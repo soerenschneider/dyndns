@@ -1,0 +1,72 @@
+package conf
+
+import (
+	"dyndns/internal/metrics"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+)
+
+type ClientConf struct {
+	Host            string `json:"host"`
+	KeyPairPath     string `json:"keypair_path"`
+	MetricsListener string `json:"metrics_listen",omitempty`
+	Once            bool   // this is not parsed via json, it's an cli flag
+	MqttConfig
+	*InterfaceConfig
+}
+
+func (conf *ClientConf) Print() {
+	log.Println("Config in use:")
+	log.Printf("host=%s", conf.Host)
+	log.Printf("KeyPairPath=%s", conf.KeyPairPath)
+	log.Printf("Once=%t", conf.Once)
+	log.Printf("MetricsListener=%s", conf.MetricsListener)
+	conf.MqttConfig.Print()
+	if conf.InterfaceConfig != nil {
+		conf.InterfaceConfig.Print()
+	}
+	log.Println("---")
+}
+
+func (conf *ClientConf) Validate() error {
+	if len(conf.Host) == 0 {
+		return errors.New("no host given")
+	}
+
+	if len(conf.KeyPairPath) == 0 {
+		return errors.New("no path for keypair given")
+	}
+
+	if conf.InterfaceConfig != nil {
+		err := conf.InterfaceConfig.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	return conf.MqttConfig.Validate()
+}
+
+func getDefaultClientConfig() *ClientConf {
+	return &ClientConf{
+		MetricsListener: metrics.DefaultListener,
+	}
+}
+
+func ReadClientConfig(path string) (*ClientConf, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read config file %s: %v", path, err)
+	}
+
+	conf := getDefaultClientConfig()
+	err = json.Unmarshal(content, &conf)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal json to config: %v", err)
+	}
+
+	return conf, nil
+}
