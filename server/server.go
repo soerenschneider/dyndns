@@ -5,6 +5,7 @@ import (
 	"dyndns/internal/common"
 	"dyndns/internal/events"
 	"dyndns/internal/metrics"
+	"dyndns/internal/util"
 	"dyndns/internal/verification"
 	"dyndns/server/dns"
 	"errors"
@@ -58,8 +59,6 @@ func (server *Server) isCached(env common.Envelope) bool {
 }
 
 func (server *Server) handlePropagateRequest(env common.Envelope) error {
-	metrics.MessagesReceivedTotal.Inc()
-
 	err := env.Validate()
 	if err != nil {
 		metrics.MessageValidationsFailed.WithLabelValues(env.PublicIp.Host, "invalid_fields").Inc()
@@ -89,6 +88,11 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 		return nil
 	}
 
+	if util.HostnameMatchesIp(env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6) {
+		log.Printf("Host %s already resolved to IPv4 %s / Ipv6 %s, not performing changes", env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6)
+		return nil
+	}
+
 	log.Printf("Verifying signature succeeded for domain '%v', performing DNS change", env.PublicIp)
 	err = server.propagator.PropagateChange(env.PublicIp)
 	if err != nil {
@@ -106,7 +110,7 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 
 func (server *Server) Listen() {
 	for request := range server.requests {
-		metrics.DnsPropagationRequestsTotal.Inc()
+		metrics.MessagesReceivedTotal.Inc()
 		metrics.LatestMessageTimestamp.SetToCurrentTime()
 
 		log.Println("Picked up a new change request")

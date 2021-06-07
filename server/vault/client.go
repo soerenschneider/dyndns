@@ -18,7 +18,7 @@ import (
 const (
 	HttpDefaultTimeout          = 10 * time.Second
 	AwsIamPropagationImpediment = 20 * time.Second
-	key                         = "X-Vault-Token"
+	vaultTokenKey               = "X-Vault-Token"
 )
 
 type VaultCredentialProvider struct {
@@ -51,7 +51,50 @@ func NewVaultCredentialProvider(conf *conf.VaultConfig) (*VaultCredentialProvide
 	}, nil
 }
 
-func getApprolePayload(roleId, secretId string) ([]byte, error) {
+func (m *VaultCredentialProvider) Retrieve() (credentials.Value, error) {
+	err := m.checkLogin()
+	if err != nil {
+		return credentials.Value{}, fmt.Errorf("could not login at vault: %v", err)
+	}
+	dynamicCredentials, err := m.readAwsCredentials()
+	if err != nil {
+		log.Printf("could not read dynamic credentials from vault: %v", err)
+		return credentials.Value{}, fmt.Errorf("could not read dynamic credentials from vault: %v", err)
+	}
+
+	m.expiry = time.Now().Add(time.Duration(dynamicCredentials.LeaseDuration) * time.Second)
+	cred := ConvertCredentials(dynamicCredentials.Data)
+
+	// The credentials we receive are usually not effective at AWS, yet, so we need to wait for a bit until
+	// the changes on AWS are propagated
+	time.Sleep(AwsIamPropagationImpediment)
+	return cred, nil
+}
+
+func (m *VaultCredentialProvider) IsExpired() bool {
+	log.Println(m.conf)
+	return time.Now().Before(m.expiry)
+}
+
+func (m *VaultCredentialProvider) checkLogin() error {
+	err := m.LookupToken()
+	if err == nil {
+		return nil
+	}
+
+	if m.conf.HasAppRoleLoginInfo() {
+		err = m.loginAppRole()
+		if err != nil {
+			return fmt.Errorf("could not login via approle: %v", err)
+		}
+
+		return m.LookupToken()
+	}
+
+	return errors.New("no more authentication methods left")
+}
+
+func buildAppRolePayload(roleId, secretId string) ([]byte, error) {
 	payload := struct {
 		RoleId   string `json:"role_id"`
 		SecretId string `json:"secret_id"`
@@ -68,11 +111,11 @@ type AuthReply struct {
 	Metadata      []string `json:"metadata,omitempty"`
 	TokenPolicies []string `json:"token_policies"`
 	Accessor      string   `json:"accessor"`
-	ClientToken   string   `json"client_token"`
+	ClientToken   string   `json:"client_token"`
 }
 
 func (m *VaultCredentialProvider) loginAppRole() error {
-	encodedPayload, err := getApprolePayload(m.conf.AppRoleId, m.conf.AppRoleSecret)
+	encodedPayload, err := buildAppRolePayload(m.conf.AppRoleId, m.conf.AppRoleSecret)
 	if err != nil {
 		return fmt.Errorf("could not marshal payload: %v", err)
 	}
@@ -94,18 +137,27 @@ func (m *VaultCredentialProvider) loginAppRole() error {
 		return fmt.Errorf("couldn't read body: %v", err)
 	}
 
-	var r VaultCredentialResponse
-	err = json.Unmarshal(body, &r)
+	credentials, err := m.parseAppRoleLoginReply(body)
 	if err != nil {
-		return fmt.Errorf("couldn't unmarshal response: %v", err)
+		return err
 	}
 
-	if len(r.Auth.ClientToken) == 0 {
-		return fmt.Errorf("could authenticate against vault, received empty client token")
-	}
-
-	m.vaultToken = r.Auth.ClientToken
+	m.vaultToken = credentials.Auth.ClientToken
 	return nil
+}
+
+func (m *VaultCredentialProvider) parseAppRoleLoginReply(body []byte) (*VaultCredentialResponse, error) {
+	var response VaultCredentialResponse
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't unmarshal response: %v", err)
+	}
+
+	if len(response.Auth.ClientToken) == 0 {
+		return nil, fmt.Errorf("could authenticate against vault, received empty client token")
+	}
+
+	return &response, nil
 }
 
 type TokenInfo struct {
@@ -118,82 +170,49 @@ type TokenInfo struct {
 }
 
 func (m *VaultCredentialProvider) LookupToken() error {
+	body, err := m.lookupTokenCall()
+	if err != nil {
+		return fmt.Errorf("error performing lookup: %v", err)
+	}
+
+	_, err = m.parseLookupReply(body)
+	return err
+}
+
+func (m *VaultCredentialProvider) lookupTokenCall() ([]byte, error) {
 	url := fmt.Sprintf("%s/v1/auth/token/lookup-self", m.conf.VaultAddr)
 	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Set(key, m.vaultToken)
+	req.Header.Set(vaultTokenKey, m.vaultToken)
 	if err != nil {
-		return fmt.Errorf("could not build request: %v", err)
+		return nil, fmt.Errorf("could not build request: %v", err)
 	}
 	response, err := m.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("could not send request: %v", err)
+		return nil, fmt.Errorf("could not send request: %v", err)
 	}
 
 	if response.StatusCode > 204 {
-		return fmt.Errorf("bad status code: %d", response.StatusCode)
+		return nil, fmt.Errorf("bad status code: %d", response.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return fmt.Errorf("couldn't read body from response: %v", err)
-	}
+	return ioutil.ReadAll(response.Body)
+}
 
+func (m *VaultCredentialProvider) parseLookupReply(body []byte) (*TokenInfo, error) {
 	var wrapper struct {
 		Data TokenInfo `json:"data"`
 	}
-	err = json.Unmarshal(body, &wrapper)
+	err := json.Unmarshal(body, &wrapper)
 	if err != nil {
 		// "not great, not terrible"
 		log.Printf("could not unmarshal response: %v", err)
-		return nil
+		return nil, err
 	}
 
 	until := wrapper.Data.ExpireTime.Sub(time.Now())
 	log.Printf("Token is valid for %v (%v)", until, wrapper.Data.ExpireTime)
 	metrics.VaultTokenLifetime.Set(float64(wrapper.Data.ExpireTime.Unix()))
-	return nil
-}
-
-func (m *VaultCredentialProvider) checkLogin() error {
-	err := m.LookupToken()
-	if err == nil {
-		return nil
-	}
-
-	if m.conf.HasAppRoleLoginInfo() {
-		err = m.loginAppRole()
-		if err != nil {
-			return fmt.Errorf("could not login via approle: %v", err)
-		}
-
-		return m.LookupToken()
-	}
-
-	return errors.New("no more authentication method left")
-}
-
-func (m *VaultCredentialProvider) Retrieve() (credentials.Value, error) {
-	err := m.checkLogin()
-	if err != nil {
-		return credentials.Value{}, fmt.Errorf("could not login at vault: %v", err)
-	}
-	dynamicCredentials, err := m.ReadCredentials()
-	if err != nil {
-		log.Printf("could not read dynamic credentials from vault: %v", err)
-		return credentials.Value{}, fmt.Errorf("could not read dynamic credentials from vault: %v", err)
-	}
-
-	m.expiry = time.Now().Add(time.Duration(dynamicCredentials.LeaseDuration) * time.Second)
-	cred := ConvertCredentials(dynamicCredentials.Data)
-
-	// The credentials we receive are usually not effective at AWS, yet, so we need to wait for a bit until
-	// the changes on AWS are propagated
-	time.Sleep(AwsIamPropagationImpediment)
-	return cred, nil
-}
-
-func (m *VaultCredentialProvider) IsExpired() bool {
-	return time.Now().Before(m.expiry)
+	return &wrapper.Data, nil
 }
 
 type Credentials struct {
@@ -216,7 +235,7 @@ type VaultCredentialResponse struct {
 	LeaseId       string      `json:"lease_id"`
 }
 
-func (m *VaultCredentialProvider) ReadCredentials() (*VaultCredentialResponse, error) {
+func (m *VaultCredentialProvider) readAwsCredentials() (*VaultCredentialResponse, error) {
 	log.Printf("Generating dynamic AWS credentials for role %s", m.conf.RoleName)
 
 	url := fmt.Sprintf("%s/v1/aws/creds/%s", m.conf.VaultAddr, m.conf.RoleName)
@@ -225,7 +244,7 @@ func (m *VaultCredentialProvider) ReadCredentials() (*VaultCredentialResponse, e
 		return nil, fmt.Errorf("error building request: %v", err)
 	}
 
-	req.Header.Set(key, m.vaultToken)
+	req.Header.Set(vaultTokenKey, m.vaultToken)
 	resp, err := m.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error from vault: %v", err)
@@ -236,8 +255,12 @@ func (m *VaultCredentialProvider) ReadCredentials() (*VaultCredentialResponse, e
 		return nil, fmt.Errorf("couldn't read response: %v", err)
 	}
 
+	return m.parseAwsCredentialsReply(body)
+}
+
+func (m *VaultCredentialProvider) parseAwsCredentialsReply(body []byte) (*VaultCredentialResponse, error) {
 	var res VaultCredentialResponse
-	err = json.Unmarshal(body, &res)
+	err := json.Unmarshal(body, &res)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal json: %v", err)
 	}
