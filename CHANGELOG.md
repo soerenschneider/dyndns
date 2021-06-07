@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/soerenschneider/dyndns/compare/v1.0.0...v1.1.0) (2021-06-07)
+
+
+### Features
+
+* Use better logging ([a7bb520](https://www.github.com/soerenschneider/dyndns/commit/a7bb520ac029aba2cff8a02c7a2bc9332c219444))
+
 ## 1.0.0 (2021-06-07)
 
 
