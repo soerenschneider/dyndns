@@ -6,6 +6,9 @@ build-server: version-info
 
 build: build-client build-server
 
+tests:
+	go test ./...
+
 version-info:
 	$(eval VERSION := $(shell git describe --tags || echo "dev"))
 	$(eval BUILD_TIME := $(shell date --rfc-3339=seconds))
