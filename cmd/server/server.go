@@ -11,6 +11,7 @@ import (
 	"dyndns/server/vault"
 	"encoding/json"
 	"flag"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"os"
@@ -49,7 +50,7 @@ func HandleChangeRequest(client paho.Client, msg paho.Message) {
 
 // getCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
 // otherwise the default credentials provider by AWS is used, trying to be resilient
-func getCredentialProvider(config conf.VaultConfig) *vault.VaultCredentialProvider {
+func getCredentialProvider(config conf.VaultConfig) credentials.Provider {
 	if config.Verify() != nil {
 		return nil
 	}
