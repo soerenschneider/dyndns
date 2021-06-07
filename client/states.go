@@ -4,7 +4,7 @@ import (
 	"dyndns/internal/common"
 	"dyndns/internal/util"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"math/rand"
 	"time"
 )
@@ -64,21 +64,21 @@ func (state *ipNotConfirmedState) Name() string {
 func (state *ipNotConfirmedState) EvaluateState(context *Client, resolved *common.ResolvedIp) bool {
 	ips, err := util.LookupDns(resolved.Host)
 	if err != nil {
-		log.Printf("Error looking up dns record %s: %v", resolved.Host, err)
+		log.Info().Msgf("Error looking up dns record %s: %v", resolved.Host, err)
 		return true
 	}
 
 	for _, hostIp := range ips {
 		if hostIp == resolved.IpV4 || hostIp == resolved.IpV6 {
-			log.Printf("DNS record %s verified", resolved.Host)
+			log.Info().Msgf("DNS record %s verified", resolved.Host)
 			context.setState(NewIpConfirmedState(resolved))
 			return false
 		}
 	}
 
-	log.Printf("DNS entry for host %s differs to new ip: %v", resolved.Host, resolved)
+	log.Info().Msgf("DNS entry for host %s differs to new ip: %v", resolved.Host, resolved)
 	if state.checks%120 == 0 {
-		log.Printf("Verifying for %d minutes already, re-sending message..", int64(state.waitInterval.Seconds())*state.checks/60)
+		log.Info().Msgf("Verifying for %d minutes already, re-sending message..", int64(state.waitInterval.Seconds())*state.checks/60)
 		return true
 	}
 
@@ -122,11 +122,11 @@ func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.R
 
 	state.checks++
 	if hasIpChanged {
-		log.Printf("New IP detected: %s", resolved)
+		log.Info().Msgf("New IP detected: %s", resolved)
 		context.setState(NewIpNotConfirmedState())
 	} else if state.checks%240 == 0 {
 		lastChange := int64(time.Now().Sub(state.since).Minutes())
-		log.Printf("Performed %d checks since %d minutes without a new IP", state.checks, lastChange)
+		log.Info().Msgf("Performed %d checks since %d minutes without a new IP", state.checks, lastChange)
 	}
 
 	return hasIpChanged

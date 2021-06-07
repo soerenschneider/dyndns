@@ -10,7 +10,7 @@ import (
 	"dyndns/server/dns"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -84,23 +84,23 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 	}
 
 	if server.isCached(env) {
-		log.Printf("Request for host %s is cached, not perfoming changes", env.PublicIp.Host)
+		log.Info().Msgf("Request for host %s is cached, not perfoming changes", env.PublicIp.Host)
 		return nil
 	}
 
 	if util.HostnameMatchesIp(env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6) {
-		log.Printf("Host %s already resolved to IPv4 %s / Ipv6 %s, not performing changes", env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6)
+		log.Info().Msgf("Host %s already resolved to IPv4 %s / Ipv6 %s, not performing changes", env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6)
 		return nil
 	}
 
-	log.Printf("Verifying signature succeeded for domain '%v', performing DNS change", env.PublicIp)
+	log.Info().Msgf("Verifying signature succeeded for domain '%v', performing DNS change", env.PublicIp)
 	err = server.propagator.PropagateChange(env.PublicIp)
 	if err != nil {
 		metrics.DnsPropagationErrors.WithLabelValues(env.PublicIp.Host).Inc()
 		return fmt.Errorf("could not propagate dns change for domain '%s': %v", env.PublicIp.Host, err)
 	}
 
-	log.Printf("Successfully propagated change '%s'", env.PublicIp.String())
+	log.Info().Msgf("Successfully propagated change '%s'", env.PublicIp.String())
 	metrics.SuccessfulDnsPropagationsTotal.WithLabelValues(env.PublicIp.Host).Inc()
 
 	// Add to cache
@@ -113,10 +113,10 @@ func (server *Server) Listen() {
 		metrics.MessagesReceivedTotal.Inc()
 		metrics.LatestMessageTimestamp.SetToCurrentTime()
 
-		log.Println("Picked up a new change request")
+		log.Info().Msg("Picked up a new change request")
 		err := server.handlePropagateRequest(request)
 		if err != nil {
-			log.Printf("Change has not been propagated: %v", err)
+			log.Error().Msgf("Change has not been propagated: %v", err)
 		}
 	}
 }

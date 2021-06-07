@@ -8,7 +8,7 @@ import (
 	"dyndns/internal/verification"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -61,7 +61,7 @@ func (client *Client) Run() {
 		var err error
 		resolvedIp, err = client.Resolve(resolvedIp)
 		if err != nil {
-			log.Printf("Error while iteration: %v", err)
+			log.Info().Msgf("Error while iteration: %v", err)
 		}
 		time.Sleep(client.state.WaitInterval())
 	}
@@ -121,7 +121,7 @@ func (client *Client) setState(state State) {
 	stateChangeTime := time.Now()
 	delta := stateChangeTime.Sub(client.lastStateChange)
 	oldState := client.state
-	log.Printf("State changed from %s -> %s after %s", oldState, state, delta)
+	log.Info().Msgf("State changed from %s -> %s after %s", oldState, state, delta)
 	metrics.StatusChangeTimestamp.WithLabelValues(client.resolver.Host(), oldState.Name(), state.Name()).Set(float64(stateChangeTime.Unix()))
 
 	client.state = state

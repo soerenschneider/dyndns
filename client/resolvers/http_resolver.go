@@ -4,8 +4,8 @@ import (
 	"dyndns/internal/common"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net"
 	"net/http"
@@ -114,7 +114,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 				}
 				break
 			} else {
-				log.Printf("Error while resolving IP: %v", err)
+				log.Info().Msgf("Error while resolving IP: %v", err)
 			}
 		}
 	}

@@ -4,7 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -139,6 +139,6 @@ func StartMetricsServer(addr string) {
 	http.Handle("/metrics", promhttp.Handler())
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
-		log.Fatalf("can not start metrics server at %s: %v", addr, err)
+		log.Fatal().Msgf("can not start metrics server at %s: %v", addr, err)
 	}
 }

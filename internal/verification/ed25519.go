@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
-	"log"
 )
 
 type Ed25519Keypair struct {
@@ -71,7 +71,7 @@ func FromFile(path string) (*Ed25519Keypair, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't decode public key: %v", err)
 	} else {
-		log.Printf("Read keypair with pub key %s from %s", conf.PubKey, path)
+		log.Info().Msgf("Read keypair with pub key %s from %s", conf.PubKey, path)
 	}
 
 	return &Ed25519Keypair{

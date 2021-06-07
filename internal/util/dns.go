@@ -2,20 +2,20 @@ package util
 
 import (
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net"
 )
 
 func HostnameMatchesIp(host, ipv4, ipv6 string) bool {
 	ips, err := LookupDns(host)
 	if err != nil {
-		log.Printf("Error looking up dns record %s: %v", host, err)
+		log.Info().Msgf("Error looking up dns record %s: %v", host, err)
 		return false
 	}
 
 	for _, hostIp := range ips {
 		if hostIp == ipv4 || hostIp == ipv6 {
-			log.Printf("DNS record %s verified", host)
+			log.Info().Msgf("DNS record %s verified", host)
 			return true
 		}
 	}

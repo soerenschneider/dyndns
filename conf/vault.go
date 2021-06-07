@@ -3,7 +3,7 @@ package conf
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -23,16 +23,16 @@ func GetDefaultVaultConfig() VaultConfig {
 }
 
 func (c *VaultConfig) Print() {
-	log.Printf("RoleName=%s", c.RoleName)
-	log.Printf("VaultAddr=%s", c.VaultAddr)
+	log.Info().Msgf("RoleName=%s", c.RoleName)
+	log.Info().Msgf("VaultAddr=%s", c.VaultAddr)
 	if len(c.AppRoleId) > 0 {
-		log.Printf("RoleName=%s", "***")
+		log.Info().Msgf("RoleName=%s", "***")
 	}
 	if len(c.AppRoleSecret) > 0 {
-		log.Printf("RoleName=%s", "***")
+		log.Info().Msgf("RoleName=%s", "***")
 	}
 	if len(c.VaultToken) > 0 {
-		log.Printf("VaultToken=%s", "***")
+		log.Info().Msgf("VaultToken=%s", "***")
 	}
 }
 

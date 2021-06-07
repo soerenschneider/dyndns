@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"log"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -19,11 +19,11 @@ type MqttBus struct {
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	log.Println("Successfully connected to broker")
+	log.Info().Msg("Successfully connected to broker")
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Printf("Connection lost: %v", err)
+	log.Info().Msgf("Connection lost: %v", err)
 	metrics.MqttConnectionsLostTotal.Inc()
 }
 
@@ -38,7 +38,7 @@ func NewMqttDispatch(broker, clientId, notificationTopic string) (*MqttBus, erro
 	client := mqtt.NewClient(opts)
 	token := client.Connect()
 	if token.WaitTimeout(60*time.Second) && token.Error() != nil {
-		log.Fatalf("Connection to broker failed: %v", token.Error())
+		log.Fatal().Msgf("Connection to broker failed: %v", token.Error())
 	}
 
 	return &MqttBus{
@@ -56,14 +56,14 @@ func NewMqttServer(broker, clientId, notificationTopic string, handler func(clie
 	opts.AutoReconnect = true
 
 	opts.OnConnect = func(client mqtt.Client) {
-		log.Printf("Connected to brokers %v", opts.Servers)
+		log.Info().Msgf("Connected to brokers %v", opts.Servers)
 		client.Subscribe(notificationTopic, 1, handler)
-		log.Printf("Subscribed to topic %s", notificationTopic)
+		log.Info().Msgf("Subscribed to topic %s", notificationTopic)
 	}
 
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("Connection to broker failed: %v", token.Error())
+		log.Fatal().Msgf("Connection to broker failed: %v", token.Error())
 	}
 
 	return &MqttBus{
@@ -73,7 +73,7 @@ func NewMqttServer(broker, clientId, notificationTopic string, handler func(clie
 }
 
 func (d *MqttBus) Disconnect() {
-	log.Println("Disconnecting from mqtt broker")
+	log.Info().Msg("Disconnecting from mqtt broker")
 	d.client.Disconnect(5000)
 }
 

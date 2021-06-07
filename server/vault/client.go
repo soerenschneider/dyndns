@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -40,6 +40,7 @@ func NewVaultCredentialProvider(conf *conf.VaultConfig) (*VaultCredentialProvide
 
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 5
+
 	standardClient := retryClient.StandardClient()
 	standardClient.Timeout = HttpDefaultTimeout
 
@@ -58,7 +59,7 @@ func (m *VaultCredentialProvider) Retrieve() (credentials.Value, error) {
 	}
 	dynamicCredentials, err := m.readAwsCredentials()
 	if err != nil {
-		log.Printf("could not read dynamic credentials from vault: %v", err)
+		log.Warn().Msgf("could not read dynamic credentials from vault: %v", err)
 		return credentials.Value{}, fmt.Errorf("could not read dynamic credentials from vault: %v", err)
 	}
 
@@ -72,7 +73,6 @@ func (m *VaultCredentialProvider) Retrieve() (credentials.Value, error) {
 }
 
 func (m *VaultCredentialProvider) IsExpired() bool {
-	log.Println(m.conf)
 	return time.Now().Before(m.expiry)
 }
 
@@ -205,12 +205,12 @@ func (m *VaultCredentialProvider) parseLookupReply(body []byte) (*TokenInfo, err
 	err := json.Unmarshal(body, &wrapper)
 	if err != nil {
 		// "not great, not terrible"
-		log.Printf("could not unmarshal response: %v", err)
+		log.Warn().Msgf("could not unmarshal response: %v", err)
 		return nil, err
 	}
 
 	until := wrapper.Data.ExpireTime.Sub(time.Now())
-	log.Printf("Token is valid for %v (%v)", until, wrapper.Data.ExpireTime)
+	log.Info().Msgf("Token is valid for %v (%v)", until, wrapper.Data.ExpireTime)
 	metrics.VaultTokenLifetime.Set(float64(wrapper.Data.ExpireTime.Unix()))
 	return &wrapper.Data, nil
 }
@@ -236,7 +236,7 @@ type VaultCredentialResponse struct {
 }
 
 func (m *VaultCredentialProvider) readAwsCredentials() (*VaultCredentialResponse, error) {
-	log.Printf("Generating dynamic AWS credentials for role %s", m.conf.RoleName)
+	log.Info().Msgf("Generating dynamic AWS credentials for role %s", m.conf.RoleName)
 
 	url := fmt.Sprintf("%s/v1/aws/creds/%s", m.conf.VaultAddr, m.conf.RoleName)
 	req, err := http.NewRequest("GET", url, nil)
@@ -265,7 +265,7 @@ func (m *VaultCredentialProvider) parseAwsCredentialsReply(body []byte) (*VaultC
 		return nil, fmt.Errorf("could not unmarshal json: %v", err)
 	}
 
-	log.Printf("Received credentials with id %s, valid for %ds", res.Data.AccessKey, res.LeaseDuration)
+	log.Info().Msgf("Received credentials with id %s, valid for %ds", res.Data.AccessKey, res.LeaseDuration)
 	return &res, nil
 }
 

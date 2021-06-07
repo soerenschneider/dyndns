@@ -8,10 +8,11 @@ import (
 	"dyndns/internal/events"
 	"dyndns/internal/events/mqtt"
 	"dyndns/internal/metrics"
+	"dyndns/internal/util"
 	"dyndns/internal/verification"
 	"flag"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 	"os/user"
 	"path"
@@ -24,20 +25,22 @@ var configPathPreferences = []string{
 }
 
 func main() {
+	util.InitLogging()
+
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.BuildTime).SetToCurrentTime()
-	log.Printf("Started dyndns client version %s, commit %s, built at %s", internal.BuildVersion, internal.CommitHash, internal.BuildTime)
+	log.Info().Msgf("Started dyndns client version %s, commit %s, built at %s", internal.BuildVersion, internal.CommitHash, internal.BuildTime)
 	defaultConfigPath := checkDefaultConfigFiles()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
 	once := flag.Bool("once", false, "Path to the config file")
 	flag.Parse()
 
 	if nil == configPath {
-		log.Fatalf("No config path supplied")
+		log.Fatal().Msgf("No config path supplied")
 	}
 
 	conf, err := conf.ReadClientConfig(*configPath)
 	if err != nil {
-		log.Fatalf("couldn't read config file: %v", err)
+		log.Fatal().Msgf("couldn't read config file: %v", err)
 	}
 	// supply once flag value
 	conf.Once = *once
@@ -69,41 +72,41 @@ func getUserHomeDirectory() string {
 
 func RunClient(conf *conf.ClientConf) {
 	if nil == conf {
-		log.Fatal("Supplied nil config")
+		log.Fatal().Msg("Supplied nil config")
 	}
 
 	err := conf.Validate()
 	if err != nil {
-		log.Fatalf("Verification of config failed: %v", err)
+		log.Fatal().Msgf("Verification of config failed: %v", err)
 	}
 	keypair := getKeypair(conf.KeyPairPath)
 
 	var resolver resolvers.IpResolver
 	if conf.InterfaceConfig != nil {
-		log.Printf("Building new resolver for interface %s", conf.NetworkInterface)
+		log.Info().Msgf("Building new resolver for interface %s", conf.NetworkInterface)
 		resolver, _ = resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
 	} else {
-		log.Printf("Building HTTP resolver")
+		log.Info().Msgf("Building HTTP resolver")
 		resolver, _ = resolvers.NewHttpResolver(conf.Host)
 	}
 
 	var dispatcher events.EventDispatch
 	dispatcher, err = mqtt.NewMqttDispatch(conf.Broker, conf.Host, fmt.Sprintf("dyndns/%s", conf.Host))
 	if err != nil {
-		log.Fatalf("Could not build mqtt dispatcher: %v", err)
+		log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
 	}
 
 	go metrics.StartMetricsServer(conf.MetricsListener)
 
 	client, err := client.NewClient(resolver, keypair, dispatcher)
 	if err != nil {
-		log.Fatalf("could not build client: %v", err)
+		log.Fatal().Msgf("could not build client: %v", err)
 	}
 
 	if conf.Once {
 		_, err := client.ResolveSingle()
 		if err != nil {
-			log.Printf("Error while resolving: %v", err)
+			log.Info().Msgf("Error while resolving: %v", err)
 			os.Exit(1)
 		}
 	} else {
@@ -112,18 +115,18 @@ func RunClient(conf *conf.ClientConf) {
 }
 
 func getKeypair(path string) verification.SignatureKeypair {
-	log.Printf("Trying to read keypair from file %s", path)
+	log.Info().Msgf("Trying to read keypair from file %s", path)
 	keypair, err := verification.FromFile(path)
 	if err != nil {
-		log.Printf("Creating new keypair, as I couldn't read keypair: %v", err)
+		log.Info().Msgf("Creating new keypair, as I couldn't read keypair: %v", err)
 		keypair, err = verification.NewKeyPair()
 		if err != nil {
-			log.Fatalf("Can not create keypair: %v", err)
+			log.Fatal().Msgf("Can not create keypair: %v", err)
 		}
 
 		err = verification.ToFile(path, keypair)
 		if err != nil {
-			log.Fatalf("Could not save keypair: %v", err)
+			log.Fatal().Msgf("Could not save keypair: %v", err)
 		}
 	}
 

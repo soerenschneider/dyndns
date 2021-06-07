@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
-	"log"
 )
 
 type ServerConf struct {
@@ -61,7 +61,7 @@ func (conf *ServerConf) DecodePublicKeys() map[string]verification.VerificationK
 	for key, val := range conf.KnownHosts {
 		if len(val) == 0 {
 			metrics.PublicKeyErrors.Inc()
-			log.Printf("Empty publickey for host %s", key)
+			log.Info().Msgf("Empty publickey for host %s", key)
 			continue
 		}
 
@@ -70,7 +70,7 @@ func (conf *ServerConf) DecodePublicKeys() map[string]verification.VerificationK
 			ret[key] = publicKey
 		} else {
 			metrics.PublicKeyErrors.Inc()
-			log.Printf("Could not initialize publicKey for host %s: %v", key, err)
+			log.Info().Msgf("Could not initialize publicKey for host %s: %v", key, err)
 		}
 	}
 
@@ -78,12 +78,12 @@ func (conf *ServerConf) DecodePublicKeys() map[string]verification.VerificationK
 }
 
 func (conf *ServerConf) Print() {
-	log.Printf("Configured %d hosts", len(conf.KnownHosts))
+	log.Info().Msgf("Configured %d hosts", len(conf.KnownHosts))
 	for host, pubKey := range conf.KnownHosts {
-		log.Printf("%s with pubKey %s", host, pubKey)
+		log.Info().Msgf("%s with pubKey %s", host, pubKey)
 	}
-	log.Printf("HostedZoneId=%s", conf.HostedZoneId)
-	log.Printf("MetricsListener=%s", conf.MetricsListener)
+	log.Info().Msgf("HostedZoneId=%s", conf.HostedZoneId)
+	log.Info().Msgf("MetricsListener=%s", conf.MetricsListener)
 	conf.MqttConfig.Print()
 	conf.VaultConfig.Print()
 }

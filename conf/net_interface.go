@@ -2,7 +2,7 @@ package conf
 
 import (
 	"errors"
-	"log"
+	"github.com/rs/zerolog/log"
 )
 
 type InterfaceConfig struct {
@@ -10,7 +10,7 @@ type InterfaceConfig struct {
 }
 
 func (conf *InterfaceConfig) Print() {
-	log.Printf("NetworkInterface=%s", conf.NetworkInterface)
+	log.Info().Msgf("NetworkInterface=%s", conf.NetworkInterface)
 }
 
 func (conf *InterfaceConfig) Validate() error {

@@ -2,7 +2,7 @@ package conf
 
 import (
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 )
 
 type MqttConfig struct {
@@ -11,8 +11,8 @@ type MqttConfig struct {
 }
 
 func (conf *MqttConfig) Print() {
-	log.Printf("Broker=%s", conf.Broker)
-	log.Printf("ClientId=%s", conf.ClientId)
+	log.Info().Msgf("Broker=%s", conf.Broker)
+	log.Info().Msgf("ClientId=%s", conf.ClientId)
 }
 
 func (conf *MqttConfig) Validate() error {

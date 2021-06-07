@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
-	"log"
 )
 
 type ClientConf struct {
@@ -19,16 +19,16 @@ type ClientConf struct {
 }
 
 func (conf *ClientConf) Print() {
-	log.Println("Config in use:")
-	log.Printf("host=%s", conf.Host)
-	log.Printf("KeyPairPath=%s", conf.KeyPairPath)
-	log.Printf("Once=%t", conf.Once)
-	log.Printf("MetricsListener=%s", conf.MetricsListener)
+	log.Info().Msg("Config in use:")
+	log.Info().Msgf("host=%s", conf.Host)
+	log.Info().Msgf("KeyPairPath=%s", conf.KeyPairPath)
+	log.Info().Msgf("Once=%t", conf.Once)
+	log.Info().Msgf("MetricsListener=%s", conf.MetricsListener)
 	conf.MqttConfig.Print()
 	if conf.InterfaceConfig != nil {
 		conf.InterfaceConfig.Print()
 	}
-	log.Println("---")
+	log.Info().Msg("---")
 }
 
 func (conf *ClientConf) Validate() error {
