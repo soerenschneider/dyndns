@@ -7,6 +7,13 @@
 
 * fix typo ([009aae2](https://www.github.com/soerenschneider/dyndns/commit/009aae24146c149b09e6df8855df2f8f32a6d2f6))
 
+### [1.1.1](https://www.github.com/soerenschneider/dyndns/compare/v1.1.0...v1.1.1) (2021-06-08)
+
+
+### Bug Fixes
+
+* fix typo ([009aae2](https://www.github.com/soerenschneider/dyndns/commit/009aae24146c149b09e6df8855df2f8f32a6d2f6))
+
 ## [1.1.0](https://www.github.com/soerenschneider/dyndns/compare/v1.0.0...v1.1.0) (2021-06-07)
 
 
