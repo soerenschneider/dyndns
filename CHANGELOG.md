@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.1.2](https://www.github.com/soerenschneider/dyndns/compare/v1.1.1...v1.1.2) (2021-07-03)
+
+
+### Bug Fixes
+
+* Fix incorrect, duplicate logmessage ([b5cad1e](https://www.github.com/soerenschneider/dyndns/commit/b5cad1e0dcb6925db4479d25bba546afef8624c2))
+
 ### [1.1.1](https://www.github.com/soerenschneider/dyndns/compare/v1.1.0...v1.1.1) (2021-06-08)
 
 
