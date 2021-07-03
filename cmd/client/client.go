@@ -28,7 +28,6 @@ func main() {
 	util.InitLogging()
 
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.BuildTime).SetToCurrentTime()
-	log.Info().Msgf("Started dyndns client version %s, commit %s, built at %s", internal.BuildVersion, internal.CommitHash, internal.BuildTime)
 	defaultConfigPath := checkDefaultConfigFiles()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
 	once := flag.Bool("once", false, "Path to the config file")
