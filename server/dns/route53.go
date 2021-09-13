@@ -78,7 +78,7 @@ func buildChange(host, value, recordType string, ttl int64) (*route53.Change, er
 		ResourceRecordSet: &route53.ResourceRecordSet{
 			Name: aws.String(host),
 			ResourceRecords: []*route53.ResourceRecord{
-				&route53.ResourceRecord{Value: aws.String(value)},
+				{Value: aws.String(value)},
 			},
 			TTL:  aws.Int64(ttl),
 			Type: aws.String(recordType),
