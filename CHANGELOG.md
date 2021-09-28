@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://www.github.com/soerenschneider/dyndns/compare/v1.1.2...v1.2.0) (2021-09-28)
+
+
+### Features
+
+* print version ([529cc31](https://www.github.com/soerenschneider/dyndns/commit/529cc31d80f809dd29141edf654ced55a8e8ccf7))
+
 ### [1.1.2](https://www.github.com/soerenschneider/dyndns/compare/v1.1.1...v1.1.2) (2021-07-03)
 
 
