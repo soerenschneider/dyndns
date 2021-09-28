@@ -25,14 +25,19 @@ var configPathPreferences = []string{
 }
 
 func main() {
-	util.InitLogging()
-
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.BuildTime).SetToCurrentTime()
+	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	defaultConfigPath := checkDefaultConfigFiles()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
 	once := flag.Bool("once", false, "Path to the config file")
+	version := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
 
+	if *version {
+		fmt.Printf("%s (commit: %s)", internal.BuildVersion, internal.CommitHash)
+		os.Exit(0)
+	}
+
+	util.InitLogging()
 	if nil == configPath {
 		log.Fatal().Msgf("No config path supplied")
 	}

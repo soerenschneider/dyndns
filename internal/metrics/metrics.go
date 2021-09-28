@@ -19,7 +19,7 @@ var (
 	Version = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Name:      "version",
-	}, []string{"version", "hash", "built_at"})
+	}, []string{"version", "hash"})
 
 	DnsPropagationRequestsTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,

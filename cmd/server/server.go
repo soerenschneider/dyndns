@@ -2,6 +2,7 @@ package main
 
 import (
 	"dyndns/conf"
+	"dyndns/internal"
 	"dyndns/internal/common"
 	"dyndns/internal/events/mqtt"
 	"dyndns/internal/metrics"
@@ -11,6 +12,7 @@ import (
 	"dyndns/server/vault"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
@@ -25,11 +27,17 @@ const notificationTopic = "dyndns/+"
 var requestsChannel = make(chan common.Envelope)
 
 func main() {
-	util.InitLogging()
-
+	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
+	version := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
 
+	if *version {
+		fmt.Printf("%s (commit: %s)", internal.BuildVersion, internal.CommitHash)
+		os.Exit(0)
+	}
+
+	util.InitLogging()
 	if nil == configPath {
 		log.Fatal().Msgf("No config path supplied")
 	}
