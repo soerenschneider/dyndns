@@ -20,5 +20,5 @@ func InitLogging() {
 	}
 	zerolog.TimestampFieldName = "timestampSeconds"
 
-	log.Info().Msgf("Started dyndns version %s, commit %s, built at %s", internal.BuildVersion, internal.CommitHash, internal.BuildTime)
+	log.Info().Msgf("Started dyndns version %s, commit %s", internal.BuildVersion, internal.CommitHash)
 }
