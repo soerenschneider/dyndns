@@ -2,6 +2,15 @@
 
 ## Server Configuration
 
+### CLI Reference
+```
+Usage of ./dyndns-server:
+  -config string
+        Path to the config file (default "/etc/dyndns/config.json")
+  -version
+        Print version and exit
+```
+
 ### Reference
 | Keyword               | Description                                                                                               | Example                                                                                       | Mandatory |
 |-----------------------|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|-----------|
@@ -15,6 +24,18 @@
 | vault_app_role_secret | [AppRole secret id](https://www.vaultproject.io/docs/auth/approle) to authenticate against vault          | 37b74931-c4cd-d49a-9246-ccc62d682a25                                                          | Y         |
 
 ## Client Configuration
+
+### CLI Reference
+```
+Usage of ./dyndns-client:
+  -config string
+        Path to the config file (default "/etc/dyndns/client.json")
+  -once
+        Path to the config file
+  -version
+        Print version and exit
+
+```
 
 ### Reference
 | Keyword        | Description                                    | Example             | Mandatory |
