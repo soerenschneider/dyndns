@@ -28,7 +28,7 @@ func main() {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	defaultConfigPath := checkDefaultConfigFiles()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
-	once := flag.Bool("once", false, "Path to the config file")
+	once := flag.Bool("once", false, "Do not run as a daemon")
 	version := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
 
