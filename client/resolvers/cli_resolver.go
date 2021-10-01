@@ -1,6 +1,6 @@
 package resolvers
 
-import "dyndns/internal/common"
+import "github.com/soerenschneider/dyndns/internal/common"
 
 type CliResolver struct {
 	ipv4 string

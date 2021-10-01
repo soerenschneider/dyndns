@@ -3,7 +3,7 @@ package verification
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	"dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"

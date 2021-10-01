@@ -1,6 +1,6 @@
 package dns
 
-import "dyndns/internal/common"
+import "github.com/soerenschneider/dyndns/internal/common"
 
 const defaultRecordTtl = 60
 

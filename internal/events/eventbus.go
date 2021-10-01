@@ -1,7 +1,7 @@
 package events
 
 import (
-	"dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/common"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 

@@ -1,13 +1,13 @@
 package server
 
 import (
-	"dyndns/conf"
-	"dyndns/internal/common"
-	"dyndns/internal/events"
-	"dyndns/internal/metrics"
-	"dyndns/internal/util"
-	"dyndns/internal/verification"
-	"dyndns/server/dns"
+	"github.com/soerenschneider/dyndns/conf"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/events"
+	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/util"
+	"github.com/soerenschneider/dyndns/internal/verification"
+	"github.com/soerenschneider/dyndns/server/dns"
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"

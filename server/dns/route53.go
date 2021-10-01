@@ -1,7 +1,7 @@
 package dns
 
 import (
-	"dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"

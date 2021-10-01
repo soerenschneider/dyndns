@@ -1,11 +1,11 @@
 package client
 
 import (
-	"dyndns/client/resolvers"
-	"dyndns/internal/common"
-	"dyndns/internal/events"
-	"dyndns/internal/metrics"
-	"dyndns/internal/verification"
+	"github.com/soerenschneider/dyndns/client/resolvers"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/events"
+	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/verification"
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"

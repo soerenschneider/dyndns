@@ -2,8 +2,8 @@ package vault
 
 import (
 	"bytes"
-	"dyndns/conf"
-	"dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/conf"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"encoding/json"
 	"errors"
 	"fmt"

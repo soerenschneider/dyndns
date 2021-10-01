@@ -1,8 +1,8 @@
 package mqtt
 
 import (
-	"dyndns/internal/common"
-	"dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"encoding/json"
 	"errors"
 	"fmt"

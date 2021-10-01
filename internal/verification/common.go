@@ -1,7 +1,7 @@
 package verification
 
 import (
-	"dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"encoding/base64"
 )
 

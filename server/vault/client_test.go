@@ -1,7 +1,7 @@
 package vault
 
 import (
-	"dyndns/conf"
+	"github.com/soerenschneider/dyndns/conf"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"net/http"
 	"reflect"

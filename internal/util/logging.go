@@ -1,7 +1,7 @@
 package util
 
 import (
-	"dyndns/internal"
+	"github.com/soerenschneider/dyndns/internal"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/ssh/terminal"

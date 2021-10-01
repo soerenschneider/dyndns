@@ -1,7 +1,7 @@
 package resolvers
 
 import (
-	"dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"

@@ -1,5 +1,5 @@
 BUILD_DIR = builds
-MODULE = dyndns
+MODULE = github.com/soerenschneider/dyndns
 BINARY_NAME_SERVER = dyndns-server
 BINARY_NAME_CLIENT = dyndns-client
 CHECKSUM_FILE = $(BUILD_DIR)/checksum.sha256

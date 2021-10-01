@@ -1,7 +1,7 @@
 package resolvers
 
 import (
-	"dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/common"
 )
 
 type IpResolver interface {

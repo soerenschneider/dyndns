@@ -1,7 +1,7 @@
 package conf
 
 import (
-	"dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"encoding/json"
 	"errors"
 	"fmt"

@@ -1,8 +1,8 @@
 package client
 
 import (
-	"dyndns/internal/common"
-	"dyndns/internal/util"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/util"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"math/rand"
