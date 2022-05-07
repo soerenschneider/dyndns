@@ -66,25 +66,23 @@ func (resolved *ResolvedIp) HasIpV4() bool {
 }
 
 func (resolved *ResolvedIp) IsValid() bool {
-	validIpV4 := false
-	if resolved.HasIpV4() {
-		addr := net.ParseIP(resolved.IpV4)
-		validIpV4 = addr != nil
-		if !validIpV4 {
-			resolved.IpV4 = ""
-		}
+	if !resolved.HasIpV4() {
+		return false
+	}
+	addr := net.ParseIP(resolved.IpV4)
+	if addr == nil {
+		return false
 	}
 
-	validIpV6 := false
-	if resolved.HasIpV6() {
-		addr := net.ParseIP(resolved.IpV6)
-		validIpV6 = addr != nil
-		if !validIpV6 {
-			resolved.IpV6 = ""
-		}
+	if addr.IsPrivate() {
+		return false
 	}
 
-	return validIpV4 || validIpV6
+	if addr.IsLoopback() {
+		return false
+	}
+
+	return true
 }
 
 func (resolved *ResolvedIp) getFormattedDate() string {

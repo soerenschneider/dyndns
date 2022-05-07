@@ -4,32 +4,6 @@ import (
 	"testing"
 )
 
-func TestResolvedIp_IsValidValidV4(t *testing.T) {
-	ipv4 := "8.8.8.8"
-	ipv6 := "invalid"
-	resolved := &ResolvedIp{IpV4: ipv4, IpV6: ipv6}
-	resolved.IsValid()
-	if resolved.IpV4 != ipv4 {
-		t.Fatalf("Expected %s", ipv4)
-	}
-	if resolved.IpV6 != "" {
-		t.Fatal("Expected empty Ipv6")
-	}
-}
-
-func TestResolvedIp_IsValidValidV6(t *testing.T) {
-	ipv4 := "invalid"
-	ipv6 := "::1"
-	resolved := &ResolvedIp{IpV4: ipv4, IpV6: ipv6}
-	resolved.IsValid()
-	if resolved.IpV6 != ipv6 {
-		t.Fatalf("Expected %s", ipv6)
-	}
-	if resolved.IpV4 != "" {
-		t.Fatal("Expected empty Ipv4")
-	}
-}
-
 func TestResolvedIp_IsValid(t *testing.T) {
 	type fields struct {
 		IpV4 string
@@ -75,17 +49,23 @@ func TestResolvedIp_IsValid(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "one valid ipv6, ipv4 empty",
+			name: "invalid because private",
 			fields: fields{
-				IpV6: "::1",
+				IpV4: "192.168.1.1",
 			},
-			want: true,
+			want: false,
 		},
 		{
-			name: "both valid",
+			name: "invalid because loopback",
 			fields: fields{
 				IpV4: "127.0.0.1",
-				IpV6: "::1",
+			},
+			want: false,
+		},
+		{
+			name: "valid",
+			fields: fields{
+				IpV4: "8.8.8.8",
 			},
 			want: true,
 		},
