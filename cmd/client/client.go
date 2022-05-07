@@ -1,6 +1,9 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client"
 	"github.com/soerenschneider/dyndns/client/resolvers"
 	"github.com/soerenschneider/dyndns/conf"
@@ -10,9 +13,6 @@ import (
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"flag"
-	"fmt"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/user"
 	"path"
@@ -100,8 +100,6 @@ func RunClient(conf *conf.ClientConf) {
 		log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
 	}
 
-	go metrics.StartMetricsServer(conf.MetricsListener)
-
 	client, err := client.NewClient(resolver, keypair, dispatcher)
 	if err != nil {
 		log.Fatal().Msgf("could not build client: %v", err)
@@ -114,6 +112,7 @@ func RunClient(conf *conf.ClientConf) {
 			os.Exit(1)
 		}
 	} else {
+		go metrics.StartMetricsServer(conf.MetricsListener)
 		client.Run()
 	}
 }
