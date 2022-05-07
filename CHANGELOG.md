@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://www.github.com/soerenschneider/dyndns/compare/v1.2.0...v1.3.0) (2022-05-07)
+
+
+### Features
+
+* require discovered ipv4 is not private and not loopback ([1ea3f45](https://www.github.com/soerenschneider/dyndns/commit/1ea3f450dedb8aa21fcbf7fa2a97cc22fb0c4bfc))
+
+
+### Bug Fixes
+
+* do not start metrics server with '-once' flag ([6f8759d](https://www.github.com/soerenschneider/dyndns/commit/6f8759d3487fc3fd84acb4ef5a7de738dfc4800e))
+
 ## [1.2.0](https://www.github.com/soerenschneider/dyndns/compare/v1.1.2...v1.2.0) (2021-09-28)
 
 
