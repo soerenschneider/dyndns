@@ -17,7 +17,7 @@ Usage of ./dyndns-server:
 | known_hosts           | A map of known hostnames and their public key                                                             | {"example.domain.tld":"AAAAC3NzaC1lZDI1NTE5AAAAIBfJ2Qjt5GPi7DKRPGxJCkvk8xNsG9dA607tnWagOk2D"} | Y         |
 | hosted_zone_id        | [AWS Route53 hosted zone id](https://docs.aws.amazon.com/Route53/latest/APIReference/API_HostedZone.html) | Z119WBBTVP5WFX                                                                                | Y         |
 | metrics_listen        | HTTP metrics handler listen address                                                                       | :9095                                                                                         | N         |
-| broker                | The MQTT broker you connect to                                                                            | tcp://host.tld                                                                                | Y         |
+| brokers               | The MQTT brokers to connect to                                                                           | ["tcp://host.tld:1883"]                                                                                | Y         |
 | client_id             | Client id for the MQTT connection                                                                         | crazy-horse                                                                                   | Y         |
 | vault_addr            | Vault URL                                                                                                 | https://vault.tld:8200                                                                        | Y         |
 | vault_app_role_id     | [AppRole role id](https://www.vaultproject.io/docs/auth/approle) to authenticate against vault            | 988a9dfd-ea69-4a53-6cb6-9d6b86474bba                                                          | Y         |
@@ -43,7 +43,7 @@ Usage of ./dyndns-client:
 | host           | FQDN of the host you want to update the IP for | https://vault:8200  | Y         |
 | keypair_path   | The path to the ed25519 keypair                | /etc/dyndns/keypair | Y         |
 | metrics_listen | HTTP metrics handler listen address            | :9095               | N         |
-| broker         | The MQTT broker you connect to                 | tcp://host.tld      | Y         |
+| brokers        | The MQTT brokers to connect to                 | ["tcp://host.tld":1883]      | Y         |
 | client_id      | Client id for the MQTT connection              | crazy-horse         | Y         |
 | interface      | The network interface to check for IP updates  | eth0                | N         |
 
