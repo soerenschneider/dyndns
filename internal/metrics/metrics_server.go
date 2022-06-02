@@ -1,3 +1,5 @@
+//go:build server
+
 package metrics
 
 import (
@@ -11,7 +13,6 @@ import (
 const (
 	namespace       = "dyndns"
 	server          = "server"
-	client          = "client"
 	DefaultListener = ":9191"
 )
 
@@ -91,48 +92,6 @@ var (
 		Subsystem: server,
 		Name:      "message_parsing_failed_total",
 	})
-
-	IpResolveErrors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "ip_resolves_errors_total",
-	}, []string{"host", "resolver"})
-
-	InvalidResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "ip_resolves_invalid_total",
-	}, []string{"host", "resolver"})
-
-	ResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "ip_resolves_success_total",
-	}, []string{"host", "resolver"})
-
-	LastCheck = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "ip_resolves_last_check_timestamp_seconds",
-	}, []string{"host", "resolver"})
-
-	UpdateDispatchErrors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "updates_dispatch_errors_total",
-	}, []string{"host"})
-
-	UpdatesDispatched = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "updates_dispatched_total",
-	})
-
-	StatusChangeTimestamp = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "state_changed_timestamp",
-	}, []string{"host", "from", "to"})
 )
 
 func StartMetricsServer(addr string) {
