@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -9,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/common"
 )
 
 type Route53Propagator struct {

@@ -1,6 +1,12 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
 	"github.com/soerenschneider/dyndns/internal/common"
@@ -10,12 +16,6 @@ import (
 	"github.com/soerenschneider/dyndns/server"
 	"github.com/soerenschneider/dyndns/server/dns"
 	"github.com/soerenschneider/dyndns/server/vault"
-	"encoding/json"
-	"flag"
-	"fmt"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -94,7 +94,7 @@ func RunServer(configPath string) {
 	}
 	conf.Print()
 
-	mqttServer, err := mqtt.NewMqttServer(conf.Broker, conf.ClientId, notificationTopic, HandleChangeRequest)
+	mqttServer, err := mqtt.NewMqttServer(conf.Brokers, conf.ClientId, notificationTopic, HandleChangeRequest)
 	if err != nil {
 		log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
 	}

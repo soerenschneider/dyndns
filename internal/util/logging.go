@@ -1,9 +1,9 @@
 package util
 
 import (
-	"github.com/soerenschneider/dyndns/internal"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
 	"time"

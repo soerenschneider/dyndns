@@ -1,6 +1,9 @@
 package server
 
 import (
+	"errors"
+	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events"
@@ -8,9 +11,6 @@ import (
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"github.com/soerenschneider/dyndns/server/dns"
-	"errors"
-	"fmt"
-	"github.com/rs/zerolog/log"
 	"time"
 )
 

@@ -94,13 +94,16 @@ func RunClient(conf *conf.ClientConf) {
 		resolver, _ = resolvers.NewHttpResolver(conf.Host)
 	}
 
-	var dispatcher events.EventDispatch
-	dispatcher, err = mqtt.NewMqttDispatch(conf.Broker, conf.Host, fmt.Sprintf("dyndns/%s", conf.Host))
-	if err != nil {
-		log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
+	var dispatchers []events.EventDispatch
+	for _, broker := range conf.Brokers {
+		dispatcher, err := mqtt.NewMqttDispatch(broker, conf.Host, fmt.Sprintf("dyndns/%s", conf.Host))
+		if err != nil {
+			log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
+		}
+		dispatchers = append(dispatchers, dispatcher)
 	}
 
-	client, err := client.NewClient(resolver, keypair, dispatcher)
+	client, err := client.NewClient(resolver, keypair, dispatchers)
 	if err != nil {
 		log.Fatal().Msgf("could not build client: %v", err)
 	}

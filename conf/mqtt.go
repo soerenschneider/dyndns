@@ -6,18 +6,20 @@ import (
 )
 
 type MqttConfig struct {
-	Broker   string `json:"broker"`
-	ClientId string `json:"client_id"`
+	Brokers  []string `json:"brokers"`
+	ClientId string   `json:"client_id"`
 }
 
 func (conf *MqttConfig) Print() {
-	log.Info().Msgf("Broker=%s", conf.Broker)
+	log.Info().Msgf("Brokers=%v", conf.Brokers)
 	log.Info().Msgf("ClientId=%s", conf.ClientId)
 }
 
 func (conf *MqttConfig) Validate() error {
-	if !IsValidUrl(conf.Broker) {
-		return fmt.Errorf("no valid host given: %s", conf.Broker)
+	for _, broker := range conf.Brokers {
+		if !IsValidUrl(broker) {
+			return fmt.Errorf("no valid host given: %s", broker)
+		}
 	}
 
 	return nil

@@ -1,10 +1,10 @@
 package client
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/util"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/util"
 	"math/rand"
 	"time"
 )
