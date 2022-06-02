@@ -1,10 +1,10 @@
 package resolvers
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"io/ioutil"
 	"math/rand"
 	"net"

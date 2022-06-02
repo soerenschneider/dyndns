@@ -1,13 +1,13 @@
 package mqtt
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
 	"encoding/json"
 	"errors"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"time"
 )
 
@@ -27,7 +27,7 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	metrics.MqttConnectionsLostTotal.Inc()
 }
 
-func NewMqttDispatch(broker, clientId, notificationTopic string) (*MqttBus, error) {
+func NewMqttDispatch(broker string, clientId, notificationTopic string) (*MqttBus, error) {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(broker)
 	opts.SetClientID(clientId)
@@ -47,9 +47,11 @@ func NewMqttDispatch(broker, clientId, notificationTopic string) (*MqttBus, erro
 	}, nil
 }
 
-func NewMqttServer(broker, clientId, notificationTopic string, handler func(client mqtt.Client, msg mqtt.Message)) (*MqttBus, error) {
+func NewMqttServer(brokers []string, clientId, notificationTopic string, handler func(client mqtt.Client, msg mqtt.Message)) (*MqttBus, error) {
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(broker)
+	for _, broker := range brokers {
+		opts.AddBroker(broker)
+	}
 	opts.SetClientID(clientId)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler

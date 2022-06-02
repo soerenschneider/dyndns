@@ -2,14 +2,14 @@ package vault
 
 import (
 	"bytes"
-	"github.com/soerenschneider/dyndns/conf"
-	"github.com/soerenschneider/dyndns/internal/metrics"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/conf"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"time"

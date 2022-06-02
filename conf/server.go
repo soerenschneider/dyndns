@@ -1,12 +1,12 @@
 package conf
 
 import (
-	"github.com/soerenschneider/dyndns/internal/metrics"
-	"github.com/soerenschneider/dyndns/internal/verification"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/verification"
 	"io/ioutil"
 )
 

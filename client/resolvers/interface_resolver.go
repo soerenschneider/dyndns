@@ -1,9 +1,9 @@
 package resolvers
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
 	"errors"
 	"fmt"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"net"
 	"time"
 )

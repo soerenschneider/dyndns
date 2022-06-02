@@ -1,8 +1,8 @@
 package verification
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
 	"encoding/base64"
+	"github.com/soerenschneider/dyndns/internal/common"
 )
 
 func DecodeBase64(input string) ([]byte, error) {

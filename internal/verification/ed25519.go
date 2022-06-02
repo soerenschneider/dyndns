@@ -3,11 +3,11 @@ package verification
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	"github.com/soerenschneider/dyndns/internal/common"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/common"
 	"io/ioutil"
 )
 

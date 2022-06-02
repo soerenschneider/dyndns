@@ -1,8 +1,8 @@
 package events
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/soerenschneider/dyndns/internal/common"
 )
 
 type EventDispatch interface {
