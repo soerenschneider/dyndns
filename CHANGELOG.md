@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.1](https://www.github.com/soerenschneider/dyndns/compare/v1.4.0...v1.4.1) (2022-06-02)
+
+
+### Bug Fixes
+
+* introduce build tags to suppress unneeded metrics ([#130](https://www.github.com/soerenschneider/dyndns/issues/130)) ([25f48a3](https://www.github.com/soerenschneider/dyndns/commit/25f48a30fa90190ebded1d705508dfab8978c67f))
+
 ## [1.4.0](https://www.github.com/soerenschneider/dyndns/compare/v1.3.0...v1.4.0) (2022-06-02)
 
 
