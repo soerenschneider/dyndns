@@ -5,23 +5,9 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/zerolog/log"
-	"net/http"
-)
-
-const (
-	namespace       = "dyndns"
-	server          = "server"
-	DefaultListener = ":9191"
 )
 
 var (
-	Version = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Name:      "version",
-	}, []string{"version", "hash"})
-
 	DnsPropagationRequestsTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: server,
@@ -76,11 +62,6 @@ var (
 		Name:      "vault_token_expiry_time_seconds",
 	})
 
-	MqttConnectionsLostTotal = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Name:      "mqtt_connections_lost_total",
-	})
-
 	PublicKeyErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: server,
@@ -93,11 +74,3 @@ var (
 		Name:      "message_parsing_failed_total",
 	})
 )
-
-func StartMetricsServer(addr string) {
-	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
-		log.Fatal().Msgf("can not start metrics server at %s: %v", addr, err)
-	}
-}
