@@ -18,7 +18,7 @@ import (
 const timestampGracePeriod = -24 * time.Hour
 
 type Server struct {
-	knownHosts map[string]verification.VerificationKey
+	knownHosts map[string][]verification.VerificationKey
 	listener   events.EventListener
 	requests   chan common.Envelope
 	propagator dns.Propagator
@@ -58,6 +58,24 @@ func (server *Server) isCached(env common.Envelope) bool {
 	return entry.Equals(&env.PublicIp)
 }
 
+func (server *Server) verifyMessage(env common.Envelope) error {
+	hostPublicKeys, ok := server.knownHosts[env.PublicIp.Host]
+	if !ok {
+		metrics.PublicKeyMissing.WithLabelValues(env.PublicIp.Host).Inc()
+		return fmt.Errorf("message for unknown domain '%s' received", env.PublicIp.Host)
+	}
+
+	for _, hostPublicKey := range hostPublicKeys {
+		verified := hostPublicKey.Verify(env.Signature, env.PublicIp)
+		if verified {
+			return nil
+		}
+	}
+
+	metrics.SignatureVerificationsFailed.WithLabelValues(env.PublicIp.Host).Inc()
+	return fmt.Errorf("verifying signature FAILED for host '%s'", env.PublicIp.Host)
+}
+
 func (server *Server) handlePropagateRequest(env common.Envelope) error {
 	err := env.Validate()
 	if err != nil {
@@ -65,16 +83,9 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 		return fmt.Errorf("invalid envelope received: %v", err)
 	}
 
-	hostPublicKey, ok := server.knownHosts[env.PublicIp.Host]
-	if !ok {
-		metrics.PublicKeyMissing.WithLabelValues(env.PublicIp.Host).Inc()
-		return fmt.Errorf("message for unknown domain '%s' received", env.PublicIp.Host)
-	}
-
-	verified := hostPublicKey.Verify(env.Signature, env.PublicIp)
-	if !verified {
-		metrics.SignatureVerificationsFailed.WithLabelValues(env.PublicIp.Host).Inc()
-		return fmt.Errorf("verifying signature FAILED for host '%s'", env.PublicIp.Host)
+	err = server.verifyMessage(env)
+	if err != nil {
+		return err
 	}
 
 	if env.PublicIp.Timestamp.Before(time.Now().Add(timestampGracePeriod)) {

@@ -7,7 +7,7 @@ SIGNATURE_KEYFILE = ~/.signify/github.sec
 DOCKER_PREFIX = ghcr.io/soerenschneider
 
 tests:
-	go test ./... -tags client,server
+	go test ./... -tags client,server -cover
 
 clean:
 	rm -rf ./$(BUILD_DIR)

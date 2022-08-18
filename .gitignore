@@ -2,4 +2,5 @@
 /dyndns-server
 /dyndns-client
 /.idea
+/keypair.json
 dist/
