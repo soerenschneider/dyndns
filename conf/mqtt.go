@@ -6,8 +6,8 @@ import (
 )
 
 type MqttConfig struct {
-	Brokers  []string `json:"brokers"`
-	ClientId string   `json:"client_id"`
+	Brokers  []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";"`
+	ClientId string   `json:"client_id" env:"DYNDNS_CLIENT_ID"`
 }
 
 func (conf *MqttConfig) Print() {
