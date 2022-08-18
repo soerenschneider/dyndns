@@ -1,0 +1,20 @@
+{
+  "known_hosts": {
+    "host": [
+      "key1",
+      "key2"
+    ]
+  },
+  "hosted_zone_id": "hosted-zone-id-x",
+  "metrics_listen": ":666",
+  "brokers": [
+    "broker-1",
+    "broker-2"
+  ],
+  "client_id": "my-client-id",
+  "vault_role_name": "my-role-name",
+  "vault_addr": "https://vault:8200",
+  "vault_app_role_id": "my-approle-id",
+  "vault_app_role_secret": "my-approle-secret",
+  "vault_token": "the-holy-token"
+}
