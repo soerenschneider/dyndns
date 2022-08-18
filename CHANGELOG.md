@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/soerenschneider/dyndns/compare/v1.4.1...v1.5.0) (2022-08-18)
+
+
+### Features
+
+* Allow reading config from env vars ([#152](https://github.com/soerenschneider/dyndns/issues/152)) ([4b7f669](https://github.com/soerenschneider/dyndns/commit/4b7f66976f3cd17516eec28dbfcadcd399a9bc51))
+* Support multiple keypairs per host ([#154](https://github.com/soerenschneider/dyndns/issues/154)) ([edca9a5](https://github.com/soerenschneider/dyndns/commit/edca9a545cae598652b49354ad63d0ce86ee5d2d))
+
 ### [1.4.1](https://www.github.com/soerenschneider/dyndns/compare/v1.4.0...v1.4.1) (2022-06-02)
 
 
