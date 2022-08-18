@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client"
 	"github.com/soerenschneider/dyndns/client/resolvers"
@@ -26,8 +27,8 @@ var configPathPreferences = []string{
 
 func main() {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
-	defaultConfigPath := checkDefaultConfigFiles()
-	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
+
+	configPath := flag.String("config", "", "Path to the config file")
 	once := flag.Bool("once", false, "Do not run as a daemon")
 	version := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
@@ -38,21 +39,24 @@ func main() {
 	}
 
 	util.InitLogging()
-	if nil == configPath {
-		log.Fatal().Msgf("No config path supplied")
+	if *configPath == "" {
+		*configPath = getDefaultConfigFileOrEmpty()
 	}
-
 	conf, err := conf.ReadClientConfig(*configPath)
 	if err != nil {
 		log.Fatal().Msgf("couldn't read config file: %v", err)
 	}
+	if err := env.Parse(conf); err != nil {
+		log.Fatal().Msgf("%+v\n", err)
+	}
+
 	// supply once flag value
 	conf.Once = *once
 	conf.Print()
 	RunClient(conf)
 }
 
-func checkDefaultConfigFiles() string {
+func getDefaultConfigFileOrEmpty() string {
 	for _, configPath := range configPathPreferences {
 		if strings.HasPrefix(configPath, "~/") {
 			configPath = path.Join(getUserHomeDirectory(), configPath[2:])
@@ -65,7 +69,7 @@ func checkDefaultConfigFiles() string {
 		}
 	}
 
-	return configPathPreferences[0]
+	return ""
 }
 
 func getUserHomeDirectory() string {

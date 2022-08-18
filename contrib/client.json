@@ -1,0 +1,6 @@
+{
+"host": "my.host.tld",
+  "keypair_path": "/keypair.json",
+  "client_id": "my-client-id",
+  "brokers": ["broker-1", "broker-2"]
+}
