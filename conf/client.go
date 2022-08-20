@@ -14,7 +14,7 @@ import (
 type ClientConf struct {
 	Host            string `json:"host" env:"DYNDNS_HOST"`
 	KeyPairPath     string `json:"keypair_path" env:"DYNDNS_KEYPAIR_PATH"`
-	MetricsListener string `json:"metrics_listen",omitempty env:"DYNDNS_METRICS_LISTEN`
+	MetricsListener string `json:"metrics_listen" env:"DYNDNS_METRICS_LISTEN"`
 	Once            bool   // this is not parsed via json, it's an cli flag
 	MqttConfig
 	*InterfaceConfig
