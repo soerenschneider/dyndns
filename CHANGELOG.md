@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/soerenschneider/dyndns/compare/v1.5.0...v1.5.1) (2022-08-20)
+
+
+### Bug Fixes
+
+* use configured client-id in client mode ([37b5b69](https://github.com/soerenschneider/dyndns/commit/37b5b696cb9beed2ab5cf329910a468c48660029))
+
 ## [1.5.0](https://github.com/soerenschneider/dyndns/compare/v1.4.1...v1.5.0) (2022-08-18)
 
 
