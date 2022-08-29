@@ -13,9 +13,9 @@ import (
 )
 
 type ServerConf struct {
-	KnownHosts      map[string]string `json:"known_hosts"`
-	HostedZoneId    string            `json:"hosted_zone_id"`
-	MetricsListener string            `json:"metrics_listen",omitempty`
+	KnownHosts      map[string][]string `json:"known_hosts"`
+	HostedZoneId    string              `json:"hosted_zone_id"`
+	MetricsListener string              `json:"metrics_listen",omitempty`
 	MqttConfig
 	VaultConfig
 }
@@ -57,22 +57,27 @@ func (conf *ServerConf) Validate() error {
 	return conf.MqttConfig.Validate()
 }
 
-func (conf *ServerConf) DecodePublicKeys() map[string]verification.VerificationKey {
-	var ret = map[string]verification.VerificationKey{}
+func (conf *ServerConf) DecodePublicKeys() map[string][]verification.VerificationKey {
+	var ret = map[string][]verification.VerificationKey{}
 
-	for key, val := range conf.KnownHosts {
-		if len(val) == 0 {
+	for host, configuredPubkeys := range conf.KnownHosts {
+		if len(configuredPubkeys) == 0 {
 			metrics.PublicKeyErrors.Inc()
-			log.Info().Msgf("Empty publickey for host %s", key)
+			log.Info().Msgf("No publickey defined for host %s", host)
 			continue
 		}
 
-		publicKey, err := verification.PubkeyFromString(val)
-		if err == nil {
-			ret[key] = publicKey
-		} else {
-			metrics.PublicKeyErrors.Inc()
-			log.Info().Msgf("Could not initialize publicKey for host %s: %v", key, err)
+		for i, key := range configuredPubkeys {
+			publicKey, err := verification.PubkeyFromString(key)
+			if err != nil {
+				metrics.PublicKeyErrors.Inc()
+				log.Info().Msgf("Could not initialize %d. publicKey for host %s: %v", i, host, err)
+			} else {
+				if ret[host] == nil {
+					ret[host] = make([]verification.VerificationKey, len(configuredPubkeys))
+				}
+				ret[host] = append(ret[host], publicKey)
+			}
 		}
 	}
 

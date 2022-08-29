@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/soerenschneider/dyndns)](https://goreportcard.com/report/github.com/soerenschneider/dyndns)
+
 # Configuration
 
 ## Server Configuration

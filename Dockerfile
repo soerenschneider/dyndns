@@ -1,12 +1,12 @@
-ARG MODE=dyndns-client
+ARG MODE=client
 
-FROM golang:1.18.2 as builder
+FROM golang:1.19.0 as builder
 ARG MODE
 ENV MODE="$MODE"
 ENV MODULE=github.com/soerenschneider/dyndns
 WORKDIR /build/
 ADD . /build/
-RUN go build -ldflags="-X $MODULE/internal.BuildVersion=$(git describe --tags --abbrev=0 || echo dev) -X $MODULE/internal.CommitHash=$(git rev-parse HEAD)" -o "dyndns-$MODE" "cmd/$MODE/$MODE.go"
+RUN go build -ldflags="-X $MODULE/internal.BuildVersion=$(git describe --tags --abbrev=0 || echo dev) -X $MODULE/internal.CommitHash=$(git rev-parse HEAD)" -tags $MODE -o "dyndns-$MODE" "cmd/$MODE/$MODE.go"
 
 FROM gcr.io/distroless/base
 ARG MODE

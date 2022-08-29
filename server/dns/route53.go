@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"time"
 )
 
 type Route53Propagator struct {
@@ -44,7 +45,7 @@ func (dns *Route53Propagator) PropagateChange(resolvedIp common.ResolvedIp) erro
 	}
 	batch := &route53.ChangeBatch{
 		Changes: changes,
-		Comment: aws.String("Dyndns Change"),
+		Comment: aws.String(fmt.Sprintf("Dyndns Change from %s", time.Now().Format("2006-01-02T15:04:05Z07:00"))),
 	}
 
 	in := &route53.ChangeResourceRecordSetsInput{

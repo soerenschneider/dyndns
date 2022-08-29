@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.5.3](https://github.com/soerenschneider/dyndns/compare/v1.5.2...v1.5.3) (2022-08-29)
+
+
+### Bug Fixes
+
+* don't fail on non-existent users ([c78bf83](https://github.com/soerenschneider/dyndns/commit/c78bf8320efc05af2d10e975a2e2c8b37fdbca95))
+
+## [1.5.2](https://github.com/soerenschneider/dyndns/compare/v1.5.1...v1.5.2) (2022-08-20)
+
+
+### Bug Fixes
+
+* fix metrics listener config ([8e1fc2c](https://github.com/soerenschneider/dyndns/commit/8e1fc2cef32afccdc874536841975223910a00b0))
+
+## [1.5.1](https://github.com/soerenschneider/dyndns/compare/v1.5.0...v1.5.1) (2022-08-20)
+
+
+### Bug Fixes
+
+* use configured client-id in client mode ([37b5b69](https://github.com/soerenschneider/dyndns/commit/37b5b696cb9beed2ab5cf329910a468c48660029))
+
+## [1.5.0](https://github.com/soerenschneider/dyndns/compare/v1.4.1...v1.5.0) (2022-08-18)
+
+
+### Features
+
+* Allow reading config from env vars ([#152](https://github.com/soerenschneider/dyndns/issues/152)) ([4b7f669](https://github.com/soerenschneider/dyndns/commit/4b7f66976f3cd17516eec28dbfcadcd399a9bc51))
+* Support multiple keypairs per host ([#154](https://github.com/soerenschneider/dyndns/issues/154)) ([edca9a5](https://github.com/soerenschneider/dyndns/commit/edca9a545cae598652b49354ad63d0ce86ee5d2d))
+
 ### [1.4.1](https://www.github.com/soerenschneider/dyndns/compare/v1.4.0...v1.4.1) (2022-06-02)
 
 

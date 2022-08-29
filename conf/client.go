@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
-	"io/ioutil"
+	"os"
 )
 
 type ClientConf struct {
-	Host            string `json:"host"`
-	KeyPairPath     string `json:"keypair_path"`
-	MetricsListener string `json:"metrics_listen",omitempty`
+	Host            string `json:"host" env:"DYNDNS_HOST"`
+	KeyPairPath     string `json:"keypair_path" env:"DYNDNS_KEYPAIR_PATH"`
+	MetricsListener string `json:"metrics_listen" env:"DYNDNS_METRICS_LISTEN"`
 	Once            bool   // this is not parsed via json, it's an cli flag
 	MqttConfig
 	*InterfaceConfig
@@ -59,7 +59,11 @@ func getDefaultClientConfig() *ClientConf {
 }
 
 func ReadClientConfig(path string) (*ClientConf, error) {
-	content, err := ioutil.ReadFile(path)
+	if path == "" {
+		return &ClientConf{}, nil
+	}
+
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("could not read config file %s: %v", path, err)
 	}
