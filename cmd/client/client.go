@@ -57,11 +57,14 @@ func main() {
 }
 
 func getDefaultConfigFileOrEmpty() string {
+	homeDir := getUserHomeDirectory()
 	for _, configPath := range configPathPreferences {
-		if strings.HasPrefix(configPath, "~/") {
-			configPath = path.Join(getUserHomeDirectory(), configPath[2:])
-		} else if strings.HasPrefix(configPath, "$HOME/") {
-			configPath = path.Join(getUserHomeDirectory(), configPath[6:])
+		if homeDir != "" {
+			if strings.HasPrefix(configPath, "~/") {
+				configPath = path.Join(homeDir, configPath[2:])
+			} else if strings.HasPrefix(configPath, "$HOME/") {
+				configPath = path.Join(homeDir, configPath[6:])
+			}
 		}
 
 		if _, err := os.Stat(configPath); err == nil {
@@ -73,7 +76,11 @@ func getDefaultConfigFileOrEmpty() string {
 }
 
 func getUserHomeDirectory() string {
-	usr, _ := user.Current()
+	usr, err := user.Current()
+	if err != nil || usr == nil {
+		log.Warn().Msg("Could not find user home directory")
+		return ""
+	}
 	dir := usr.HomeDir
 	return dir
 }
