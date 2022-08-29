@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/soerenschneider/dyndns/compare/v1.5.2...v1.5.3) (2022-08-29)
+
+
+### Bug Fixes
+
+* don't fail on non-existent users ([c78bf83](https://github.com/soerenschneider/dyndns/commit/c78bf8320efc05af2d10e975a2e2c8b37fdbca95))
+
 ## [1.5.2](https://github.com/soerenschneider/dyndns/compare/v1.5.1...v1.5.2) (2022-08-20)
 
 
