@@ -12,4 +12,5 @@ FROM gcr.io/distroless/base
 ARG MODE
 ENV MODE="$MODE"
 COPY --from=builder "/build/dyndns-$MODE" /dyndns
+USER 65532:65532
 ENTRYPOINT ["/dyndns"]
