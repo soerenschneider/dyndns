@@ -74,7 +74,7 @@ func (conf *ServerConf) DecodePublicKeys() map[string][]verification.Verificatio
 				log.Info().Msgf("Could not initialize %d. publicKey for host %s: %v", i, host, err)
 			} else {
 				if ret[host] == nil {
-					ret[host] = make([]verification.VerificationKey, len(configuredPubkeys))
+					ret[host] = make([]verification.VerificationKey, 0, len(configuredPubkeys))
 				}
 				ret[host] = append(ret[host], publicKey)
 			}
