@@ -7,7 +7,7 @@ require (
 	github.com/caarlos0/env/v6 v6.10.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/hashicorp/go-retryablehttp v0.7.1
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/rs/zerolog v1.28.0
 	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
 )
