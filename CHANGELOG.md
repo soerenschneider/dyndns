@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/soerenschneider/dyndns/compare/v1.5.4...v1.6.0) (2022-11-26)
+
+
+### Features
+
+* support tls config ([20bcf82](https://github.com/soerenschneider/dyndns/commit/20bcf82d1e311729870c6c02939d99b2a2f73234))
+
 ## [1.5.4](https://github.com/soerenschneider/dyndns/compare/v1.5.3...v1.5.4) (2022-08-31)
 
 
