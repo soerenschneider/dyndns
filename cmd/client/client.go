@@ -107,7 +107,7 @@ func RunClient(conf *conf.ClientConf) {
 
 	var dispatchers []events.EventDispatch
 	for _, broker := range conf.Brokers {
-		dispatcher, err := mqtt.NewMqttDispatch(broker, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host))
+		dispatcher, err := mqtt.NewMqttDispatch(broker, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
 		if err != nil {
 			log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
 		}

@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,13 +28,17 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	metrics.MqttConnectionsLostTotal.Inc()
 }
 
-func NewMqttDispatch(broker string, clientId, notificationTopic string) (*MqttBus, error) {
+func NewMqttDispatch(broker string, clientId, notificationTopic string, tlsConfig *tls.Config) (*MqttBus, error) {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(broker)
 	opts.SetClientID(clientId)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	opts.AutoReconnect = true
+
+	if tlsConfig != nil {
+		opts.SetTLSConfig(tlsConfig)
+	}
 
 	client := mqtt.NewClient(opts)
 	token := client.Connect()
@@ -47,15 +52,20 @@ func NewMqttDispatch(broker string, clientId, notificationTopic string) (*MqttBu
 	}, nil
 }
 
-func NewMqttServer(brokers []string, clientId, notificationTopic string, handler func(client mqtt.Client, msg mqtt.Message)) (*MqttBus, error) {
+func NewMqttServer(brokers []string, clientId, notificationTopic string, tlsConfig *tls.Config, handler func(client mqtt.Client, msg mqtt.Message)) (*MqttBus, error) {
 	opts := mqtt.NewClientOptions()
 	for _, broker := range brokers {
 		opts.AddBroker(broker)
 	}
+
 	opts.SetClientID(clientId)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	opts.AutoReconnect = true
+
+	if tlsConfig != nil {
+		opts.SetTLSConfig(tlsConfig)
+	}
 
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Info().Msgf("Connected to brokers %v", opts.Servers)

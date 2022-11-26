@@ -94,7 +94,7 @@ func RunServer(configPath string) {
 	}
 	conf.Print()
 
-	mqttServer, err := mqtt.NewMqttServer(conf.Brokers, conf.ClientId, notificationTopic, HandleChangeRequest)
+	mqttServer, err := mqtt.NewMqttServer(conf.Brokers, conf.ClientId, notificationTopic, conf.TlsConfig(), HandleChangeRequest)
 	if err != nil {
 		log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
 	}
