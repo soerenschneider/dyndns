@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/soerenschneider/dyndns/compare/v1.6.0...v1.6.1) (2022-11-27)
+
+
+### Bug Fixes
+
+* Use multiple brokers in client ([#190](https://github.com/soerenschneider/dyndns/issues/190)) ([204d872](https://github.com/soerenschneider/dyndns/commit/204d8728f6bbacf4194411c206bdeddcd94684d4))
+
 ## [1.6.0](https://github.com/soerenschneider/dyndns/compare/v1.5.4...v1.6.0) (2022-11-26)
 
 
