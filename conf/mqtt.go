@@ -25,17 +25,16 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Warn().Msgf("Could not get system cert pool")
-		if len(conf.CaCertFile) > 0 {
-			log.Warn().Msgf("Creating empty cert pool")
-			certPool = x509.NewCertPool()
-		}
+		certPool = x509.NewCertPool()
 	}
 
-	pemCerts, err := os.ReadFile(conf.CaCertFile)
-	if err != nil {
-		log.Error().Msgf("Could not read CA cert file: %v", err)
-	} else {
-		certPool.AppendCertsFromPEM(pemCerts)
+	if len(conf.CaCertFile) > 0 {
+		pemCerts, err := os.ReadFile(conf.CaCertFile)
+		if err != nil {
+			log.Error().Msgf("Could not read CA cert file: %v", err)
+		} else {
+			certPool.AppendCertsFromPEM(pemCerts)
+		}
 	}
 
 	var certs []tls.Certificate
@@ -76,6 +75,7 @@ func (conf *MqttConfig) Print() {
 	if len(conf.ClientKeyFile) > 1 {
 		log.Info().Msgf("ClientKeyFile=%s", conf.ClientKeyFile)
 	}
+	log.Info().Msgf("TlsInsecure=%t", conf.TlsInsecure)
 }
 
 func (conf *MqttConfig) Validate() error {
