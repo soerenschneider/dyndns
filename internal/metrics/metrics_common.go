@@ -21,6 +21,22 @@ var (
 		Name:      "version",
 	}, []string{"version", "hash"})
 
+	ProcessStartTime = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Name:      "start_time_seconds",
+	})
+	MqttBrokersConfiguredTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: "mqtt",
+		Name:      "brokers_configured_total",
+	})
+
+	MqttBrokersConnectedTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: "mqtt",
+		Name:      "brokers_connected_total",
+	})
+
 	MqttConnectionsLostTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Name:      "mqtt_connections_lost_total",

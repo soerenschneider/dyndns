@@ -86,6 +86,8 @@ func getUserHomeDirectory() string {
 }
 
 func RunClient(conf *conf.ClientConf) {
+	metrics.ProcessStartTime.SetToCurrentTime()
+
 	if nil == conf {
 		log.Fatal().Msg("Supplied nil config")
 	}
@@ -106,13 +108,11 @@ func RunClient(conf *conf.ClientConf) {
 	}
 
 	var dispatchers []events.EventDispatch
-	for _, broker := range conf.Brokers {
-		dispatcher, err := mqtt.NewMqttDispatch(broker, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
-		if err != nil {
-			log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
-		}
-		dispatchers = append(dispatchers, dispatcher)
+	dispatcher, err := mqtt.NewMqttDispatch(conf.Brokers, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
+	if err != nil {
+		log.Error().Msgf("Could not build mqtt dispatcher: %v", err)
 	}
+	dispatchers = append(dispatchers, dispatcher)
 
 	client, err := client.NewClient(resolver, keypair, dispatchers)
 	if err != nil {

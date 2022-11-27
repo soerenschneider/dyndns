@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"sync"
 	"time"
 )
 
@@ -19,20 +20,30 @@ type MqttBus struct {
 	notificationTopic string
 }
 
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	log.Info().Msg("Successfully connected to broker")
-}
+var mutex sync.Mutex
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
 	log.Info().Msgf("Connection lost: %v", err)
 	metrics.MqttConnectionsLostTotal.Inc()
+	mutex.Lock()
+	defer mutex.Unlock()
+	metrics.MqttBrokersConnectedTotal.Sub(1)
 }
 
-func NewMqttDispatch(broker string, clientId, notificationTopic string, tlsConfig *tls.Config) (*MqttBus, error) {
+func NewMqttDispatch(brokers []string, clientId, notificationTopic string, tlsConfig *tls.Config) (*MqttBus, error) {
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(broker)
+	for _, broker := range brokers {
+		opts.AddBroker(broker)
+	}
 	opts.SetClientID(clientId)
-	opts.OnConnect = connectHandler
+
+	opts.OnConnect = func(client mqtt.Client) {
+		log.Info().Msgf("Connected to brokers %v", opts.Servers)
+		mutex.Lock()
+		metrics.MqttBrokersConnectedTotal.Add(1)
+		mutex.Unlock()
+	}
+
 	opts.OnConnectionLost = connectLostHandler
 	opts.AutoReconnect = true
 
@@ -59,7 +70,6 @@ func NewMqttServer(brokers []string, clientId, notificationTopic string, tlsConf
 	}
 
 	opts.SetClientID(clientId)
-	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	opts.AutoReconnect = true
 
@@ -71,6 +81,9 @@ func NewMqttServer(brokers []string, clientId, notificationTopic string, tlsConf
 		log.Info().Msgf("Connected to brokers %v", opts.Servers)
 		client.Subscribe(notificationTopic, 1, handler)
 		log.Info().Msgf("Subscribed to topic %s", notificationTopic)
+		mutex.Lock()
+		defer mutex.Unlock()
+		metrics.MqttBrokersConnectedTotal.Add(1)
 	}
 
 	client := mqtt.NewClient(opts)
