@@ -83,6 +83,8 @@ func getCredentialProvider(config conf.VaultConfig) credentials.Provider {
 }
 
 func RunServer(configPath string) {
+	metrics.ProcessStartTime.SetToCurrentTime()
+
 	conf, err := conf.ReadServerConfig(configPath)
 	if err != nil {
 		log.Fatal().Msgf("couldn't read config file: %v", err)
