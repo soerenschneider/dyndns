@@ -3,8 +3,10 @@ package conf
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"os"
 )
 
@@ -77,6 +79,11 @@ func (conf *MqttConfig) Print() {
 }
 
 func (conf *MqttConfig) Validate() error {
+	metrics.MqttBrokersConfiguredTotal.Set(float64(len(conf.Brokers)))
+	if len(conf.Brokers) == 0 {
+		return errors.New("no brokers configured")
+	}
+
 	for _, broker := range conf.Brokers {
 		if !IsValidUrl(broker) {
 			return fmt.Errorf("no valid host given: %s", broker)
