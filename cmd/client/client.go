@@ -104,7 +104,7 @@ func RunClient(conf *conf.ClientConf) {
 		resolver, _ = resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
 	} else {
 		log.Info().Msgf("Building HTTP resolver")
-		resolver, _ = resolvers.NewHttpResolver(conf.Host)
+		resolver, _ = resolvers.NewHttpResolver(conf.Host, conf.Urls)
 	}
 
 	var dispatchers []events.EventDispatch

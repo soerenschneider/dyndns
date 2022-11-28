@@ -5,7 +5,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
-	"io/ioutil"
+	"github.com/soerenschneider/dyndns/internal/metrics"
+	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -20,16 +21,6 @@ const (
 	AddrFamilyIpv4 = "ip4"
 )
 
-var providers = []string{
-	"https://icanhazip.com",
-	"https://ifconfig.me",
-	"https://ifconfig.co",
-	"https://ipinfo.io/ip",
-	"https://api.ipify.org",
-	"https://ipecho.net/plain",
-	"https://checkip.amazonaws.com",
-}
-
 var (
 	serverAddresses = map[string]string{
 		AddrFamilyIpv4: "8.8.8.8:53",
@@ -41,16 +32,17 @@ type HttpResolver struct {
 	client         *http.Client
 	host           string
 	localAddresses map[string]string
+	providers      []string
 }
 
-func NewHttpResolver(domain string) (*HttpResolver, error) {
+func NewHttpResolver(domain string, urls []string) (*HttpResolver, error) {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
 
 	standardClient := retryClient.StandardClient()
 	standardClient.Timeout = timeout
 
-	return &HttpResolver{client: standardClient, host: domain}, nil
+	return &HttpResolver{client: standardClient, host: domain, providers: urls}, nil
 }
 
 func getLocalAddress(serverAddr string) (net.Addr, error) {
@@ -76,7 +68,7 @@ func (resolver *HttpResolver) Name() string {
 }
 
 func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
-	shuffleProviders()
+	resolver.shuffleProviders()
 	detectedIps := &common.ResolvedIp{
 		Host:      resolver.host,
 		Timestamp: time.Now(),
@@ -98,11 +90,13 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 			continue
 		}
 		resolver.client.Transport = transport
-		for _, url := range providers {
+		for _, url := range resolver.providers {
 			detectedIp, err := resolveSingle(url, resolver.client)
 			if err == nil {
 				// Check if the resolved IP is actually a valid IP
 				if net.ParseIP(detectedIp) == nil {
+					log.Error().Msgf("could not parse IP address: %s", detectedIp)
+					metrics.InvalidResolvedIps.WithLabelValues(resolver.Host(), resolver.Name(), url).Inc()
 					continue
 				}
 
@@ -112,9 +106,11 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 				} else {
 					detectedIps.IpV4 = detectedIp
 				}
+				metrics.IpsResolved.WithLabelValues(resolver.host, resolver.Name(), url).Inc()
 				break
 			} else {
-				log.Info().Msgf("Error while resolving IP: %v", err)
+				metrics.IpResolveErrors.WithLabelValues(resolver.host, resolver.Name(), url).Inc()
+				log.Error().Msgf("Error while resolving IP: %v", err)
 			}
 		}
 	}
@@ -122,9 +118,11 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 	return detectedIps, nil
 }
 
-func shuffleProviders() {
+func (resolver *HttpResolver) shuffleProviders() {
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(providers), func(i, j int) { providers[i], providers[j] = providers[j], providers[i] })
+	rand.Shuffle(len(resolver.providers), func(i, j int) {
+		resolver.providers[i], resolver.providers[j] = resolver.providers[j], resolver.providers[i]
+	})
 }
 
 func resolveSingle(url string, client *http.Client) (string, error) {
@@ -134,7 +132,7 @@ func resolveSingle(url string, client *http.Client) (string, error) {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("couldn't read response: %v", err)
 	}

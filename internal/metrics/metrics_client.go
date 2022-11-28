@@ -12,7 +12,13 @@ var (
 		Namespace: namespace,
 		Subsystem: client,
 		Name:      "ip_resolves_errors_total",
-	}, []string{"host", "resolver"})
+	}, []string{"host", "resolver", "name"})
+
+	IpsResolved = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: client,
+		Name:      "ip_resolved_successful_total",
+	}, []string{"host", "resolver", "name"})
 
 	InvalidResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,

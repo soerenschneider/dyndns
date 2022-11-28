@@ -72,15 +72,14 @@ func (client *Client) resolveIp() (*common.ResolvedIp, error) {
 	metrics.LastCheck.WithLabelValues(client.resolver.Host(), client.resolver.Name()).SetToCurrentTime()
 
 	if err != nil {
-		metrics.IpResolveErrors.WithLabelValues(client.resolver.Host(), client.resolver.Name()).Inc()
+		metrics.IpResolveErrors.WithLabelValues(client.resolver.Host(), client.resolver.Name(), "").Inc()
 		return nil, fmt.Errorf("error while resolving ip: %v", err)
 	}
 	if !resolvedIp.IsValid() {
-		metrics.InvalidResolvedIps.WithLabelValues(client.resolver.Host(), client.resolver.Name()).Inc()
+		metrics.InvalidResolvedIps.WithLabelValues(client.resolver.Host(), client.resolver.Name(), "").Inc()
 		return nil, fmt.Errorf("resolvedip is invalid")
 	}
 
-	metrics.ResolvedIps.WithLabelValues(client.resolver.Host(), client.resolver.Name()).Inc()
 	return resolvedIp, err
 }
 

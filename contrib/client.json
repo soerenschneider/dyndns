@@ -1,6 +1,6 @@
 {
-"host": "my.host.tld",
-  "keypair_path": "/keypair.json",
+  "host": "my.host.tld",
+  "keypair_path": "/tmp/keypair.json",
   "client_id": "my-client-id",
-  "brokers": ["broker-1", "broker-2"]
+  "brokers": ["tcp://mqtt.eclipseprojects.io:1883", "ssl://mqtt.eclipseprojects.io:8883"]
 }

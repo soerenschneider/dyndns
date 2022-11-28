@@ -20,10 +20,11 @@ func TestReadClientConfig(t *testing.T) {
 			args: args{"../contrib/client.json"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
-				KeyPairPath:     "/keypair.json",
+				KeyPairPath:     "/tmp/keypair.json",
+				Urls:            defaultHttpResolverUrls,
 				MetricsListener: ":9191",
 				MqttConfig: MqttConfig{
-					Brokers:  []string{"broker-1", "broker-2"},
+					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883", "ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
 			},
