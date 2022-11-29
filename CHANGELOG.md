@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/soerenschneider/dyndns/compare/v1.6.1...v1.7.0) (2022-11-29)
+
+
+### Features
+
+* add configurable urls ([#193](https://github.com/soerenschneider/dyndns/issues/193)) ([48fe7e1](https://github.com/soerenschneider/dyndns/commit/48fe7e1b04f3f5ba2731be8779cb0edda59d1dbe))
+
 ## [1.6.1](https://github.com/soerenschneider/dyndns/compare/v1.6.0...v1.6.1) (2022-11-27)
 
 
