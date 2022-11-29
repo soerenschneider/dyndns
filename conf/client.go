@@ -11,11 +11,22 @@ import (
 	"os"
 )
 
+var defaultHttpResolverUrls = []string{
+	"https://icanhazip.com",
+	"https://ifconfig.me",
+	"https://ifconfig.co",
+	"https://ipinfo.io/ip",
+	"https://api.ipify.org",
+	"https://ipecho.net/plain",
+	"https://checkip.amazonaws.com",
+}
+
 type ClientConf struct {
-	Host            string `json:"host" env:"DYNDNS_HOST"`
-	KeyPairPath     string `json:"keypair_path" env:"DYNDNS_KEYPAIR_PATH"`
-	MetricsListener string `json:"metrics_listen" env:"DYNDNS_METRICS_LISTEN"`
-	Once            bool   // this is not parsed via json, it's an cli flag
+	Host            string   `json:"host,omitempty" env:"DYNDNS_HOST"`
+	KeyPairPath     string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH"`
+	MetricsListener string   `json:"metrics_listen,omitempty" env:"DYNDNS_METRICS_LISTEN"`
+	Urls            []string `json:"http_resolver_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_URLS" envSeparator:";"`
+	Once            bool     // this is not parsed via json, it's an cli flag
 	MqttConfig
 	*InterfaceConfig
 }
@@ -26,6 +37,9 @@ func (conf *ClientConf) Print() {
 	log.Info().Msgf("KeyPairPath=%s", conf.KeyPairPath)
 	log.Info().Msgf("Once=%t", conf.Once)
 	log.Info().Msgf("MetricsListener=%s", conf.MetricsListener)
+	if len(conf.Urls) > 0 {
+		log.Info().Msgf("Urls=%v", conf.Urls)
+	}
 	conf.MqttConfig.Print()
 	if conf.InterfaceConfig != nil {
 		conf.InterfaceConfig.Print()
@@ -55,6 +69,7 @@ func (conf *ClientConf) Validate() error {
 func getDefaultClientConfig() *ClientConf {
 	return &ClientConf{
 		MetricsListener: metrics.DefaultListener,
+		Urls:            defaultHttpResolverUrls,
 	}
 }
 
