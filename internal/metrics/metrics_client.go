@@ -55,4 +55,10 @@ var (
 		Subsystem: client,
 		Name:      "state_changed_timestamp",
 	}, []string{"host", "from", "to"})
+
+	CurrentStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: client,
+		Name:      "current_state_bool",
+	}, []string{"host", "state"})
 )

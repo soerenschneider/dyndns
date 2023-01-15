@@ -120,10 +120,11 @@ func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, erro
 
 func (client *Client) setState(state State) {
 	stateChangeTime := time.Now()
-	delta := stateChangeTime.Sub(client.lastStateChange)
 	oldState := client.state
-	log.Info().Msgf("State changed from %s -> %s after %s", oldState, state, delta)
+	log.Info().Msgf("State changed from %s -> %s after %s", oldState, state, stateChangeTime.Sub(client.lastStateChange))
 	metrics.StatusChangeTimestamp.WithLabelValues(client.resolver.Host(), oldState.Name(), state.Name()).Set(float64(stateChangeTime.Unix()))
+	metrics.CurrentStatus.WithLabelValues(client.resolver.Host(), client.state.Name()).Set(0)
+	metrics.CurrentStatus.WithLabelValues(client.resolver.Host(), state.Name()).Set(1)
 
 	client.state = state
 	client.lastStateChange = stateChangeTime
