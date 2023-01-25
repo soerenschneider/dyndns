@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/soerenschneider/dyndns/compare/v1.7.0...v1.8.0) (2023-01-25)
+
+
+### Features
+
+* add metric for currently active status ([72712f6](https://github.com/soerenschneider/dyndns/commit/72712f686ccbdee0b49886e47c4362a1ad90afe0))
+
 ## [1.8.0](https://github.com/soerenschneider/dyndns/compare/v1.7.0...v1.8.0) (2023-01-15)
 
 
