@@ -77,8 +77,8 @@ func (state *ipNotConfirmedState) EvaluateState(context *Client, resolved *commo
 	}
 
 	log.Info().Msgf("DNS entry for host %s differs to new ip: %v", resolved.Host, resolved)
-	if state.checks%120 == 0 {
-		log.Info().Msgf("Verifying for %d minutes already, re-sending message..", int64(state.waitInterval.Seconds())*state.checks/60)
+	if state.checks%10 == 0 {
+		log.Info().Msgf("Verifying for %v minutes already, re-sending message..", int64(state.waitInterval.Seconds())*state.checks/60)
 		return true
 	}
 

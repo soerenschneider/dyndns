@@ -107,18 +107,30 @@ func RunClient(conf *conf.ClientConf) {
 		resolver, _ = resolvers.NewHttpResolver(conf.Host, conf.Urls)
 	}
 
-	var dispatchers []events.EventDispatch
-	dispatcher, err := mqtt.NewMqttDispatch(conf.Brokers, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
-	if err != nil {
-		log.Error().Msgf("Could not build mqtt dispatcher: %v", err)
+	dispatchers := map[string]events.EventDispatch{}
+	for _, broker := range conf.Brokers {
+		dispatcher, err := mqtt.NewMqttClient(broker, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
+		if err != nil {
+			log.Error().Msgf("Could not build mqtt dispatcher: %v", err)
+		} else {
+			dispatchers[broker] = dispatcher
+		}
 	}
-	dispatchers = append(dispatchers, dispatcher)
 
-	client, err := client.NewClient(resolver, keypair, dispatchers)
+	if len(dispatchers) == 0 {
+		log.Fatal().Msg("not a single dispatcher built, exiting")
+	}
+
+	reconciler, err := client.NewReconciler(dispatchers)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not build reconciler")
+	}
+	client, err := client.NewClient(resolver, keypair, reconciler)
 	if err != nil {
 		log.Fatal().Msgf("could not build client: %v", err)
 	}
 
+	go reconciler.Run()
 	if conf.Once {
 		_, err := client.ResolveSingle()
 		if err != nil {

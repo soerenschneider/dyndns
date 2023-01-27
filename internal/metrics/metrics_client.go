@@ -20,6 +20,18 @@ var (
 		Name:      "ip_resolved_successful_total",
 	}, []string{"host", "resolver", "name"})
 
+	ReconcilersActive = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: client,
+		Name:      "reconcilers_pending_changes_total",
+	}, []string{"host"})
+
+	ReconcilerTimestamp = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: client,
+		Name:      "reconciler_timestamp_seconds",
+	}, []string{"host"})
+
 	InvalidResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: client,

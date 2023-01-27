@@ -6,7 +6,7 @@ import (
 )
 
 type EventDispatch interface {
-	Notify(msg common.Envelope) error
+	Notify(msg *common.Envelope) error
 }
 
 type EventListener interface {

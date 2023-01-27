@@ -6,7 +6,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client/resolvers"
 	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"time"
@@ -28,25 +27,25 @@ type State interface {
 type Client struct {
 	signature       verification.SignatureKeypair
 	resolver        resolvers.IpResolver
-	dispatchers     []events.EventDispatch
+	reconciler      *Reconciler
 	state           State
 	lastStateChange time.Time
 }
 
-func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, dispatchers []events.EventDispatch) (*Client, error) {
+func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler) (*Client, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver provided")
 	}
 	if signature == nil {
 		return nil, errors.New("no signature provider given")
 	}
-	if dispatchers == nil || len(dispatchers) == 0 {
-		return nil, errors.New("no dispatchers provided")
+	if reconciler == nil {
+		return nil, errors.New("no reconciler provided")
 	}
 
 	c := Client{
 		resolver:        resolver,
-		dispatchers:     dispatchers,
+		reconciler:      reconciler,
 		signature:       signature,
 		state:           &initialState{},
 		lastStateChange: time.Now(),
@@ -100,19 +99,11 @@ func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, erro
 
 	if client.state.EvaluateState(client, resolvedIp) {
 		signature := client.signature.Sign(*resolvedIp)
-		env := common.Envelope{
+		env := &common.Envelope{
 			PublicIp:  *resolvedIp,
 			Signature: signature,
 		}
-
-		for _, dispatcher := range client.dispatchers {
-			err := dispatcher.Notify(env)
-			if err != nil {
-				metrics.UpdateDispatchErrors.WithLabelValues(client.resolver.Host()).Inc()
-				return resolvedIp, fmt.Errorf("could not dispatch ip update notification: %v", err)
-			}
-		}
-		metrics.UpdatesDispatched.Inc()
+		client.reconciler.RegisterUpdate(env)
 	}
 
 	return resolvedIp, nil
