@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/soerenschneider/dyndns/compare/v1.8.0...v1.9.0) (2023-01-27)
+
+
+### Features
+
+* decouple detection and change propagation  ([#210](https://github.com/soerenschneider/dyndns/issues/210)) ([c687a2d](https://github.com/soerenschneider/dyndns/commit/c687a2d30798257b3a8831a3ce5aad0ac0a63fba))
+
 ## [1.8.0](https://github.com/soerenschneider/dyndns/compare/v1.7.0...v1.8.0) (2023-01-15)
 
 
