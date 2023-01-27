@@ -130,7 +130,7 @@ func RunClient(conf *conf.ClientConf) {
 		log.Fatal().Msgf("could not build client: %v", err)
 	}
 
-	reconciler.Run()
+	go reconciler.Run()
 	if conf.Once {
 		_, err := client.ResolveSingle()
 		if err != nil {
