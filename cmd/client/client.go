@@ -107,7 +107,7 @@ func RunClient(conf *conf.ClientConf) {
 		resolver, _ = resolvers.NewHttpResolver(conf.Host, conf.Urls)
 	}
 
-	var dispatchers map[string]events.EventDispatch
+	dispatchers := map[string]events.EventDispatch{}
 	for _, broker := range conf.Brokers {
 		dispatcher, err := mqtt.NewMqttClient(broker, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
 		if err != nil {
