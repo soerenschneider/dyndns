@@ -59,12 +59,15 @@ func (d *MqttClientBus) Notify(msg *common.Envelope) error {
 	if err != nil {
 		return fmt.Errorf("could not marshal envelope: %v", err)
 	}
+	opts := d.client.OptionsReader()
+	log.Debug().Msgf("Sending %v to %v", string(payload), opts.Servers())
 
 	token := d.client.Publish(d.notificationTopic, 1, true, payload)
 	ok := token.WaitTimeout(publishWaitTimeout)
 	if !ok {
 		return errors.New("received timeout when trying to publish the message")
 	}
+	log.Debug().Msgf("Dispatched message to %v", opts.Servers())
 
 	return nil
 }

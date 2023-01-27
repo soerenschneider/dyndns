@@ -61,7 +61,8 @@ func (r *Reconciler) dispatch() {
 	timeStart := time.Now()
 	wg := sync.WaitGroup{}
 	wg.Add(len(r.pendingChanges))
-	for key, dispatcher := range r.pendingChanges {
+	for key, _ := range r.pendingChanges {
+		dispatcher := r.pendingChanges[key]
 		go func(key string) {
 			err := dispatcher.Notify(r.env)
 			if err == nil {
