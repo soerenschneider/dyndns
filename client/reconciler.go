@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events"
@@ -29,9 +30,9 @@ func NewReconciler(dispatchers map[string]events.EventDispatch) (*Reconciler, er
 	}, nil
 }
 
-func (r *Reconciler) RegisterUpdate(env *common.Envelope) {
+func (r *Reconciler) RegisterUpdate(env *common.Envelope) []error {
 	if env == nil {
-		return
+		return []error{errors.New("nil env supplied")}
 	}
 
 	r.mutex.Lock()
@@ -44,15 +45,15 @@ func (r *Reconciler) RegisterUpdate(env *common.Envelope) {
 	metrics.ReconcilersActive.WithLabelValues(env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
 
 	r.mutex.Unlock()
-	r.dispatch()
+	return r.dispatch()
 }
 
-func (r *Reconciler) dispatch() {
+func (r *Reconciler) dispatch() []error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	if len(r.pendingChanges) == 0 {
-		return
+		return nil
 	}
 
 	metrics.ReconcilerTimestamp.WithLabelValues(r.env.PublicIp.Host).SetToCurrentTime()
@@ -61,6 +62,7 @@ func (r *Reconciler) dispatch() {
 	timeStart := time.Now()
 	wg := sync.WaitGroup{}
 	wg.Add(len(r.pendingChanges))
+	var errs []error
 	for key, _ := range r.pendingChanges {
 		dispatcher := r.pendingChanges[key]
 		go func(key string) {
@@ -71,7 +73,9 @@ func (r *Reconciler) dispatch() {
 				metrics.UpdatesDispatched.Inc()
 				log.Info().Msgf("Reconciliation for dispatcher %s successful", key)
 			} else {
-				log.Warn().Msgf("Reconciliation for dispatcher %s failed: %v", key, err)
+				err = fmt.Errorf("reconciliation for dispatcher %s failed: %w", key, err)
+				errs = append(errs, err)
+				log.Warn().Msg(err.Error())
 			}
 			wg.Done()
 		}(key)
@@ -82,6 +86,7 @@ func (r *Reconciler) dispatch() {
 
 	log.Info().Msgf("Spent %v on reconciliation (%d dispatchers)", timeSpent, len(r.dispatchers))
 	metrics.ReconcilersActive.WithLabelValues(r.env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
+	return errs
 }
 
 func (r *Reconciler) Run() {

@@ -57,10 +57,10 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 func (client *Client) Run() {
 	var resolvedIp *common.ResolvedIp
 	for {
-		var err error
-		resolvedIp, err = client.Resolve(resolvedIp)
-		if err != nil {
-			log.Info().Msgf("Error while iteration: %v", err)
+		var errs []error
+		resolvedIp, errs = client.Resolve(resolvedIp)
+		if errs != nil {
+			log.Info().Msgf("Error while iteration: %v", errs)
 		}
 		time.Sleep(client.state.WaitInterval())
 	}
@@ -82,31 +82,32 @@ func (client *Client) resolveIp() (*common.ResolvedIp, error) {
 	return resolvedIp, err
 }
 
-func (client *Client) ResolveSingle() (*common.ResolvedIp, error) {
+func (client *Client) ResolveSingle() (*common.ResolvedIp, []error) {
 	return client.Resolve(nil)
 }
 
-func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, error) {
+func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []error) {
 	var resolvedIp = prev
 
 	if prev == nil || client.state.PerformIpLookup() {
 		var err error
 		resolvedIp, err = client.resolveIp()
 		if err != nil {
-			return prev, err
+			return prev, []error{err}
 		}
 	}
 
+	var errs []error
 	if client.state.EvaluateState(client, resolvedIp) {
 		signature := client.signature.Sign(*resolvedIp)
 		env := &common.Envelope{
 			PublicIp:  *resolvedIp,
 			Signature: signature,
 		}
-		client.reconciler.RegisterUpdate(env)
+		errs = client.reconciler.RegisterUpdate(env)
 	}
 
-	return resolvedIp, nil
+	return resolvedIp, errs
 }
 
 func (client *Client) setState(state State) {
