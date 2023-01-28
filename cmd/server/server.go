@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
@@ -24,8 +22,6 @@ import (
 const defaultConfigPath = "/etc/dyndns/config.json"
 const notificationTopic = "dyndns/+"
 
-var requestsChannel = make(chan common.Envelope)
-
 func main() {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
@@ -43,18 +39,6 @@ func main() {
 	}
 
 	RunServer(*configPath)
-}
-
-func HandleChangeRequest(client paho.Client, msg paho.Message) {
-	var env common.Envelope
-	err := json.Unmarshal(msg.Payload(), &env)
-	if err != nil {
-		metrics.MessageParsingFailed.Inc()
-		log.Info().Msgf("Can't parse message: %v", err)
-		return
-	}
-
-	requestsChannel <- env
 }
 
 // getCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
@@ -96,9 +80,14 @@ func RunServer(configPath string) {
 	}
 	conf.Print()
 
-	mqttServer, err := mqtt.NewMqttServer(conf.Brokers, conf.ClientId, notificationTopic, conf.TlsConfig(), HandleChangeRequest)
-	if err != nil {
-		log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
+	var requestsChannel = make(chan common.Envelope)
+	var servers []*mqtt.MqttBus
+	for _, broker := range conf.Brokers {
+		mqttServer, err := mqtt.NewMqttServer(broker, conf.ClientId, notificationTopic, conf.TlsConfig(), requestsChannel)
+		if err != nil {
+			log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
+		}
+		servers = append(servers, mqttServer)
 	}
 
 	go metrics.StartMetricsServer(conf.MetricsListener)
@@ -119,7 +108,10 @@ func RunServer(configPath string) {
 	signal.Notify(term, syscall.SIGINT, syscall.SIGTERM)
 	<-term
 	log.Info().Msg("Caught signal")
-	mqttServer.Disconnect()
+	for index := range servers {
+		mqttServer := servers[index]
+		mqttServer.Disconnect()
+	}
 
 	close(requestsChannel)
 }
