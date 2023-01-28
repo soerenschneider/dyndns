@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/soerenschneider/dyndns/compare/v1.9.0...v1.10.0) (2023-01-28)
+
+
+### Features
+
+* **server:** support multiple brokers simultaneously ([#212](https://github.com/soerenschneider/dyndns/issues/212)) ([12011da](https://github.com/soerenschneider/dyndns/commit/12011da5964346e7c026b184ab953fee2b22534d))
+
 ## [1.9.0](https://github.com/soerenschneider/dyndns/compare/v1.8.0...v1.9.0) (2023-01-27)
 
 
