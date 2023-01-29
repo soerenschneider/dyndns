@@ -8,6 +8,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"github.com/soerenschneider/dyndns/server/dns"
@@ -18,14 +19,15 @@ import (
 const timestampGracePeriod = -24 * time.Hour
 
 type Server struct {
-	knownHosts map[string][]verification.VerificationKey
-	listener   events.EventListener
-	requests   chan common.Envelope
-	propagator dns.Propagator
-	cache      map[string]common.ResolvedIp
+	knownHosts       map[string][]verification.VerificationKey
+	listener         events.EventListener
+	requests         chan common.Envelope
+	propagator       dns.Propagator
+	cache            map[string]common.ResolvedIp
+	notificationImpl notification.Notification
 }
 
-func NewServer(conf conf.ServerConf, propagator dns.Propagator, requests chan common.Envelope) (*Server, error) {
+func NewServer(conf conf.ServerConf, propagator dns.Propagator, requests chan common.Envelope, notifyImpl notification.Notification) (*Server, error) {
 	err := conf.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid conf passed: %v", err)
@@ -40,10 +42,11 @@ func NewServer(conf conf.ServerConf, propagator dns.Propagator, requests chan co
 	}
 
 	server := Server{
-		knownHosts: conf.DecodePublicKeys(),
-		requests:   requests,
-		propagator: propagator,
-		cache:      make(map[string]common.ResolvedIp, len(conf.KnownHosts)),
+		knownHosts:       conf.DecodePublicKeys(),
+		requests:         requests,
+		propagator:       propagator,
+		cache:            make(map[string]common.ResolvedIp, len(conf.KnownHosts)),
+		notificationImpl: notifyImpl,
 	}
 
 	return &server, nil
@@ -128,6 +131,11 @@ func (server *Server) Listen() {
 		err := server.handlePropagateRequest(request)
 		if err != nil {
 			log.Error().Msgf("Change has not been propagated: %v", err)
+		} else {
+			if server.notificationImpl != nil {
+				pubIp := request.PublicIp
+				server.notificationImpl.NotifyUpdatedIpApplied(&pubIp)
+			}
 		}
 	}
 }

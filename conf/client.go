@@ -25,9 +25,11 @@ type ClientConf struct {
 	Host            string   `json:"host,omitempty" env:"DYNDNS_HOST"`
 	KeyPairPath     string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH"`
 	MetricsListener string   `json:"metrics_listen,omitempty" env:"DYNDNS_METRICS_LISTEN"`
-	Urls            []string `json:"http_resolver_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_URLS" envSeparator:";"`
+	PreferredUrls   []string `json:"http_resolver_preferred_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
+	FallbackUrls    []string `json:"http_resolver_fallback_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
 	Once            bool     // this is not parsed via json, it's an cli flag
 	MqttConfig
+	*EmailConfig `json:"notifications"`
 	*InterfaceConfig
 }
 
@@ -37,8 +39,11 @@ func (conf *ClientConf) Print() {
 	log.Info().Msgf("KeyPairPath=%s", conf.KeyPairPath)
 	log.Info().Msgf("Once=%t", conf.Once)
 	log.Info().Msgf("MetricsListener=%s", conf.MetricsListener)
-	if len(conf.Urls) > 0 {
-		log.Info().Msgf("Urls=%v", conf.Urls)
+	if len(conf.PreferredUrls) > 0 {
+		log.Info().Msgf("PreferredUrls=%v", conf.PreferredUrls)
+	}
+	if len(conf.FallbackUrls) > 0 {
+		log.Info().Msgf("FallbackUrls=%v", conf.FallbackUrls)
 	}
 	conf.MqttConfig.Print()
 	if conf.InterfaceConfig != nil {
@@ -63,13 +68,17 @@ func (conf *ClientConf) Validate() error {
 		}
 	}
 
+	if len(conf.PreferredUrls) == 0 {
+		return errors.New("no preferred urls given")
+	}
+
 	return conf.MqttConfig.Validate()
 }
 
 func getDefaultClientConfig() *ClientConf {
 	return &ClientConf{
 		MetricsListener: metrics.DefaultListener,
-		Urls:            defaultHttpResolverUrls,
+		PreferredUrls:   defaultHttpResolverUrls,
 	}
 }
 

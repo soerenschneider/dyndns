@@ -7,6 +7,7 @@ import (
 	"github.com/soerenschneider/dyndns/client/resolvers"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"time"
 )
@@ -25,14 +26,15 @@ type State interface {
 }
 
 type Client struct {
-	signature       verification.SignatureKeypair
-	resolver        resolvers.IpResolver
-	reconciler      *Reconciler
-	state           State
-	lastStateChange time.Time
+	signature        verification.SignatureKeypair
+	resolver         resolvers.IpResolver
+	reconciler       *Reconciler
+	state            State
+	lastStateChange  time.Time
+	notificationImpl notification.Notification
 }
 
-func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler) (*Client, error) {
+func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler, notifyImpl notification.Notification) (*Client, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver provided")
 	}
@@ -44,11 +46,12 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 	}
 
 	c := Client{
-		resolver:        resolver,
-		reconciler:      reconciler,
-		signature:       signature,
-		state:           &initialState{},
-		lastStateChange: time.Now(),
+		resolver:         resolver,
+		reconciler:       reconciler,
+		signature:        signature,
+		state:            &initialState{},
+		lastStateChange:  time.Now(),
+		notificationImpl: notifyImpl,
 	}
 
 	return &c, nil
@@ -99,6 +102,9 @@ func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []er
 
 	var errs []error
 	if client.state.EvaluateState(client, resolvedIp) {
+		if client.notificationImpl != nil {
+			client.notificationImpl.NotifyUpdatedIpDetected(resolvedIp)
+		}
 		signature := client.signature.Sign(*resolvedIp)
 		env := &common.Envelope{
 			PublicIp:  *resolvedIp,
