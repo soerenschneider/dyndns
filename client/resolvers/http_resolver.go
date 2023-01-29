@@ -48,7 +48,12 @@ func NewHttpResolver(domain string, preferredUrls []string, fallbackUrls []strin
 		fallbackUrls = make([]string, 0)
 	}
 
-	resolver := &HttpResolver{client: standardClient, host: domain, preferredProviders: preferredUrls, backupProviders: fallbackUrls}
+	resolver := &HttpResolver{
+		host:               domain,
+		client:             standardClient,
+		preferredProviders: preferredUrls,
+		backupProviders:    fallbackUrls,
+	}
 	resolver.providers = make([]string, len(preferredUrls)+len(fallbackUrls))
 	return resolver, nil
 }
@@ -131,7 +136,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 
 func (resolver *HttpResolver) shuffleProviders() {
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(resolver.backupProviders), func(i, j int) {
+	rand.Shuffle(len(resolver.preferredProviders), func(i, j int) {
 		resolver.preferredProviders[i], resolver.preferredProviders[j] = resolver.preferredProviders[j], resolver.preferredProviders[i]
 	})
 	rand.Shuffle(len(resolver.backupProviders), func(i, j int) {
@@ -142,7 +147,7 @@ func (resolver *HttpResolver) shuffleProviders() {
 		if i < len(resolver.preferredProviders) {
 			resolver.providers[i] = resolver.preferredProviders[i]
 		} else {
-			resolver.providers[i] = resolver.backupProviders[i]
+			resolver.providers[i] = resolver.backupProviders[i-len(resolver.preferredProviders)]
 		}
 	}
 }
