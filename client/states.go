@@ -13,10 +13,6 @@ const jitterSeconds = 15
 
 type initialState struct{}
 
-func (state *initialState) PerformIpLookup() bool {
-	return true
-}
-
 func (state *initialState) String() string {
 	return "initialState"
 }
@@ -32,7 +28,7 @@ func (state *initialState) EvaluateState(context *Client, resolved *common.Resol
 }
 
 func (state *initialState) WaitInterval() time.Duration {
-	return defaultResolveInterval
+	return DefaultResolveInterval
 }
 
 // ipNotConfirmedState is the state after we detect an ip update. we stay in this state until the dns record has been
@@ -44,13 +40,6 @@ type ipNotConfirmedState struct {
 
 func NewIpNotConfirmedState() State {
 	return &ipNotConfirmedState{checks: 0, waitInterval: 30 * time.Second}
-}
-
-func (state *ipNotConfirmedState) PerformIpLookup() bool {
-	// after detecting an ip update, only perform a new lookup after being called for the 10th time (300s) or the state
-	// has changed
-	state.checks++
-	return state.checks%10 == 0
 }
 
 func (state *ipNotConfirmedState) String() string {
@@ -104,10 +93,6 @@ func NewIpConfirmedState(prev *common.ResolvedIp) State {
 	}
 }
 
-func (state *ipConfirmedState) PerformIpLookup() bool {
-	return true
-}
-
 func (state *ipConfirmedState) String() string {
 	return fmt.Sprintf("ipConfirmedState (%s)", state.previouslyResolvedIp)
 }
@@ -133,7 +118,7 @@ func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.R
 }
 
 func (state *ipConfirmedState) WaitInterval() time.Duration {
-	return defaultResolveInterval + jitter()
+	return DefaultResolveInterval
 }
 
 func jitter() time.Duration {

@@ -15,8 +15,6 @@ import (
 const defaultResolveInterval = 2 * time.Minute
 
 type State interface {
-	// PerformIpLookup returns true when a lookup for a potential new ip should be performed.
-	PerformIpLookup() bool
 	// EvaluateState evaluates the current state and returns true if the client should proceed sending a change request
 	// using the currently detected ip
 	EvaluateState(client *Client, ip *common.ResolvedIp) bool
@@ -92,12 +90,9 @@ func (client *Client) ResolveSingle() (*common.ResolvedIp, []error) {
 func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []error) {
 	var resolvedIp = prev
 
-	if prev == nil || client.state.PerformIpLookup() {
-		var err error
-		resolvedIp, err = client.resolveIp()
-		if err != nil {
-			return prev, []error{err}
-		}
+	resolvedIp, err := client.resolveIp()
+	if err != nil {
+		return prev, []error{err}
 	}
 
 	var errs []error
