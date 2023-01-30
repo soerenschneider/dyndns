@@ -58,17 +58,22 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 func (client *Client) Run() {
 	ticker := time.NewTicker(DefaultResolveInterval)
 	var resolvedIp *common.ResolvedIp
+	tick := func() {
+		var errs []error
+		resolvedIp, errs = client.Resolve(resolvedIp)
+		if errs != nil {
+			log.Info().Msgf("Error while iteration: %v", errs)
+		}
+		if DefaultResolveInterval != client.state.WaitInterval() {
+			ticker.Reset(client.state.WaitInterval())
+		}
+	}
+
+	tick()
 	for {
 		select {
 		case <-ticker.C:
-			var errs []error
-			resolvedIp, errs = client.Resolve(resolvedIp)
-			if errs != nil {
-				log.Info().Msgf("Error while iteration: %v", errs)
-			}
-			if DefaultResolveInterval != client.state.WaitInterval() {
-				ticker.Reset(client.state.WaitInterval())
-			}
+			tick()
 		}
 	}
 }
@@ -103,9 +108,6 @@ func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []er
 
 	var errs []error
 	if client.state.EvaluateState(client, resolvedIp) {
-		if client.notificationImpl != nil {
-			client.notificationImpl.NotifyUpdatedIpDetected(resolvedIp)
-		}
 		signature := client.signature.Sign(*resolvedIp)
 		env := &common.Envelope{
 			PublicIp:  *resolvedIp,
