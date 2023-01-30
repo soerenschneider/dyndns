@@ -119,7 +119,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 			} else {
 				metrics.IpResolveErrors.WithLabelValues(resolver.host, resolver.Name(), url).Inc()
 				log.Error().Msgf("Error while resolving IP: %v", err)
-				if index == len(resolver.preferredProviders) {
+				if index == len(resolver.preferredProviders) - 1 {
 					log.Warn().Msgf("Exhausted list of preferred providers")
 				}
 			}
