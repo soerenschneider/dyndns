@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const defaultResolveInterval = 2 * time.Minute
+const DefaultResolveInterval = 45 * time.Second
 
 type State interface {
 	// EvaluateState evaluates the current state and returns true if the client should proceed sending a change request
@@ -56,14 +56,20 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 }
 
 func (client *Client) Run() {
+	ticker := time.NewTicker(DefaultResolveInterval)
 	var resolvedIp *common.ResolvedIp
 	for {
-		var errs []error
-		resolvedIp, errs = client.Resolve(resolvedIp)
-		if errs != nil {
-			log.Info().Msgf("Error while iteration: %v", errs)
+		select {
+		case <-ticker.C:
+			var errs []error
+			resolvedIp, errs = client.Resolve(resolvedIp)
+			if errs != nil {
+				log.Info().Msgf("Error while iteration: %v", errs)
+			}
+			if DefaultResolveInterval != client.state.WaitInterval() {
+				ticker.Reset(client.state.WaitInterval())
+			}
 		}
-		time.Sleep(client.state.WaitInterval())
 	}
 }
 
