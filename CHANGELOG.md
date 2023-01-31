@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/soerenschneider/dyndns/compare/v1.11.0...v1.11.1) (2023-01-31)
+
+
+### Bug Fixes
+
+* add missing label ([6952b85](https://github.com/soerenschneider/dyndns/commit/6952b85da62f88b81c62af30d285d57218a9e020))
+
 ## [1.11.0](https://github.com/soerenschneider/dyndns/compare/v1.10.0...v1.11.0) (2023-01-31)
 
 
