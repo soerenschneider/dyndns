@@ -36,7 +36,7 @@ var (
 		Namespace: namespace,
 		Subsystem: client,
 		Name:      "ip_resolves_invalid_total",
-	}, []string{"host", "resolver"})
+	}, []string{"host", "resolver", "url"})
 
 	ResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
