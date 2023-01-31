@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/soerenschneider/dyndns/compare/v1.10.0...v1.11.0) (2023-01-31)
+
+
+### Features
+
+* Notifications and preferred resolvers ([#216](https://github.com/soerenschneider/dyndns/issues/216)) ([c294004](https://github.com/soerenschneider/dyndns/commit/c2940047cbb13b42825698d068f904d1a47d8b32))
+
 ## [1.10.0](https://github.com/soerenschneider/dyndns/compare/v1.9.0...v1.10.0) (2023-01-28)
 
 
