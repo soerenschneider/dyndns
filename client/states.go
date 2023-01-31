@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"math/rand"
 	"time"
@@ -110,7 +111,9 @@ func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.R
 		context.setState(NewIpNotConfirmedState())
 
 		if context.notificationImpl != nil {
-			context.notificationImpl.NotifyUpdatedIpDetected(resolved)
+			if err := context.notificationImpl.NotifyUpdatedIpDetected(resolved); err != nil {
+				metrics.NotificationErrors.Inc()
+			}
 		}
 	}
 

@@ -98,7 +98,7 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 	}
 
 	if server.isCached(env) {
-		log.Info().Msgf("Request for host %s is cached, not perfoming changes", env.PublicIp.Host)
+		log.Info().Msgf("Request for host %s is cached, not performing changes", env.PublicIp.Host)
 		return nil
 	}
 
@@ -114,6 +114,13 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 		return fmt.Errorf("could not propagate dns change for domain '%s': %v", env.PublicIp.Host, err)
 	}
 
+	if server.notificationImpl != nil {
+		pubIp := env.PublicIp
+		err := server.notificationImpl.NotifyUpdatedIpApplied(&pubIp)
+		if err != nil {
+			metrics.NotificationErrors.Inc()
+		}
+	}
 	log.Info().Msgf("Successfully propagated change '%s'", env.PublicIp.String())
 	metrics.SuccessfulDnsPropagationsTotal.WithLabelValues(env.PublicIp.Host).Inc()
 
@@ -131,11 +138,6 @@ func (server *Server) Listen() {
 		err := server.handlePropagateRequest(request)
 		if err != nil {
 			log.Error().Msgf("Change has not been propagated: %v", err)
-		} else {
-			if server.notificationImpl != nil {
-				pubIp := request.PublicIp
-				server.notificationImpl.NotifyUpdatedIpApplied(&pubIp)
-			}
 		}
 	}
 }
