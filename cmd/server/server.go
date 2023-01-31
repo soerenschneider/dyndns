@@ -10,6 +10,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/server"
 	"github.com/soerenschneider/dyndns/server/dns"
@@ -80,6 +81,18 @@ func RunServer(configPath string) {
 	}
 	conf.Print()
 
+	var notificationImpl notification.Notification
+	if conf.EmailConfig != nil {
+		err := conf.EmailConfig.Validate()
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Bad email config")
+		}
+		notificationImpl, err = util.NewEmailNotification(conf.EmailConfig)
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Can't build email notification")
+		}
+	}
+
 	var requestsChannel = make(chan common.Envelope)
 	var servers []*mqtt.MqttBus
 	for _, broker := range conf.Brokers {
@@ -98,7 +111,7 @@ func RunServer(configPath string) {
 		log.Fatal().Msgf("Could not build dns propagation implementation: %v", err)
 	}
 
-	dyndnsServer, err := server.NewServer(*conf, propagator, requestsChannel)
+	dyndnsServer, err := server.NewServer(*conf, propagator, requestsChannel, notificationImpl)
 	if err != nil {
 		log.Fatal().Msgf("Could not build server: %v", err)
 	}

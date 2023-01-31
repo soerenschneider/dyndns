@@ -41,6 +41,11 @@ var (
 		Namespace: namespace,
 		Name:      "mqtt_connections_lost_total",
 	})
+
+	NotificationErrors = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Name:      "notification_errors",
+	})
 )
 
 func StartMetricsServer(addr string) {

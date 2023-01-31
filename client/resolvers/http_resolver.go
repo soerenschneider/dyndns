@@ -29,20 +29,33 @@ var (
 )
 
 type HttpResolver struct {
-	client         *http.Client
-	host           string
-	localAddresses map[string]string
-	providers      []string
+	client             *http.Client
+	host               string
+	localAddresses     map[string]string
+	preferredProviders []string
+	backupProviders    []string
+	providers          []string
 }
 
-func NewHttpResolver(domain string, urls []string) (*HttpResolver, error) {
+func NewHttpResolver(domain string, preferredUrls []string, fallbackUrls []string) (*HttpResolver, error) {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
 
 	standardClient := retryClient.StandardClient()
 	standardClient.Timeout = timeout
 
-	return &HttpResolver{client: standardClient, host: domain, providers: urls}, nil
+	if fallbackUrls == nil {
+		fallbackUrls = make([]string, 0)
+	}
+
+	resolver := &HttpResolver{
+		host:               domain,
+		client:             standardClient,
+		preferredProviders: preferredUrls,
+		backupProviders:    fallbackUrls,
+	}
+	resolver.providers = make([]string, len(preferredUrls)+len(fallbackUrls))
+	return resolver, nil
 }
 
 func getLocalAddress(serverAddr string) (net.Addr, error) {
@@ -90,7 +103,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 			continue
 		}
 		resolver.client.Transport = transport
-		for _, url := range resolver.providers {
+		for index, url := range resolver.providers {
 			detectedIp, err := resolveSingle(url, resolver.client)
 			if err == nil {
 				// Check if the resolved IP is actually a valid IP
@@ -100,7 +113,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 					continue
 				}
 
-				// Set the correct address family and stop iterating providers
+				// Set the correct address family and stop iterating backupProviders
 				if addressFamily == AddrFamilyIpv6 {
 					detectedIps.IpV6 = detectedIp
 				} else {
@@ -111,6 +124,9 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 			} else {
 				metrics.IpResolveErrors.WithLabelValues(resolver.host, resolver.Name(), url).Inc()
 				log.Error().Msgf("Error while resolving IP: %v", err)
+				if index == len(resolver.preferredProviders) - 1 {
+					log.Warn().Msgf("Exhausted list of preferred providers")
+				}
 			}
 		}
 	}
@@ -120,16 +136,30 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 
 func (resolver *HttpResolver) shuffleProviders() {
 	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(resolver.providers), func(i, j int) {
-		resolver.providers[i], resolver.providers[j] = resolver.providers[j], resolver.providers[i]
+	rand.Shuffle(len(resolver.preferredProviders), func(i, j int) {
+		resolver.preferredProviders[i], resolver.preferredProviders[j] = resolver.preferredProviders[j], resolver.preferredProviders[i]
 	})
+	rand.Shuffle(len(resolver.backupProviders), func(i, j int) {
+		resolver.backupProviders[i], resolver.backupProviders[j] = resolver.backupProviders[j], resolver.backupProviders[i]
+	})
+
+	for i := 0; i < len(resolver.providers); i++ {
+		if i < len(resolver.preferredProviders) {
+			resolver.providers[i] = resolver.preferredProviders[i]
+		} else {
+			resolver.providers[i] = resolver.backupProviders[i-len(resolver.preferredProviders)]
+		}
+	}
 }
 
 func resolveSingle(url string, client *http.Client) (string, error) {
+	start := time.Now()
 	resp, err := client.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("error talking to '%s': %v", url, err)
 	}
+	timeTaken := time.Now().Sub(start)
+	metrics.ResponseTime.WithLabelValues(url).Observe(timeTaken.Seconds())
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
@@ -141,6 +171,5 @@ func resolveSingle(url string, client *http.Client) (string, error) {
 }
 
 func repair(body string) string {
-	body = strings.TrimSuffix(body, "\n")
-	return body
+	return strings.TrimSuffix(body, "\n")
 }

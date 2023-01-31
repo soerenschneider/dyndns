@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"math/rand"
 	"time"
@@ -12,10 +13,6 @@ import (
 const jitterSeconds = 15
 
 type initialState struct{}
-
-func (state *initialState) PerformIpLookup() bool {
-	return true
-}
 
 func (state *initialState) String() string {
 	return "initialState"
@@ -32,7 +29,7 @@ func (state *initialState) EvaluateState(context *Client, resolved *common.Resol
 }
 
 func (state *initialState) WaitInterval() time.Duration {
-	return defaultResolveInterval
+	return DefaultResolveInterval
 }
 
 // ipNotConfirmedState is the state after we detect an ip update. we stay in this state until the dns record has been
@@ -43,14 +40,10 @@ type ipNotConfirmedState struct {
 }
 
 func NewIpNotConfirmedState() State {
-	return &ipNotConfirmedState{checks: 0, waitInterval: 30 * time.Second}
-}
-
-func (state *ipNotConfirmedState) PerformIpLookup() bool {
-	// after detecting an ip update, only perform a new lookup after being called for the 10th time (300s) or the state
-	// has changed
-	state.checks++
-	return state.checks%10 == 0
+	return &ipNotConfirmedState{
+		checks:       0,
+		waitInterval: 30 * time.Second,
+	}
 }
 
 func (state *ipNotConfirmedState) String() string {
@@ -78,7 +71,8 @@ func (state *ipNotConfirmedState) EvaluateState(context *Client, resolved *commo
 
 	log.Info().Msgf("DNS entry for host %s differs to new ip: %v", resolved.Host, resolved)
 	if state.checks%10 == 0 {
-		log.Info().Msgf("Verifying for %v minutes already, re-sending message..", int64(state.waitInterval.Seconds())*state.checks/60)
+		since := time.Now().Sub(context.lastStateChange)
+		log.Info().Msgf("Re-sending update as no propagation has happened since %v", since)
 		return true
 	}
 
@@ -92,20 +86,12 @@ func (state *ipNotConfirmedState) WaitInterval() time.Duration {
 // ipConfirmedState is set after the dns record has been verified successfully
 type ipConfirmedState struct {
 	previouslyResolvedIp *common.ResolvedIp
-	checks               int64
-	since                time.Time
 }
 
 func NewIpConfirmedState(prev *common.ResolvedIp) State {
 	return &ipConfirmedState{
 		previouslyResolvedIp: prev,
-		checks:               0,
-		since:                time.Now(),
 	}
-}
-
-func (state *ipConfirmedState) PerformIpLookup() bool {
-	return true
 }
 
 func (state *ipConfirmedState) String() string {
@@ -120,20 +106,22 @@ func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.R
 	hasIpChanged := !state.previouslyResolvedIp.Equals(resolved)
 	state.previouslyResolvedIp = resolved
 
-	state.checks++
 	if hasIpChanged {
 		log.Info().Msgf("New IP detected: %s", resolved)
 		context.setState(NewIpNotConfirmedState())
-	} else if state.checks%240 == 0 {
-		lastChange := int64(time.Now().Sub(state.since).Minutes())
-		log.Info().Msgf("Performed %d checks since %d minutes without a new IP", state.checks, lastChange)
+
+		if context.notificationImpl != nil {
+			if err := context.notificationImpl.NotifyUpdatedIpDetected(resolved); err != nil {
+				metrics.NotificationErrors.Inc()
+			}
+		}
 	}
 
 	return hasIpChanged
 }
 
 func (state *ipConfirmedState) WaitInterval() time.Duration {
-	return defaultResolveInterval + jitter()
+	return DefaultResolveInterval
 }
 
 func jitter() time.Duration {

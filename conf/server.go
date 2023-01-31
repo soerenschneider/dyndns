@@ -18,6 +18,7 @@ type ServerConf struct {
 	MetricsListener string              `json:"metrics_listen",omitempty`
 	MqttConfig
 	VaultConfig
+	*EmailConfig `json:"notifications"`
 }
 
 func getDefaultServerConfig() *ServerConf {

@@ -7,15 +7,14 @@ import (
 	"github.com/soerenschneider/dyndns/client/resolvers"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"time"
 )
 
-const defaultResolveInterval = 2 * time.Minute
+const DefaultResolveInterval = 45 * time.Second
 
 type State interface {
-	// PerformIpLookup returns true when a lookup for a potential new ip should be performed.
-	PerformIpLookup() bool
 	// EvaluateState evaluates the current state and returns true if the client should proceed sending a change request
 	// using the currently detected ip
 	EvaluateState(client *Client, ip *common.ResolvedIp) bool
@@ -25,14 +24,15 @@ type State interface {
 }
 
 type Client struct {
-	signature       verification.SignatureKeypair
-	resolver        resolvers.IpResolver
-	reconciler      *Reconciler
-	state           State
-	lastStateChange time.Time
+	signature        verification.SignatureKeypair
+	resolver         resolvers.IpResolver
+	reconciler       *Reconciler
+	state            State
+	lastStateChange  time.Time
+	notificationImpl notification.Notification
 }
 
-func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler) (*Client, error) {
+func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler, notifyImpl notification.Notification) (*Client, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver provided")
 	}
@@ -44,25 +44,37 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 	}
 
 	c := Client{
-		resolver:        resolver,
-		reconciler:      reconciler,
-		signature:       signature,
-		state:           &initialState{},
-		lastStateChange: time.Now(),
+		resolver:         resolver,
+		reconciler:       reconciler,
+		signature:        signature,
+		state:            &initialState{},
+		lastStateChange:  time.Now(),
+		notificationImpl: notifyImpl,
 	}
 
 	return &c, nil
 }
 
 func (client *Client) Run() {
+	ticker := time.NewTicker(DefaultResolveInterval)
 	var resolvedIp *common.ResolvedIp
-	for {
+	tick := func() {
 		var errs []error
 		resolvedIp, errs = client.Resolve(resolvedIp)
 		if errs != nil {
 			log.Info().Msgf("Error while iteration: %v", errs)
 		}
-		time.Sleep(client.state.WaitInterval())
+		if DefaultResolveInterval != client.state.WaitInterval() {
+			ticker.Reset(client.state.WaitInterval())
+		}
+	}
+
+	tick()
+	for {
+		select {
+		case <-ticker.C:
+			tick()
+		}
 	}
 }
 
@@ -89,12 +101,9 @@ func (client *Client) ResolveSingle() (*common.ResolvedIp, []error) {
 func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []error) {
 	var resolvedIp = prev
 
-	if prev == nil || client.state.PerformIpLookup() {
-		var err error
-		resolvedIp, err = client.resolveIp()
-		if err != nil {
-			return prev, []error{err}
-		}
+	resolvedIp, err := client.resolveIp()
+	if err != nil {
+		return prev, []error{err}
 	}
 
 	var errs []error

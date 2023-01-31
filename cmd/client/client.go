@@ -12,6 +12,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"os"
@@ -98,13 +99,25 @@ func RunClient(conf *conf.ClientConf) {
 	}
 	keypair := getKeypair(conf.KeyPairPath)
 
+	var notificationImpl notification.Notification
+	if conf.EmailConfig != nil {
+		err := conf.EmailConfig.Validate()
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Bad email config")
+		}
+		notificationImpl, err = util.NewEmailNotification(conf.EmailConfig)
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Can't build email notification")
+		}
+	}
+
 	var resolver resolvers.IpResolver
 	if conf.InterfaceConfig != nil {
 		log.Info().Msgf("Building new resolver for interface %s", conf.NetworkInterface)
 		resolver, _ = resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
 	} else {
 		log.Info().Msgf("Building HTTP resolver")
-		resolver, _ = resolvers.NewHttpResolver(conf.Host, conf.Urls)
+		resolver, _ = resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls)
 	}
 
 	dispatchers := map[string]events.EventDispatch{}
@@ -125,7 +138,7 @@ func RunClient(conf *conf.ClientConf) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not build reconciler")
 	}
-	client, err := client.NewClient(resolver, keypair, reconciler)
+	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl)
 	if err != nil {
 		log.Fatal().Msgf("could not build client: %v", err)
 	}

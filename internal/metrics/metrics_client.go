@@ -73,4 +73,10 @@ var (
 		Subsystem: client,
 		Name:      "current_state_bool",
 	}, []string{"host", "state"})
+
+	ResponseTime = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: client,
+		Name:      "resolver_response_time_seconds",
+	}, []string{"resolver"})
 )
