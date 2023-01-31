@@ -21,7 +21,7 @@ func TestReadClientConfig(t *testing.T) {
 			want: &ClientConf{
 				Host:            "my.host.tld",
 				KeyPairPath:     "/tmp/keypair.json",
-				Urls:            defaultHttpResolverUrls,
+				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: ":9191",
 				MqttConfig: MqttConfig{
 					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883", "ssl://mqtt.eclipseprojects.io:8883"},
