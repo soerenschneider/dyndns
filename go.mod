@@ -3,13 +3,14 @@ module github.com/soerenschneider/dyndns
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go v1.44.189
+	github.com/aws/aws-sdk-go v1.44.194
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rs/zerolog v1.29.0
 	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
 require (
@@ -31,5 +32,4 @@ require (
 	golang.org/x/term v0.1.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 )
