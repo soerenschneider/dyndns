@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rs/zerolog v1.29.0
-	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
+	golang.org/x/crypto v0.6.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
@@ -26,10 +26,10 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.6.0 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.1.0 // indirect
-	golang.org/x/term v0.1.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
