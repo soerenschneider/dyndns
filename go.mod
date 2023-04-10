@@ -3,7 +3,7 @@ module github.com/soerenschneider/dyndns
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go v1.44.219
+	github.com/aws/aws-sdk-go v1.44.239
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/hashicorp/go-retryablehttp v0.7.2
