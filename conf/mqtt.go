@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"os"
@@ -12,10 +13,10 @@ import (
 
 type MqttConfig struct {
 	Brokers        []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";"`
-	ClientId       string   `json:"client_id" env:"DYNDNS_CLIENT_ID"`
-	CaCertFile     string   `json:"tls_ca_cert" env:"DYNDNS_TLS_CA"`
-	ClientCertFile string   `json:"tls_client_cert" env:"DYNDNS_TLS_CERT"`
-	ClientKeyFile  string   `json:"tls_client_key" env:"DYNDNS_TLS_KEY"`
+	ClientId       string   `json:"client_id" env:"DYNDNS_CLIENT_ID" validate:"required"`
+	CaCertFile     string   `json:"tls_ca_cert" env:"DYNDNS_TLS_CA" validate:"omitempty,file"`
+	ClientCertFile string   `json:"tls_client_cert" env:"DYNDNS_TLS_CERT" validate:"omitempty,file"`
+	ClientKeyFile  string   `json:"tls_client_key" env:"DYNDNS_TLS_KEY" validate:"omitempty,file"`
 	TlsInsecure    bool     `json:"tls_insecure" env:"DYNDNS_TLS_INSECURE"`
 }
 
@@ -79,6 +80,12 @@ func (conf *MqttConfig) Print() {
 }
 
 func (conf *MqttConfig) Validate() error {
+	v := validator.New()
+	err := v.Struct(conf)
+	if err != nil {
+		return err
+
+	}
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(conf.Brokers)))
 	if len(conf.Brokers) == 0 {
 		return errors.New("no brokers configured")

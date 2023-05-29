@@ -22,8 +22,8 @@ var defaultHttpResolverUrls = []string{
 }
 
 type ClientConf struct {
-	Host            string   `json:"host,omitempty" env:"DYNDNS_HOST"`
-	KeyPairPath     string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH"`
+	Host            string   `json:"host,omitempty" env:"DYNDNS_HOST" validate:"required"`
+	KeyPairPath     string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH" validate:"file"`
 	MetricsListener string   `json:"metrics_listen,omitempty" env:"DYNDNS_METRICS_LISTEN"`
 	PreferredUrls   []string `json:"http_resolver_preferred_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
 	FallbackUrls    []string `json:"http_resolver_fallback_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
