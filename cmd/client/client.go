@@ -111,13 +111,9 @@ func RunClient(conf *conf.ClientConf) {
 		}
 	}
 
-	var resolver resolvers.IpResolver
-	if conf.InterfaceConfig != nil {
-		log.Info().Msgf("Building new resolver for interface %s", conf.NetworkInterface)
-		resolver, _ = resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
-	} else {
-		log.Info().Msgf("Building HTTP resolver")
-		resolver, _ = resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls)
+	resolver, err := buildResolver(conf)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not build ip resolver")
 	}
 
 	dispatchers := map[string]events.EventDispatch{}
@@ -154,6 +150,16 @@ func RunClient(conf *conf.ClientConf) {
 		go metrics.StartMetricsServer(conf.MetricsListener)
 		client.Run()
 	}
+}
+
+func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
+	if conf.InterfaceConfig != nil {
+		log.Info().Msgf("Building new resolver for interface %s", conf.NetworkInterface)
+		return resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
+	}
+
+	log.Info().Msgf("Building HTTP resolver")
+	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls)
 }
 
 func getKeypair(path string) verification.SignatureKeypair {
