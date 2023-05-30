@@ -1,6 +1,23 @@
 package conf
 
-import "net/url"
+import (
+	"github.com/go-playground/validator/v10"
+	"net/url"
+	"sync"
+)
+
+var (
+	once     sync.Once
+	validate *validator.Validate
+)
+
+func ValidateConfig[T any](c T) error {
+	once.Do(func() {
+		validate = validator.New()
+	})
+
+	return validate.Struct(c)
+}
 
 func IsValidUrl(input string) bool {
 	_, err := url.ParseRequestURI(input)

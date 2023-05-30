@@ -27,8 +27,8 @@ type Server struct {
 	notificationImpl notification.Notification
 }
 
-func NewServer(conf conf.ServerConf, propagator dns.Propagator, requests chan common.Envelope, notifyImpl notification.Notification) (*Server, error) {
-	err := conf.Validate()
+func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan common.Envelope, notifyImpl notification.Notification) (*Server, error) {
+	err := conf.ValidateConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("invalid conf passed: %v", err)
 	}
@@ -41,11 +41,15 @@ func NewServer(conf conf.ServerConf, propagator dns.Propagator, requests chan co
 		return nil, errors.New("empty/closed channel provided")
 	}
 
+	if notifyImpl == nil {
+		notifyImpl = &notification.DummyNotification{}
+	}
+
 	server := Server{
-		knownHosts:       conf.DecodePublicKeys(),
+		knownHosts:       config.DecodePublicKeys(),
 		requests:         requests,
 		propagator:       propagator,
-		cache:            make(map[string]common.ResolvedIp, len(conf.KnownHosts)),
+		cache:            make(map[string]common.ResolvedIp, len(config.KnownHosts)),
 		notificationImpl: notifyImpl,
 	}
 

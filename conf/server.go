@@ -4,7 +4,6 @@ package conf
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
@@ -13,8 +12,8 @@ import (
 )
 
 type ServerConf struct {
-	KnownHosts      map[string][]string `json:"known_hosts"`
-	HostedZoneId    string              `json:"hosted_zone_id"`
+	KnownHosts      map[string][]string `json:"known_hosts" validate:"required"`
+	HostedZoneId    string              `json:"hosted_zone_id" validate:"required"`
 	MetricsListener string              `json:"metrics_listen",omitempty`
 	MqttConfig
 	VaultConfig
@@ -44,18 +43,6 @@ func ReadServerConfig(path string) (*ServerConf, error) {
 	}
 
 	return conf, nil
-}
-
-func (conf *ServerConf) Validate() error {
-	if len(conf.KnownHosts) == 0 {
-		return errors.New("no hosts configured")
-	}
-
-	if len(conf.HostedZoneId) == 0 {
-		return errors.New("no hosted zone id provided")
-	}
-
-	return conf.MqttConfig.Validate()
 }
 
 func (conf *ServerConf) DecodePublicKeys() map[string][]verification.VerificationKey {
