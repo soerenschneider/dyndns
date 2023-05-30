@@ -11,6 +11,11 @@ import (
 	"os"
 )
 
+const (
+	AddrFamilyIpv6 = "ip6"
+	AddrFamilyIpv4 = "ip4"
+)
+
 var defaultHttpResolverUrls = []string{
 	"https://icanhazip.com",
 	"https://ifconfig.me",
@@ -23,6 +28,7 @@ var defaultHttpResolverUrls = []string{
 
 type ClientConf struct {
 	Host            string   `json:"host,omitempty" env:"DYNDNS_HOST" validate:"required"`
+	AddrFamilies    []string `json:"address_families" env:"ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,oneof=ipv4 ipv6"`
 	KeyPairPath     string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH" validate:"file"`
 	MetricsListener string   `json:"metrics_listen,omitempty" env:"DYNDNS_METRICS_LISTEN"`
 	PreferredUrls   []string `json:"http_resolver_preferred_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
@@ -78,6 +84,7 @@ func (conf *ClientConf) Validate() error {
 func getDefaultClientConfig() *ClientConf {
 	return &ClientConf{
 		MetricsListener: metrics.DefaultListener,
+		AddrFamilies:    []string{AddrFamilyIpv4, AddrFamilyIpv6},
 		PreferredUrls:   defaultHttpResolverUrls,
 	}
 }

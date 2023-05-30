@@ -159,7 +159,7 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 	}
 
 	log.Info().Msgf("Building HTTP resolver")
-	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls)
+	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls, conf.AddrFamilies)
 }
 
 func getKeypair(path string) verification.SignatureKeypair {

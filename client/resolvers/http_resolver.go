@@ -1,9 +1,11 @@
 package resolvers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"io"
@@ -15,16 +17,14 @@ import (
 )
 
 const (
-	retries        = 3
-	timeout        = 2 * time.Second
-	AddrFamilyIpv6 = "ip6"
-	AddrFamilyIpv4 = "ip4"
+	retries = 3
+	timeout = 2 * time.Second
 )
 
 var (
 	serverAddresses = map[string]string{
-		AddrFamilyIpv4: "8.8.8.8:53",
-		AddrFamilyIpv6: "[2001:4860:4860::8888]:53",
+		conf.AddrFamilyIpv4: "8.8.8.8:53",
+		conf.AddrFamilyIpv6: "[2001:4860:4860::8888]:53",
 	}
 )
 
@@ -35,9 +35,10 @@ type HttpResolver struct {
 	preferredProviders []string
 	backupProviders    []string
 	providers          []string
+	addressFamilies    []string
 }
 
-func NewHttpResolver(domain string, preferredUrls []string, fallbackUrls []string) (*HttpResolver, error) {
+func NewHttpResolver(domain string, preferredUrls []string, fallbackUrls []string, addressFamilies []string) (*HttpResolver, error) {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = retries
 
@@ -48,11 +49,20 @@ func NewHttpResolver(domain string, preferredUrls []string, fallbackUrls []strin
 		fallbackUrls = make([]string, 0)
 	}
 
+	if len(preferredUrls)+len(fallbackUrls) == 0 {
+		return nil, errors.New("neither preferred- nor fallback-urls provided")
+	}
+
+	if addressFamilies == nil {
+		return nil, errors.New("empty addressFamily slice provided")
+	}
+
 	resolver := &HttpResolver{
 		host:               domain,
 		client:             standardClient,
 		preferredProviders: preferredUrls,
 		backupProviders:    fallbackUrls,
+		addressFamilies:    addressFamilies,
 	}
 	resolver.providers = make([]string, len(preferredUrls)+len(fallbackUrls))
 	return resolver, nil
@@ -87,7 +97,13 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 		Timestamp: time.Now(),
 	}
 
-	for addressFamily, serverAddress := range serverAddresses {
+	for _, addressFamily := range serverAddresses {
+		serverAddress, ok := serverAddresses[addressFamily]
+		if !ok {
+			log.Warn().Msgf("unknown address family: '%s', check your configuration", addressFamily)
+			continue
+		}
+
 		localAddr, err := getLocalAddress(serverAddress)
 		if err != nil {
 			// system has no support for addressFamily apparently, continue
@@ -114,7 +130,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 				}
 
 				// Set the correct address family and stop iterating backupProviders
-				if addressFamily == AddrFamilyIpv6 {
+				if addressFamily == conf.AddrFamilyIpv6 {
 					detectedIps.IpV6 = detectedIp
 				} else {
 					detectedIps.IpV4 = detectedIp
@@ -124,7 +140,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 			} else {
 				metrics.IpResolveErrors.WithLabelValues(resolver.host, resolver.Name(), url).Inc()
 				log.Error().Msgf("Error while resolving IP: %v", err)
-				if index == len(resolver.preferredProviders) - 1 {
+				if index == len(resolver.preferredProviders)-1 {
 					log.Warn().Msgf("Exhausted list of preferred providers")
 				}
 			}
