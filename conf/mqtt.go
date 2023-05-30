@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"os"
@@ -80,12 +79,6 @@ func (conf *MqttConfig) Print() {
 }
 
 func (conf *MqttConfig) Validate() error {
-	v := validator.New()
-	err := v.Struct(conf)
-	if err != nil {
-		return err
-
-	}
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(conf.Brokers)))
 	if len(conf.Brokers) == 0 {
 		return errors.New("no brokers configured")
