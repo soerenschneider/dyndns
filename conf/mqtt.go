@@ -37,30 +37,22 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 		}
 	}
 
-	var certs []tls.Certificate
+	tlsConf := &tls.Config{
+		RootCAs:            certPool,
+		ClientAuth:         tls.RequestClientCert,
+		InsecureSkipVerify: conf.TlsInsecure,
+	}
+
 	clientCertDefined := len(conf.ClientCertFile) > 0
 	clientKeyDefined := len(conf.ClientKeyFile) > 0
 	if clientCertDefined && clientKeyDefined {
-		cert, err := tls.LoadX509KeyPair(conf.ClientCertFile, conf.ClientKeyFile)
-		if err != nil {
-			log.Panic().Msgf("could not read tls key pair: %v", err)
+		tlsConf.GetClientCertificate = func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			cert, err := tls.LoadX509KeyPair(conf.ClientCertFile, conf.ClientKeyFile)
+			return &cert, err
 		}
-
-		cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-		if err != nil {
-			log.Panic().Msgf("could not parse tls key pair: %v", err)
-		}
-
-		certs = []tls.Certificate{cert}
 	}
 
-	return &tls.Config{
-		RootCAs:            certPool,
-		ClientAuth:         tls.RequestClientCert,
-		Certificates:       certs,
-		ClientCAs:          nil,
-		InsecureSkipVerify: conf.TlsInsecure,
-	}
+	return tlsConf
 }
 
 func (conf *MqttConfig) Print() {
