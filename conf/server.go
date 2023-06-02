@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"io/ioutil"
+	"os"
 	"reflect"
 )
 
@@ -45,7 +45,7 @@ func getDefaultServerConfig() *ServerConf {
 }
 
 func ReadServerConfig(path string) (*ServerConf, error) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("could not read config file %s: %v", path, err)
 	}
