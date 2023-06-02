@@ -86,39 +86,39 @@ func getUserHomeDirectory() string {
 	return dir
 }
 
-func RunClient(conf *conf.ClientConf) {
+func RunClient(config *conf.ClientConf) {
 	metrics.ProcessStartTime.SetToCurrentTime()
 
-	if nil == conf {
+	if nil == config {
 		log.Fatal().Msg("Supplied nil config")
 	}
 
-	err := conf.Validate()
+	err := conf.ValidateConfig(config)
 	if err != nil {
 		log.Fatal().Msgf("Verification of config failed: %v", err)
 	}
-	keypair := getKeypair(conf.KeyPairPath)
+	keypair := getKeypair(config.KeyPairPath)
 
 	var notificationImpl notification.Notification
-	if conf.EmailConfig != nil {
-		err := conf.EmailConfig.Validate()
+	if config.EmailConfig != nil {
+		err := config.EmailConfig.Validate()
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Bad email config")
 		}
-		notificationImpl, err = util.NewEmailNotification(conf.EmailConfig)
+		notificationImpl, err = util.NewEmailNotification(config.EmailConfig)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Can't build email notification")
 		}
 	}
 
-	resolver, err := buildResolver(conf)
+	resolver, err := buildResolver(config)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not build ip resolver")
 	}
 
 	dispatchers := map[string]events.EventDispatch{}
-	for _, broker := range conf.Brokers {
-		dispatcher, err := mqtt.NewMqttClient(broker, conf.ClientId, fmt.Sprintf("dyndns/%s", conf.Host), conf.TlsConfig())
+	for _, broker := range config.Brokers {
+		dispatcher, err := mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
 		if err != nil {
 			log.Error().Msgf("Could not build mqtt dispatcher: %v", err)
 		} else {
@@ -140,14 +140,14 @@ func RunClient(conf *conf.ClientConf) {
 	}
 
 	go reconciler.Run()
-	if conf.Once {
+	if config.Once {
 		_, err := client.ResolveSingle()
 		if err != nil {
 			log.Info().Msgf("Error while resolving: %v", err)
 			os.Exit(1)
 		}
 	} else {
-		go metrics.StartMetricsServer(conf.MetricsListener)
+		go metrics.StartMetricsServer(config.MetricsListener)
 		client.Run()
 	}
 }
