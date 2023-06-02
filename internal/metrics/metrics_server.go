@@ -3,11 +3,26 @@
 package metrics
 
 import (
+	"context"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/rs/zerolog/log"
+	"time"
 )
 
 var (
+	ServerHeartbeat = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: server,
+		Name:      "heartbeat_timestamp_seconds",
+	})
+
+	KnownHostsHash = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: server,
+		Name:      "known_hosts_configuration_hash",
+	})
+
 	DnsPropagationRequestsTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: server,
@@ -74,3 +89,18 @@ var (
 		Name:      "message_parsing_failed_total",
 	})
 )
+
+func StartHeartbeat(ctx context.Context) {
+	log.Info().Msg("Starting metrics heartbeat ticker...")
+	ticker := time.NewTicker(60 * time.Second)
+
+	for {
+		select {
+		case <-ticker.C:
+			ServerHeartbeat.SetToCurrentTime()
+		case <-ctx.Done():
+			ticker.Stop()
+			return
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -102,7 +103,17 @@ func RunServer(configPath string) {
 		servers = append(servers, mqttServer)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	go metrics.StartMetricsServer(config.MetricsListener)
+	go metrics.StartHeartbeat(ctx)
+
+	// set hash of known hosts
+	hash, err := conf.GetKnownHostsHash(config.KnownHosts)
+	if err != nil {
+		log.Warn().Err(err).Msg("could not reliably compute hash for known_hosts, alerts may trigger")
+		metrics.KnownHostsHash.Set(float64(hash))
+	}
 
 	provider := getCredentialProvider(config.VaultConfig)
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
@@ -119,7 +130,8 @@ func RunServer(configPath string) {
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, syscall.SIGINT, syscall.SIGTERM)
 	<-term
-	log.Info().Msg("Caught signal")
+	log.Info().Msg("Caught signal, cancelling context")
+	cancel()
 	for index := range servers {
 		mqttServer := servers[index]
 		mqttServer.Disconnect()
