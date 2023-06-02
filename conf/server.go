@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/verification"
+	"hash/fnv"
 	"os"
 	"reflect"
 )
@@ -84,4 +85,15 @@ func (conf *ServerConf) DecodePublicKeys() map[string][]verification.Verificatio
 	}
 
 	return ret
+}
+
+func GetKnownHostsHash(knownHosts map[string][]string) (uint64, error) {
+	jsonBytes, err := json.Marshal(knownHosts)
+	if err != nil {
+		return 0, err
+	}
+
+	hash := fnv.New64a()
+	hash.Write(jsonBytes)
+	return hash.Sum64(), nil
 }

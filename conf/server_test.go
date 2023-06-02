@@ -51,3 +51,82 @@ func TestReadServerConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestServerConf_GetKnownHostsHash_HappyPath(t *testing.T) {
+	var h1, h2 map[string][]string
+	h1 = map[string][]string{
+		"host1": []string{"abc"},
+	}
+	hash1, err := GetKnownHostsHash(h1)
+	if err != nil {
+		t.Fatal()
+	}
+
+	h2 = map[string][]string{
+		"host1": []string{"abc"},
+	}
+	hash2, err := GetKnownHostsHash(h2)
+	if err != nil {
+		t.Fatal()
+	}
+
+	if hash1 != hash2 {
+		t.Fatal()
+	}
+}
+
+func TestServerConf_GetKnownHostsHash_MultipleHosts(t *testing.T) {
+	host1 := "host1"
+	host2 := "host2"
+
+	var h1, h2 map[string][]string
+	h1 = map[string][]string{
+		host1: []string{"abc", "1234"},
+		host2: []string{"zzz"},
+	}
+	hash1, err := GetKnownHostsHash(h1)
+	if err != nil {
+		t.Fatal()
+	}
+
+	h2 = map[string][]string{
+		host2: []string{"zzz"},
+		host1: []string{"abc", "1234"},
+	}
+	hash2, err := GetKnownHostsHash(h2)
+	if err != nil {
+		t.Fatal()
+	}
+
+	if hash1 != hash2 {
+		t.Fatal()
+	}
+}
+
+func TestServerConf_GetKnownHostsHash_ListWrongOrder(t *testing.T) {
+	host1 := "host1"
+	host2 := "host2"
+
+	var h1, h2 map[string][]string
+	h1 = map[string][]string{
+		host1: []string{"abc", "1234"},
+		host2: []string{"zzz"},
+	}
+	hash1, err := GetKnownHostsHash(h1)
+	if err != nil {
+		t.Fatal()
+	}
+
+	h2 = map[string][]string{
+		host2: []string{"zzz"},
+		host1: []string{"1234", "abc"},
+	}
+	hash2, err := GetKnownHostsHash(h2)
+	if err != nil {
+		t.Fatal()
+	}
+
+	if hash1 == hash2 {
+		t.Fatal()
+	}
+}
