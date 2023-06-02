@@ -3,7 +3,6 @@ package conf
 import (
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -19,20 +18,6 @@ func GetDefaultVaultConfig() VaultConfig {
 	return VaultConfig{
 		RoleName:  "dyndns",
 		VaultAddr: os.Getenv("VAULT_ADDR"),
-	}
-}
-
-func (c *VaultConfig) Print() {
-	log.Info().Msgf("RoleName=%s", c.RoleName)
-	log.Info().Msgf("VaultAddr=%s", c.VaultAddr)
-	if len(c.AppRoleId) > 0 {
-		log.Info().Msgf("RoleName=%s", "***")
-	}
-	if len(c.AppRoleSecret) > 0 {
-		log.Info().Msgf("RoleName=%s", "***")
-	}
-	if len(c.VaultToken) > 0 {
-		log.Info().Msgf("VaultToken=%s", "***")
 	}
 }
 

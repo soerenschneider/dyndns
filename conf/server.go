@@ -9,6 +9,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"io/ioutil"
+	"reflect"
 )
 
 type ServerConf struct {
@@ -18,6 +19,19 @@ type ServerConf struct {
 	MqttConfig
 	VaultConfig
 	*EmailConfig `json:"notifications"`
+}
+
+func (c *ServerConf) Print() {
+	log.Info().Msg("---")
+	log.Info().Msg("Active config values:")
+	val := reflect.ValueOf(c).Elem()
+	for i := 0; i < val.NumField(); i++ {
+		if !val.Field(i).IsZero() {
+			fieldName := val.Type().Field(i).Tag.Get("mapstructure")
+			log.Info().Msgf("%s=%v", fieldName, val.Field(i))
+		}
+	}
+	log.Info().Msg("---")
 }
 
 func getDefaultServerConfig() *ServerConf {
@@ -70,15 +84,4 @@ func (conf *ServerConf) DecodePublicKeys() map[string][]verification.Verificatio
 	}
 
 	return ret
-}
-
-func (conf *ServerConf) Print() {
-	log.Info().Msgf("Configured %d hosts", len(conf.KnownHosts))
-	for host, pubKey := range conf.KnownHosts {
-		log.Info().Msgf("%s with pubKey %s", host, pubKey)
-	}
-	log.Info().Msgf("HostedZoneId=%s", conf.HostedZoneId)
-	log.Info().Msgf("MetricsListener=%s", conf.MetricsListener)
-	conf.MqttConfig.Print()
-	conf.VaultConfig.Print()
 }

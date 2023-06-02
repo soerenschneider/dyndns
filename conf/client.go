@@ -4,11 +4,11 @@ package conf
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"os"
+	"reflect"
 )
 
 const (
@@ -39,46 +39,17 @@ type ClientConf struct {
 	*InterfaceConfig
 }
 
-func (conf *ClientConf) Print() {
-	log.Info().Msg("Config in use:")
-	log.Info().Msgf("host=%s", conf.Host)
-	log.Info().Msgf("KeyPairPath=%s", conf.KeyPairPath)
-	log.Info().Msgf("Once=%t", conf.Once)
-	log.Info().Msgf("MetricsListener=%s", conf.MetricsListener)
-	if len(conf.PreferredUrls) > 0 {
-		log.Info().Msgf("PreferredUrls=%v", conf.PreferredUrls)
-	}
-	if len(conf.FallbackUrls) > 0 {
-		log.Info().Msgf("FallbackUrls=%v", conf.FallbackUrls)
-	}
-	conf.MqttConfig.Print()
-	if conf.InterfaceConfig != nil {
-		conf.InterfaceConfig.Print()
-	}
+func (c *ClientConf) Print() {
 	log.Info().Msg("---")
-}
-
-func (conf *ClientConf) Validate() error {
-	if len(conf.Host) == 0 {
-		return errors.New("no host given")
-	}
-
-	if len(conf.KeyPairPath) == 0 {
-		return errors.New("no path for keypair given")
-	}
-
-	if conf.InterfaceConfig != nil {
-		err := conf.InterfaceConfig.Validate()
-		if err != nil {
-			return err
+	log.Info().Msg("Active config values:")
+	val := reflect.ValueOf(c).Elem()
+	for i := 0; i < val.NumField(); i++ {
+		if !val.Field(i).IsZero() {
+			fieldName := val.Type().Field(i).Tag.Get("mapstructure")
+			log.Info().Msgf("%s=%v", fieldName, val.Field(i))
 		}
 	}
-
-	if len(conf.PreferredUrls) == 0 {
-		return errors.New("no preferred urls given")
-	}
-
-	return conf.MqttConfig.Validate()
+	log.Info().Msg("---")
 }
 
 func getDefaultClientConfig() *ClientConf {

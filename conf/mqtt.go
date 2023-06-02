@@ -55,21 +55,6 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 	return tlsConf
 }
 
-func (conf *MqttConfig) Print() {
-	log.Info().Msgf("Brokers=%v", conf.Brokers)
-	log.Info().Msgf("ClientId=%s", conf.ClientId)
-	if len(conf.CaCertFile) > 1 {
-		log.Info().Msgf("CaCertFile=%s", conf.CaCertFile)
-	}
-	if len(conf.ClientCertFile) > 1 {
-		log.Info().Msgf("ClientCertFile=%s", conf.ClientCertFile)
-	}
-	if len(conf.ClientKeyFile) > 1 {
-		log.Info().Msgf("ClientKeyFile=%s", conf.ClientKeyFile)
-	}
-	log.Info().Msgf("TlsInsecure=%t", conf.TlsInsecure)
-}
-
 func (conf *MqttConfig) Validate() error {
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(conf.Brokers)))
 	if len(conf.Brokers) == 0 {
