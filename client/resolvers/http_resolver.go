@@ -36,6 +36,7 @@ type HttpResolver struct {
 	backupProviders    []string
 	providers          []string
 	addressFamilies    []string
+	random             *rand.Rand
 }
 
 func NewHttpResolver(domain string, preferredUrls []string, fallbackUrls []string, addressFamilies []string) (*HttpResolver, error) {
@@ -151,11 +152,11 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 }
 
 func (resolver *HttpResolver) shuffleProviders() {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(resolver.preferredProviders), func(i, j int) {
+	resolver.random = rand.New(rand.NewSource(time.Now().UnixNano()))
+	resolver.random.Shuffle(len(resolver.preferredProviders), func(i, j int) {
 		resolver.preferredProviders[i], resolver.preferredProviders[j] = resolver.preferredProviders[j], resolver.preferredProviders[i]
 	})
-	rand.Shuffle(len(resolver.backupProviders), func(i, j int) {
+	resolver.random.Shuffle(len(resolver.backupProviders), func(i, j int) {
 		resolver.backupProviders[i], resolver.backupProviders[j] = resolver.backupProviders[j], resolver.backupProviders[i]
 	})
 
