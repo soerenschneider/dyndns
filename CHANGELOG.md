@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.12.0](https://github.com/soerenschneider/dyndns/compare/v1.11.1...v1.12.0) (2023-06-02)
+
+
+### Features
+
+* add further metrics to enhance observability ([29e14b3](https://github.com/soerenschneider/dyndns/commit/29e14b33ba8aaff2cbfa5eeb4ab3b16f051658b5))
+* add simple hash function to compare known hosts across hosts ([162b073](https://github.com/soerenschneider/dyndns/commit/162b0739326c007ac0f9a25ffcdeeafafc8a76c2))
+* auto reload updated certificates ([b512a7a](https://github.com/soerenschneider/dyndns/commit/b512a7af74b7029bbcf3d0e4b87d7b9831cd852f))
+* configurable address families ([89f05f8](https://github.com/soerenschneider/dyndns/commit/89f05f86f6fc622477ad80a387cb12322220a3f2))
+* validate using 'go-playground/validator' ([3db56f7](https://github.com/soerenschneider/dyndns/commit/3db56f72314e2a3be90daabd7b1f5286f5526f36))
+
+
+### Bug Fixes
+
+* change validation flag ([9acd257](https://github.com/soerenschneider/dyndns/commit/9acd257a4019e060b3f4bd35408eec36e3cd54b1))
+* define custom validator to fix panic ([7ca9cd5](https://github.com/soerenschneider/dyndns/commit/7ca9cd50dfc6d34eebe81e67c33249c55072326a))
+* iterate over correct datastructure ([2c3bfcd](https://github.com/soerenschneider/dyndns/commit/2c3bfcdb13875574745e632320099a95b9e03b38))
+
 ## [1.11.1](https://github.com/soerenschneider/dyndns/compare/v1.11.0...v1.11.1) (2023-01-31)
 
 
