@@ -70,24 +70,23 @@ func getCredentialProvider(config conf.VaultConfig) credentials.Provider {
 func RunServer(configPath string) {
 	metrics.ProcessStartTime.SetToCurrentTime()
 
-	conf, err := conf.ReadServerConfig(configPath)
+	config, err := conf.ReadServerConfig(configPath)
 	if err != nil {
 		log.Fatal().Msgf("couldn't read config file: %v", err)
 	}
 
-	err = conf.Validate()
+	err = conf.ValidateConfig(config)
 	if err != nil {
 		log.Fatal().Msgf("Config validation failed: %v", err)
 	}
-	conf.Print()
 
 	var notificationImpl notification.Notification
-	if conf.EmailConfig != nil {
-		err := conf.EmailConfig.Validate()
+	if config.EmailConfig != nil {
+		err := config.EmailConfig.Validate()
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Bad email config")
 		}
-		notificationImpl, err = util.NewEmailNotification(conf.EmailConfig)
+		notificationImpl, err = util.NewEmailNotification(config.EmailConfig)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Can't build email notification")
 		}
@@ -95,23 +94,23 @@ func RunServer(configPath string) {
 
 	var requestsChannel = make(chan common.Envelope)
 	var servers []*mqtt.MqttBus
-	for _, broker := range conf.Brokers {
-		mqttServer, err := mqtt.NewMqttServer(broker, conf.ClientId, notificationTopic, conf.TlsConfig(), requestsChannel)
+	for _, broker := range config.Brokers {
+		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requestsChannel)
 		if err != nil {
 			log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
 		}
 		servers = append(servers, mqttServer)
 	}
 
-	go metrics.StartMetricsServer(conf.MetricsListener)
+	go metrics.StartMetricsServer(config.MetricsListener)
 
-	provider := getCredentialProvider(conf.VaultConfig)
-	propagator, err := dns.NewRoute53Propagator(conf.HostedZoneId, provider)
+	provider := getCredentialProvider(config.VaultConfig)
+	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
 	if err != nil {
 		log.Fatal().Msgf("Could not build dns propagation implementation: %v", err)
 	}
 
-	dyndnsServer, err := server.NewServer(*conf, propagator, requestsChannel, notificationImpl)
+	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	if err != nil {
 		log.Fatal().Msgf("Could not build server: %v", err)
 	}
