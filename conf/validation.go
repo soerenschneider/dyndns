@@ -7,6 +7,11 @@ import (
 	"sync"
 )
 
+const (
+	AddrFamilyIpv6 = "ip6"
+	AddrFamilyIpv4 = "ip4"
+)
+
 var (
 	once     sync.Once
 	validate *validator.Validate

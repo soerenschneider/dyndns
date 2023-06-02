@@ -11,11 +11,6 @@ import (
 	"reflect"
 )
 
-const (
-	AddrFamilyIpv6 = "ip6"
-	AddrFamilyIpv4 = "ip4"
-)
-
 var defaultHttpResolverUrls = []string{
 	"https://icanhazip.com",
 	"https://ifconfig.me",
