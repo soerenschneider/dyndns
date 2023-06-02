@@ -97,7 +97,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 		Timestamp: time.Now(),
 	}
 
-	for _, addressFamily := range serverAddresses {
+	for _, addressFamily := range resolver.addressFamilies {
 		serverAddress, ok := serverAddresses[addressFamily]
 		if !ok {
 			log.Warn().Msgf("unknown address family: '%s', check your configuration", addressFamily)
