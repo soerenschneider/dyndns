@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -45,27 +46,27 @@ func main() {
 
 // getCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
 // otherwise the default credentials provider by AWS is used, trying to be resilient
-func getCredentialProvider(config conf.VaultConfig) credentials.Provider {
-	if config.Verify() != nil {
-		return nil
+func getCredentialProvider(config *conf.VaultConfig) (credentials.Provider, error) {
+	if config == nil {
+		return nil, errors.New("nil config provided")
 	}
 
-	provider, err := vault.NewVaultCredentialProvider(&config)
+	if err := config.Verify(); err != nil {
+		return nil, fmt.Errorf("could not verify config: %w", err)
+	}
+
+	provider, err := vault.NewVaultCredentialProvider(config)
 	if err != nil {
-		log.Info().Msgf("couldn't build vault dynamic credential provider: %v", err)
-		// TODO: metrics
-		return nil
+		return nil, err
 	}
 
 	log.Info().Msg("Testing authentication against vault")
 	err = provider.LookupToken()
 	if err != nil {
-		log.Error().Msgf("Could not authenticate against vault: %v", err)
-		// TODO: metrics
-		return nil
+		return nil, fmt.Errorf("could not authenticate against vault: %w", err)
 	}
 
-	return provider
+	return provider, nil
 }
 
 func RunServer(configPath string) {
@@ -80,6 +81,7 @@ func RunServer(configPath string) {
 	if err != nil {
 		log.Fatal().Msgf("Config validation failed: %v", err)
 	}
+	conf.PrintFields(config)
 
 	var notificationImpl notification.Notification
 	if config.EmailConfig != nil {
@@ -115,15 +117,18 @@ func RunServer(configPath string) {
 		metrics.KnownHostsHash.Set(float64(hash))
 	}
 
-	provider := getCredentialProvider(config.VaultConfig)
+	provider, err := getCredentialProvider(config.VaultConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not build credentials provider")
+	}
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
 	if err != nil {
-		log.Fatal().Msgf("Could not build dns propagation implementation: %v", err)
+		log.Fatal().Err(err).Msg("Could not build dns propagation implementation")
 	}
 
 	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	if err != nil {
-		log.Fatal().Msgf("Could not build server: %v", err)
+		log.Fatal().Err(err).Msg("could not build dyndns server")
 	}
 	go dyndnsServer.Listen()
 
