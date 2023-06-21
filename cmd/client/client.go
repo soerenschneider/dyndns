@@ -43,18 +43,19 @@ func main() {
 	if *configPath == "" {
 		*configPath = getDefaultConfigFileOrEmpty()
 	}
-	conf, err := conf.ReadClientConfig(*configPath)
+	config, err := conf.ReadClientConfig(*configPath)
 	if err != nil {
 		log.Fatal().Msgf("couldn't read config file: %v", err)
 	}
-	if err := env.Parse(conf); err != nil {
+	if err := env.Parse(config); err != nil {
 		log.Fatal().Msgf("%+v\n", err)
 	}
 
 	// supply once flag value
-	conf.Once = *once
-	conf.Print()
-	RunClient(conf)
+	config.Once = *once
+
+	conf.PrintFields(config)
+	RunClient(config)
 }
 
 func getDefaultConfigFileOrEmpty() string {
