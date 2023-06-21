@@ -19,6 +19,10 @@ type MqttConfig struct {
 	TlsInsecure    bool     `json:"tls_insecure" env:"DYNDNS_TLS_INSECURE"`
 }
 
+func (conf *MqttConfig) UsesTlsClientCerts() bool {
+	return len(conf.CaCertFile) > 0 && len(conf.ClientCertFile) > 0 && len(conf.ClientKeyFile) > 0
+}
+
 func (conf *MqttConfig) TlsConfig() *tls.Config {
 	log.Info().Msg("Building TLS config...")
 
@@ -28,7 +32,7 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 		certPool = x509.NewCertPool()
 	}
 
-	if len(conf.CaCertFile) > 0 {
+	if conf.UsesTlsClientCerts() {
 		pemCerts, err := os.ReadFile(conf.CaCertFile)
 		if err != nil {
 			log.Error().Msgf("Could not read CA cert file: %v", err)
@@ -53,6 +57,15 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 	}
 
 	return tlsConf
+}
+
+func (conf MqttConfig) String() string {
+	base := fmt.Sprintf("brokers=%v, clientId=%s", conf.Brokers, conf.ClientId)
+	if conf.UsesTlsClientCerts() {
+		base += fmt.Sprintf("ca=%s, crt=%s, key=%s", conf.CaCertFile, conf.ClientCertFile, conf.ClientKeyFile)
+	}
+
+	return base
 }
 
 func (conf *MqttConfig) Validate() error {

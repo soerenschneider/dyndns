@@ -10,35 +10,21 @@ import (
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"hash/fnv"
 	"os"
-	"reflect"
 )
 
 type ServerConf struct {
 	KnownHosts      map[string][]string `json:"known_hosts" validate:"required"`
 	HostedZoneId    string              `json:"hosted_zone_id" validate:"required"`
 	MetricsListener string              `json:"metrics_listen",omitempty`
-	MqttConfig
-	VaultConfig
+	*MqttConfig
+	*VaultConfig
 	*EmailConfig `json:"notifications"`
-}
-
-func (c *ServerConf) Print() {
-	log.Info().Msg("---")
-	log.Info().Msg("Active config values:")
-	val := reflect.ValueOf(c).Elem()
-	for i := 0; i < val.NumField(); i++ {
-		if !val.Field(i).IsZero() {
-			fieldName := val.Type().Field(i).Tag.Get("mapstructure")
-			log.Info().Msgf("%s=%v", fieldName, val.Field(i))
-		}
-	}
-	log.Info().Msg("---")
 }
 
 func getDefaultServerConfig() *ServerConf {
 	return &ServerConf{
 		MetricsListener: metrics.DefaultListener,
-		MqttConfig: MqttConfig{
+		MqttConfig: &MqttConfig{
 			ClientId: "dyndns-server",
 		},
 		VaultConfig: GetDefaultVaultConfig(),

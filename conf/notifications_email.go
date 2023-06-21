@@ -1,6 +1,9 @@
 package conf
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type EmailConfig struct {
 	From         string   `json:"from" env:"DYNDNS_EMAIL_FROM"`
@@ -28,4 +31,8 @@ func (conf *EmailConfig) Validate() error {
 		return errors.New("'SmtpPassword' not defined")
 	}
 	return nil
+}
+
+func (conf *EmailConfig) String() string {
+	return fmt.Sprintf("from=%s, to=%v, smtpHost=%s, smtpPort=%d, smtpUsername=%s", conf.From, conf.To, conf.SmtpHost, conf.SmtpPort, conf.SmtpUsername)
 }

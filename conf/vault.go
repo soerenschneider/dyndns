@@ -14,8 +14,8 @@ type VaultConfig struct {
 	VaultToken    string `json:"vault_token,omitempty"`
 }
 
-func GetDefaultVaultConfig() VaultConfig {
-	return VaultConfig{
+func GetDefaultVaultConfig() *VaultConfig {
+	return &VaultConfig{
 		RoleName:  "dyndns",
 		VaultAddr: os.Getenv("VAULT_ADDR"),
 	}
@@ -61,4 +61,15 @@ func (c *VaultConfig) Verify() error {
 	}
 
 	return nil
+}
+
+func (c *VaultConfig) String() string {
+	base := fmt.Sprintf("vault-addr=%s, role-name=%s", c.VaultAddr, c.RoleName)
+	if c.HasAppRoleLoginInfo() {
+		base += " (using approle auth)"
+	} else {
+		base += " (using token auth)"
+	}
+
+	return base
 }
