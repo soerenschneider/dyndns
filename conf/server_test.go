@@ -24,16 +24,23 @@ func TestReadServerConfig(t *testing.T) {
 				},
 				HostedZoneId:    "hosted-zone-id-x",
 				MetricsListener: ":666",
-				MqttConfig: MqttConfig{
+				MqttConfig: &MqttConfig{
 					Brokers:  []string{"broker-1", "broker-2"},
 					ClientId: "my-client-id",
 				},
-				VaultConfig: VaultConfig{
+				EmailConfig: &EmailConfig{
+					From:         "from",
+					To:           []string{"to-1"},
+					SmtpHost:     "smtp-host",
+					SmtpPort:     465,
+					SmtpUsername: "username",
+					SmtpPassword: "password",
+				},
+				VaultConfig: &VaultConfig{
 					RoleName:      "my-role-name",
 					VaultAddr:     "https://vault:8200",
 					AppRoleId:     "my-approle-id",
 					AppRoleSecret: "my-approle-secret",
-					VaultToken:    "the-holy-token",
 				},
 			},
 		},

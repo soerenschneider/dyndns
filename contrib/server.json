@@ -16,5 +16,14 @@
   "vault_addr": "https://vault:8200",
   "vault_app_role_id": "my-approle-id",
   "vault_app_role_secret": "my-approle-secret",
-  "vault_token": "the-holy-token"
+  "notifications": {
+    "from": "from",
+    "to": [
+      "to-1"
+    ],
+    "host": "smtp-host",
+    "port": 465,
+    "user": "username",
+    "password": "password"
+  }
 }
