@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -51,7 +52,7 @@ var (
 func StartMetricsServer(addr string) {
 	http.Handle("/metrics", promhttp.Handler())
 	err := http.ListenAndServe(addr, nil)
-	if err != nil {
-		log.Fatal().Msgf("can not start metrics server at %s: %v", addr, err)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal().Err(err).Msg("can not start metrics server")
 	}
 }
