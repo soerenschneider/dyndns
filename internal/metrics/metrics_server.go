@@ -65,6 +65,12 @@ var (
 		Name:      "public_keys_missing_total",
 	}, []string{"host"})
 
+	IgnoredMessage = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: server,
+		Name:      "messages_ignored_total",
+	}, []string{"host", "reason"})
+
 	MessageValidationsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: server,

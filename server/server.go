@@ -18,6 +18,8 @@ import (
 // timestampGracePeriod must be a negative number
 const timestampGracePeriod = -24 * time.Hour
 
+var ErrorMessageTooOld = errors.New("message timestamp is too old")
+
 type Server struct {
 	knownHosts       map[string][]verification.VerificationKey
 	listener         events.EventListener
@@ -96,9 +98,8 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 	}
 
 	if env.PublicIp.Timestamp.Before(time.Now().Add(timestampGracePeriod)) {
-		metrics.MessageValidationsFailed.WithLabelValues(env.PublicIp.Host, "stale_message").Inc()
-		diff := time.Now().Sub(env.PublicIp.Timestamp)
-		return fmt.Errorf("timestamp too old for host %s: %v min", env.PublicIp.Host, diff)
+		metrics.IgnoredMessage.WithLabelValues(env.PublicIp.Host, "message_too_old").Inc()
+		return ErrorMessageTooOld
 	}
 
 	if server.isCached(env) {
@@ -140,7 +141,7 @@ func (server *Server) Listen() {
 
 		log.Info().Msg("Picked up a new change request")
 		err := server.handlePropagateRequest(request)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrorMessageTooOld) {
 			log.Error().Msgf("Change has not been propagated: %v", err)
 		}
 	}
