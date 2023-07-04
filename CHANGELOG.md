@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.12.1](https://github.com/soerenschneider/dyndns/compare/v1.12.0...v1.12.1) (2023-07-04)
+
+
+### Bug Fixes
+
+* do not print sensitive values ([dcf30a7](https://github.com/soerenschneider/dyndns/commit/dcf30a78cbabed9328c90291540531d1305637d3))
+* fix printing config values ([33cd42f](https://github.com/soerenschneider/dyndns/commit/33cd42fb22ed49301d340551c7dcc38627eb39b1))
+* retry reconnects ([aeb518b](https://github.com/soerenschneider/dyndns/commit/aeb518b02f0cf4c2a2826aaafa0ebc5aa553660a))
+
 ## [1.12.0](https://github.com/soerenschneider/dyndns/compare/v1.11.1...v1.12.0) (2023-06-02)
 
 
