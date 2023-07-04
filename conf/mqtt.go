@@ -9,7 +9,7 @@ import (
 )
 
 type MqttConfig struct {
-	Brokers        []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";"`
+	Brokers        []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";" validate:"required,broker"`
 	ClientId       string   `json:"client_id" env:"DYNDNS_CLIENT_ID" validate:"required"`
 	CaCertFile     string   `json:"tls_ca_cert" env:"DYNDNS_TLS_CA" validate:"omitempty,file"`
 	ClientCertFile string   `json:"tls_client_cert" env:"DYNDNS_TLS_CERT" validate:"omitempty,file"`
