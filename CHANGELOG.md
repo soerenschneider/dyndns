@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.0](https://github.com/soerenschneider/dyndns/compare/v1.12.1...v1.13.0) (2023-07-04)
+
+
+### Features
+
+* use dedicated validator ([3f67832](https://github.com/soerenschneider/dyndns/commit/3f67832eba6c53ebce49e2fbb3b17df7eb9a9f71))
+
+
+### Bug Fixes
+
+* remove dead code and actually set metric ([1b08613](https://github.com/soerenschneider/dyndns/commit/1b086138b7e0d95a4fd4133d73c5703ca791430d))
+
 ## [1.12.1](https://github.com/soerenschneider/dyndns/compare/v1.12.0...v1.12.1) (2023-07-04)
 
 
