@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
-	"time"
 )
 
 const publishWaitTimeout = 2 * time.Minute
@@ -37,6 +38,7 @@ func NewMqttClient(broker string, clientId, notificationTopic string, tlsConfig 
 	opts.OnConnectionLost = connectLostHandler
 	opts.OnConnect = onConnectHandler
 	opts.AutoReconnect = true
+	opts.ConnectRetry = true
 
 	if tlsConfig != nil {
 		opts.SetTLSConfig(tlsConfig)
