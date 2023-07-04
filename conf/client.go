@@ -5,11 +5,8 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"reflect"
-
-	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"os"
 )
 
 var defaultHttpResolverUrls = []string{
@@ -33,19 +30,6 @@ type ClientConf struct {
 	MqttConfig
 	*EmailConfig `json:"notifications"`
 	*InterfaceConfig
-}
-
-func (c *ClientConf) Print() {
-	log.Info().Msg("---")
-	log.Info().Msg("Active config values:")
-	val := reflect.ValueOf(c).Elem()
-	for i := 0; i < val.NumField(); i++ {
-		if !val.Field(i).IsZero() {
-			fieldName := val.Type().Field(i).Tag.Get("mapstructure")
-			log.Info().Msgf("%s=%v", fieldName, val.Field(i))
-		}
-	}
-	log.Info().Msg("---")
 }
 
 func getDefaultClientConfig() *ClientConf {
