@@ -82,6 +82,7 @@ func RunServer(configPath string) {
 	if err != nil {
 		log.Fatal().Msgf("Config validation failed: %v", err)
 	}
+	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 	conf.PrintFields(config, conf.SensitiveFields...)
 
 	var notificationImpl notification.Notification

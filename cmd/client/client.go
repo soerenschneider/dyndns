@@ -51,6 +51,7 @@ func main() {
 	if err := env.Parse(config); err != nil {
 		log.Fatal().Msgf("%+v\n", err)
 	}
+	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 
 	// supply once flag value
 	config.Once = *once
