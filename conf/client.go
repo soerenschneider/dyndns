@@ -5,10 +5,11 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/metrics"
 	"os"
 	"reflect"
+
+	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 )
 
 var defaultHttpResolverUrls = []string{

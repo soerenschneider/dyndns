@@ -3,6 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/user"
+	"path"
+	"strings"
+
 	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client"
@@ -15,10 +20,6 @@ import (
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"os"
-	"os/user"
-	"path"
-	"strings"
 )
 
 var configPathPreferences = []string{
@@ -54,7 +55,7 @@ func main() {
 	// supply once flag value
 	config.Once = *once
 
-	conf.PrintFields(config)
+	conf.PrintFields(config, conf.SensitiveFields...)
 	RunClient(config)
 }
 

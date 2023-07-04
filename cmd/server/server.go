@@ -5,6 +5,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
@@ -17,9 +21,6 @@ import (
 	"github.com/soerenschneider/dyndns/server"
 	"github.com/soerenschneider/dyndns/server/dns"
 	"github.com/soerenschneider/dyndns/server/vault"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 const defaultConfigPath = "/etc/dyndns/config.json"
@@ -81,7 +82,7 @@ func RunServer(configPath string) {
 	if err != nil {
 		log.Fatal().Msgf("Config validation failed: %v", err)
 	}
-	conf.PrintFields(config)
+	conf.PrintFields(config, conf.SensitiveFields...)
 
 	var notificationImpl notification.Notification
 	if config.EmailConfig != nil {
