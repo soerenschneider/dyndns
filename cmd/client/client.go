@@ -27,9 +27,10 @@ var (
 		"/etc/dyndns/client.json",
 		"~/.dyndns/config.json",
 	}
-	configPath string
-	once       bool
-	cmdVersion bool
+	configPath    string
+	once          bool
+	cmdVersion    bool
+	cmdGenKeypair bool
 )
 
 func main() {
@@ -38,6 +39,10 @@ func main() {
 	if cmdVersion {
 		fmt.Printf("%s (commit: %s)", internal.BuildVersion, internal.CommitHash)
 		os.Exit(0)
+	}
+
+	if cmdGenKeypair {
+		generateKeypair()
 	}
 
 	util.InitLogging()
@@ -191,4 +196,18 @@ func getKeypair(path string) verification.SignatureKeypair {
 	}
 
 	return keypair
+}
+
+func generateKeypair() {
+	keypair, err := verification.NewKeyPair()
+	if err != nil {
+		log.Fatal().Msgf("Can not create keypair: %v", err)
+	}
+
+	jsonEncoded, err := keypair.AsJson()
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not marshall keypair")
+	}
+	fmt.Printf("%s\n", jsonEncoded)
+	os.Exit(0)
 }
