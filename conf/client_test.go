@@ -25,7 +25,7 @@ func TestReadClientConfig(t *testing.T) {
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: ":9191",
 				MqttConfig: MqttConfig{
-					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883", "ssl://mqtt.eclipseprojects.io:8883"},
+					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
 			},

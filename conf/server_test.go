@@ -23,9 +23,9 @@ func TestReadServerConfig(t *testing.T) {
 					"host": []string{"key1", "key2"},
 				},
 				HostedZoneId:    "hosted-zone-id-x",
-				MetricsListener: ":666",
+				MetricsListener: ":6666",
 				MqttConfig: &MqttConfig{
-					Brokers:  []string{"broker-1", "broker-2"},
+					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
 					ClientId: "my-client-id",
 				},
 				EmailConfig: &EmailConfig{
@@ -36,12 +36,7 @@ func TestReadServerConfig(t *testing.T) {
 					SmtpUsername: "username",
 					SmtpPassword: "password",
 				},
-				VaultConfig: &VaultConfig{
-					RoleName:      "my-role-name",
-					VaultAddr:     "https://vault:8200",
-					AppRoleId:     "my-approle-id",
-					AppRoleSecret: "my-approle-secret",
-				},
+				VaultConfig: GetDefaultVaultConfig(),
 			},
 		},
 	}
