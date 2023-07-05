@@ -2,6 +2,7 @@ package conf
 
 import (
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 	"net/url"
 	"reflect"
 	"sync"
@@ -20,8 +21,12 @@ var (
 func ValidateConfig[T any](c T) error {
 	once.Do(func() {
 		validate = validator.New()
-		validate.RegisterValidation("addrfamilies", validateAddrFamilies)
-		validate.RegisterValidation("broker", validateBrokers)
+		if err := validate.RegisterValidation("addrfamilies", validateAddrFamilies); err != nil {
+			log.Fatal().Err(err).Msg("could not build custom validation 'addrfamilies'")
+		}
+		if err := validate.RegisterValidation("broker", validateBrokers); err != nil {
+			log.Fatal().Err(err).Msg("could not build custom validation 'validateBrokers'")
+		}
 	})
 
 	return validate.Struct(c)

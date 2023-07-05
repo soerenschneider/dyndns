@@ -70,11 +70,8 @@ func (client *Client) Run() {
 	}
 
 	tick()
-	for {
-		select {
-		case <-ticker.C:
-			tick()
-		}
+	for range ticker.C {
+		tick()
 	}
 }
 
@@ -99,8 +96,6 @@ func (client *Client) ResolveSingle() (*common.ResolvedIp, []error) {
 }
 
 func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []error) {
-	var resolvedIp = prev
-
 	resolvedIp, err := client.resolveIp()
 	if err != nil {
 		return prev, []error{err}

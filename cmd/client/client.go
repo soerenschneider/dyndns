@@ -106,10 +106,6 @@ func RunClient(config *conf.ClientConf) {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
 
-	if nil == config {
-		log.Fatal().Msg("Supplied nil config")
-	}
-
 	err := conf.ValidateConfig(config)
 	if err != nil {
 		log.Fatal().Msgf("Verification of config failed: %v", err)

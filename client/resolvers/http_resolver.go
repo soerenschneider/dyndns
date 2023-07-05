@@ -31,7 +31,6 @@ var (
 type HttpResolver struct {
 	client             *http.Client
 	host               string
-	localAddresses     map[string]string
 	preferredProviders []string
 	backupProviders    []string
 	providers          []string
@@ -116,9 +115,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 				LocalAddr: localAddr,
 			}).DialContext,
 		}
-		if transport == nil {
-			continue
-		}
+
 		resolver.client.Transport = transport
 		for index, url := range resolver.providers {
 			detectedIp, err := resolveSingle(url, resolver.client)
@@ -175,7 +172,7 @@ func resolveSingle(url string, client *http.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error talking to '%s': %v", url, err)
 	}
-	timeTaken := time.Now().Sub(start)
+	timeTaken := time.Since(start)
 	metrics.ResponseTime.WithLabelValues(url).Observe(timeTaken.Seconds())
 
 	defer resp.Body.Close()

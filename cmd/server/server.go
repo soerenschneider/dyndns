@@ -41,7 +41,7 @@ func main() {
 	}
 
 	util.InitLogging()
-	if nil == configPath {
+	if len(*configPath) == 0 {
 		log.Fatal().Msgf("No config path supplied")
 	}
 

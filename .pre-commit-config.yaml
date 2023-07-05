@@ -16,3 +16,11 @@ repos:
         language: golang
         require_serial: true
         pass_filenames: false
+
+      - id: golangci-lint
+        name: golangci-lint
+        entry: golangci-lint run --build-tags "server,client"
+        types: [go]
+        language: golang
+        require_serial: true
+        pass_filenames: false

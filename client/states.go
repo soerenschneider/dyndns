@@ -6,11 +6,8 @@ import (
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/util"
-	"math/rand"
 	"time"
 )
-
-const jitterSeconds = 15
 
 type initialState struct{}
 
@@ -71,7 +68,7 @@ func (state *ipNotConfirmedState) EvaluateState(context *Client, resolved *commo
 
 	log.Info().Msgf("DNS entry for host %s differs to new ip: %v", resolved.Host, resolved)
 	if state.checks%10 == 0 {
-		since := time.Now().Sub(context.lastStateChange)
+		since := time.Since(context.lastStateChange)
 		log.Info().Msgf("Re-sending update as no propagation has happened since %v", since)
 		return true
 	}
@@ -122,9 +119,4 @@ func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.R
 
 func (state *ipConfirmedState) WaitInterval() time.Duration {
 	return DefaultResolveInterval
-}
-
-func jitter() time.Duration {
-	rand.Seed(time.Now().UnixNano())
-	return time.Duration(rand.Intn(jitterSeconds*2)-jitterSeconds) * time.Second
 }

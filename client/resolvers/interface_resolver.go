@@ -1,7 +1,6 @@
 package resolvers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"net"
@@ -62,5 +61,5 @@ func GetInterfaceIpv4Addr(interfaceName string) (addr string, err error) {
 		}
 	}
 
-	return "", errors.New(fmt.Sprintf("interface %s doesn't have an ipv4 address\n", interfaceName))
+	return "", fmt.Errorf("interface %s doesn't have an ipv4 address", interfaceName)
 }

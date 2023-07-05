@@ -15,7 +15,7 @@ import (
 type ServerConf struct {
 	KnownHosts      map[string][]string `json:"known_hosts" validate:"required"`
 	HostedZoneId    string              `json:"hosted_zone_id" validate:"required"`
-	MetricsListener string              `json:"metrics_listen",omitempty`
+	MetricsListener string              `json:"metrics_listen,omitempty"`
 	*MqttConfig
 	*VaultConfig
 	*EmailConfig `json:"notifications"`

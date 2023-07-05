@@ -85,10 +85,6 @@ func (resolved *ResolvedIp) IsValid() bool {
 	return true
 }
 
-func (resolved *ResolvedIp) getFormattedDate() string {
-	return resolved.Timestamp.Format(time.RFC3339)
-}
-
 func (resolved *ResolvedIp) String() string {
 	if resolved.HasIpV4() && resolved.HasIpV6() {
 		return fmt.Sprintf("%s: %s (v4), %s (v6)", resolved.Host, resolved.IpV4, resolved.IpV6)

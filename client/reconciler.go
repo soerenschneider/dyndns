@@ -63,10 +63,10 @@ func (r *Reconciler) dispatch() []error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(r.pendingChanges))
 	var errs []error
-	for key, _ := range r.pendingChanges {
-		dispatcher := r.pendingChanges[key]
+	for key, dispatcher := range r.pendingChanges {
+		var disp = dispatcher
 		go func(key string) {
-			err := dispatcher.Notify(r.env)
+			err := disp.Notify(r.env)
 			if err == nil {
 				r.pendingChanges[key] = nil
 				delete(r.pendingChanges, key)
@@ -82,7 +82,7 @@ func (r *Reconciler) dispatch() []error {
 	}
 
 	wg.Wait()
-	timeSpent := time.Now().Sub(timeStart)
+	timeSpent := time.Since(timeStart)
 
 	log.Info().Msgf("Spent %v on reconciliation (%d dispatchers)", timeSpent, len(r.dispatchers))
 	metrics.ReconcilersActive.WithLabelValues(r.env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
@@ -93,10 +93,7 @@ func (r *Reconciler) Run() {
 	interval := 1 * time.Minute
 	ticker := time.NewTicker(interval)
 
-	for {
-		select {
-		case <-ticker.C:
-			r.dispatch()
-		}
+	for range ticker.C {
+		r.dispatch()
 	}
 }

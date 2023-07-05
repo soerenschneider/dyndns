@@ -69,11 +69,6 @@ func (m *VaultCredentialProvider) IsExpired() bool {
 	return time.Now().Before(m.expiry)
 }
 
-func (m *VaultCredentialProvider) checkLogin() error {
-	_, err := m.auth.Login(context.Background(), m.client)
-	return err
-}
-
 func (m *VaultCredentialProvider) readAwsCredentials() (*api.Secret, error) {
 	log.Info().Msgf("Generating dynamic AWS credentials for role %s", m.config.AwsRoleName)
 
