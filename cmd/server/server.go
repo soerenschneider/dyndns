@@ -45,13 +45,9 @@ func main() {
 		log.Fatal().Msgf("No config path supplied")
 	}
 
-	RunServer(*configPath)
-}
-
-func RunServer(configPath string) {
 	metrics.ProcessStartTime.SetToCurrentTime()
 
-	config, err := conf.ReadServerConfig(configPath)
+	config, err := conf.ReadServerConfig(*configPath)
 	if err != nil {
 		log.Fatal().Msgf("couldn't read config file: %v", err)
 	}
@@ -60,19 +56,17 @@ func RunServer(configPath string) {
 	if err != nil {
 		log.Fatal().Msgf("Config validation failed: %v", err)
 	}
+
+	RunServer(config)
+}
+
+func RunServer(config *conf.ServerConf) {
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 	conf.PrintFields(config, conf.SensitiveFields...)
 
-	var notificationImpl notification.Notification
-	if config.EmailConfig != nil {
-		err := config.EmailConfig.Validate()
-		if err != nil {
-			log.Fatal().Err(err).Msgf("Bad email config")
-		}
-		notificationImpl, err = util.NewEmailNotification(config.EmailConfig)
-		if err != nil {
-			log.Fatal().Err(err).Msgf("Can't build email notification")
-		}
+	notificationImpl, err := buildNotificationImpl(config)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Can't build notification impl")
 	}
 
 	var requestsChannel = make(chan common.Envelope)
@@ -97,20 +91,9 @@ func RunServer(configPath string) {
 		metrics.KnownHostsHash.Set(float64(hash))
 	}
 
-	var provider credentials.Provider
-	if config.UseVaultCredentialsProvider() {
-		client, err := buildVaultClient(config.VaultConfig)
-		if err != nil {
-			log.Fatal().Err(err).Msg("could not build vault client")
-		}
-		auth, err := buildVaultAuth(config.VaultConfig)
-		if err != nil {
-			log.Fatal().Err(err).Msg("could not build auth")
-		}
-		provider, err = buildCredentialProvider(config.VaultConfig, client, auth)
-		if err != nil {
-			log.Fatal().Err(err).Msg("could not build credentials provider")
-		}
+	provider, err := buildProvider(config)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not build credentials provider")
 	}
 
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
@@ -135,6 +118,22 @@ func RunServer(configPath string) {
 	}
 
 	close(requestsChannel)
+}
+
+func buildProvider(config *conf.ServerConf) (credentials.Provider, error) {
+	if !config.UseVaultCredentialsProvider() {
+		return nil, nil
+	}
+
+	client, err := buildVaultClient(config.VaultConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not build vault client")
+	}
+	auth, err := buildVaultAuth(config.VaultConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("could not build auth")
+	}
+	return buildCredentialProvider(config.VaultConfig, client, auth)
 }
 
 func buildVaultClient(conf *conf.VaultConfig) (*api.Client, error) {
@@ -181,4 +180,15 @@ func buildVaultAuth(config *conf.VaultConfig) (vaultDyndns.Auth, error) {
 	default:
 		return nil, errors.New("can't build vault auth")
 	}
+}
+func buildNotificationImpl(config *conf.ServerConf) (notification.Notification, error) {
+	if config.EmailConfig != nil {
+		err := config.EmailConfig.Validate()
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Bad email config")
+		}
+		return util.NewEmailNotification(config.EmailConfig)
+	}
+
+	return &notification.DummyNotification{}, nil
 }

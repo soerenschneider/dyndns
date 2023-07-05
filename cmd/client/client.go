@@ -56,6 +56,11 @@ func main() {
 	if err := env.Parse(config); err != nil {
 		log.Fatal().Msgf("%+v\n", err)
 	}
+
+	if err := conf.ValidateConfig(config); err != nil {
+		log.Fatal().Msgf("Verification of config failed: %v", err)
+	}
+
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 
 	// supply once flag value
@@ -106,22 +111,11 @@ func RunClient(config *conf.ClientConf) {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
 
-	err := conf.ValidateConfig(config)
-	if err != nil {
-		log.Fatal().Msgf("Verification of config failed: %v", err)
-	}
 	keypair := getKeypair(config.KeyPairPath)
 
-	var notificationImpl notification.Notification
-	if config.EmailConfig != nil {
-		err := config.EmailConfig.Validate()
-		if err != nil {
-			log.Fatal().Err(err).Msgf("Bad email config")
-		}
-		notificationImpl, err = util.NewEmailNotification(config.EmailConfig)
-		if err != nil {
-			log.Fatal().Err(err).Msgf("Can't build email notification")
-		}
+	notificationImpl, err := buildNotificationImpl(config)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Can't build email notification")
 	}
 
 	resolver, err := buildResolver(config)
@@ -139,14 +133,11 @@ func RunClient(config *conf.ClientConf) {
 		}
 	}
 
-	if len(dispatchers) == 0 {
-		log.Fatal().Msg("not a single dispatcher built, exiting")
-	}
-
 	reconciler, err := client.NewReconciler(dispatchers)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not build reconciler")
 	}
+
 	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl)
 	if err != nil {
 		log.Fatal().Msgf("could not build client: %v", err)
@@ -173,6 +164,18 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 
 	log.Info().Msgf("Building HTTP resolver")
 	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls, conf.AddrFamilies)
+}
+
+func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, error) {
+	if config.EmailConfig != nil {
+		err := config.EmailConfig.Validate()
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Bad email config")
+		}
+		return util.NewEmailNotification(config.EmailConfig)
+	}
+
+	return &notification.DummyNotification{}, nil
 }
 
 func getKeypair(path string) verification.SignatureKeypair {
