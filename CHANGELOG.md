@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.2](https://github.com/soerenschneider/dyndns/compare/v1.14.1...v1.14.2) (2023-07-05)
+
+
+### Miscellaneous Chores
+
+* release 1.14.2 ([d098ace](https://github.com/soerenschneider/dyndns/commit/d098ace3157d45a720c7bb129271537e02ff671a))
+
 ## [1.14.1](https://github.com/soerenschneider/dyndns/compare/v1.14.0...v1.14.1) (2023-07-05)
 
 
