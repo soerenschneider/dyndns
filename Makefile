@@ -52,6 +52,10 @@ version-info:
 fmt:
 	find . -iname "*.go" -exec go fmt {} \; 
 
+pre-commit-init:
+	pre-commit install
+	pre-commit install --hook-type commit-msg
+
 docs:
 	rm -rf go-diagrams
 	go run doc/main.go

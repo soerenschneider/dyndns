@@ -1,4 +1,4 @@
-
+---
 name: Create and publish a container
 
 on:
@@ -45,7 +45,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-      
+
       - name: Build and push container image
         uses: docker/build-push-action@v4.1.1
         with:

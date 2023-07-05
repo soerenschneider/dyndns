@@ -1,0 +1,18 @@
+---
+repos:
+  - repo: https://github.com/soerenschneider/pre-commit-hooks
+    rev: v1.1.0
+    hooks:
+      - id: gofmt
+      - id: conventional-commit
+
+      - id: yamllint
+  - repo: local
+    hooks:
+      - id: go-unit-tests
+        name: go unit tests
+        entry: go test ./...
+        types: [go]
+        language: golang
+        require_serial: true
+        pass_filenames: false
