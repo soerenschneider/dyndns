@@ -188,6 +188,7 @@ func getKeypair(path string) verification.SignatureKeypair {
 		if err != nil {
 			log.Fatal().Msgf("Can not create keypair: %v", err)
 		}
+		log.Info().Msgf("Created keypair with pubkey '%s'", keypair.PubKey)
 
 		err = verification.WriteToFile(path, keypair)
 		if err != nil {
