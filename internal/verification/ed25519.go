@@ -106,7 +106,7 @@ func WriteToFile(path string, keypair *Ed25519Keypair) error {
 		return err
 	}
 
-	if err := os.WriteFile(path, marshalled, 0640); err != nil {
+	if err := os.WriteFile(path, marshalled, 0600); err != nil {
 		return fmt.Errorf("can not write config to path %s: %v", path, err)
 	}
 

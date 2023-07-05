@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"time"
 )
 
 const (
@@ -50,9 +51,19 @@ var (
 )
 
 func StartMetricsServer(addr string) {
-	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(addr, nil)
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	server := http.Server{
+		Addr:              addr,
+		ReadTimeout:       3 * time.Second,
+		ReadHeaderTimeout: 3 * time.Second,
+		WriteTimeout:      3 * time.Second,
+		IdleTimeout:       30 * time.Second,
+	}
+
+	err := server.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal().Err(err).Msg("can not start metrics server")
 	}
 }

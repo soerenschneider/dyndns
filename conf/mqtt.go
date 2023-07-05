@@ -39,6 +39,7 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 		}
 	}
 
+	// #nosec G402
 	tlsConf := &tls.Config{
 		RootCAs:            certPool,
 		ClientAuth:         tls.RequestClientCert,

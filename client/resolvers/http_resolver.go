@@ -149,7 +149,7 @@ func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
 }
 
 func (resolver *HttpResolver) shuffleProviders() {
-	resolver.random = rand.New(rand.NewSource(time.Now().UnixNano()))
+	resolver.random = rand.New(rand.NewSource(time.Now().UnixNano())) // #nosec G404
 	resolver.random.Shuffle(len(resolver.preferredProviders), func(i, j int) {
 		resolver.preferredProviders[i], resolver.preferredProviders[j] = resolver.preferredProviders[j], resolver.preferredProviders[i]
 	})
