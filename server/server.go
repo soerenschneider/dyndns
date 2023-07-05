@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
@@ -12,7 +14,6 @@ import (
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"github.com/soerenschneider/dyndns/server/dns"
-	"time"
 )
 
 // timestampGracePeriod must be a negative number
@@ -86,14 +87,12 @@ func (server *Server) verifyMessage(env common.Envelope) error {
 }
 
 func (server *Server) handlePropagateRequest(env common.Envelope) error {
-	err := env.Validate()
-	if err != nil {
+	if err := env.Validate(); err != nil {
 		metrics.MessageValidationsFailed.WithLabelValues(env.PublicIp.Host, "invalid_fields").Inc()
 		return fmt.Errorf("invalid envelope received: %v", err)
 	}
 
-	err = server.verifyMessage(env)
-	if err != nil {
+	if err := server.verifyMessage(env); err != nil {
 		return err
 	}
 
@@ -113,8 +112,7 @@ func (server *Server) handlePropagateRequest(env common.Envelope) error {
 	}
 
 	log.Info().Msgf("Verifying signature succeeded for domain '%v', performing DNS change", env.PublicIp)
-	err = server.propagator.PropagateChange(env.PublicIp)
-	if err != nil {
+	if err := server.propagator.PropagateChange(env.PublicIp); err != nil {
 		metrics.DnsPropagationErrors.WithLabelValues(env.PublicIp.Host).Inc()
 		return fmt.Errorf("could not propagate dns change for domain '%s': %v", env.PublicIp.Host, err)
 	}
