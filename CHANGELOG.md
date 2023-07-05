@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/soerenschneider/dyndns/compare/v1.14.0...v1.14.1) (2023-07-05)
+
+
+### Bug Fixes
+
+* fix import ([cb10801](https://github.com/soerenschneider/dyndns/commit/cb108016b81cafea65703cc554eb3fcbca9053b9))
+
 ## [1.14.0](https://github.com/soerenschneider/dyndns/compare/v1.13.0...v1.14.0) (2023-07-05)
 
 
