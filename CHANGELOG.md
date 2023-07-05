@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/soerenschneider/dyndns/compare/v1.13.0...v1.14.0) (2023-07-05)
+
+
+### Features
+
+* add easy way to generate keypairs from the cli ([5632aa8](https://github.com/soerenschneider/dyndns/commit/5632aa842decaf19e35203535aa760bcdbf49fe5))
+
 ## [1.13.0](https://github.com/soerenschneider/dyndns/compare/v1.12.1...v1.13.0) (2023-07-04)
 
 
