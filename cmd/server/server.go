@@ -10,6 +10,8 @@ import (
 	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/hashicorp/vault/api"
+	"github.com/hashicorp/vault/api/auth/approle"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
@@ -20,7 +22,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/server"
 	"github.com/soerenschneider/dyndns/server/dns"
-	"github.com/soerenschneider/dyndns/server/vault"
+	vaultDyndns "github.com/soerenschneider/dyndns/server/vault"
 )
 
 const defaultConfigPath = "/etc/dyndns/config.json"
@@ -43,31 +45,6 @@ func main() {
 	}
 
 	RunServer(*configPath)
-}
-
-// getCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
-// otherwise the default credentials provider by AWS is used, trying to be resilient
-func getCredentialProvider(config *conf.VaultConfig) (credentials.Provider, error) {
-	if config == nil {
-		return nil, errors.New("nil config provided")
-	}
-
-	if err := config.Verify(); err != nil {
-		return nil, fmt.Errorf("could not verify config: %w", err)
-	}
-
-	provider, err := vault.NewVaultCredentialProvider(config)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info().Msg("Testing authentication against vault")
-	err = provider.LookupToken()
-	if err != nil {
-		return nil, fmt.Errorf("could not authenticate against vault: %w", err)
-	}
-
-	return provider, nil
 }
 
 func RunServer(configPath string) {
@@ -119,10 +96,22 @@ func RunServer(configPath string) {
 		metrics.KnownHostsHash.Set(float64(hash))
 	}
 
-	provider, err := getCredentialProvider(config.VaultConfig)
-	if err != nil {
-		log.Fatal().Err(err).Msg("could not build credentials provider")
+	var provider credentials.Provider
+	if config.UseVaultCredentialsProvider() {
+		client, err := buildVaultClient(config.VaultConfig)
+		if err != nil {
+			log.Fatal().Err(err).Msg("could not build vault client")
+		}
+		auth, err := buildVaultAuth(config.VaultConfig)
+		if err != nil {
+			log.Fatal().Err(err).Msg("could not build auth")
+		}
+		provider, err = buildCredentialProvider(config.VaultConfig, client, auth)
+		if err != nil {
+			log.Fatal().Err(err).Msg("could not build credentials provider")
+		}
 	}
+
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Could not build dns propagation implementation")
@@ -145,4 +134,50 @@ func RunServer(configPath string) {
 	}
 
 	close(requestsChannel)
+}
+
+func buildVaultClient(conf *conf.VaultConfig) (*api.Client, error) {
+	config := api.DefaultConfig()
+	config.Address = conf.VaultAddr
+	config.Timeout = 30 * time.Second
+
+	return api.NewClient(config)
+}
+
+// buildCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
+// otherwise the default credentials provider by AWS is used, trying to be resilient
+func buildCredentialProvider(config *conf.VaultConfig, client *api.Client, auth vaultDyndns.Auth) (credentials.Provider, error) {
+	if config == nil {
+		return nil, errors.New("nil config provided")
+	}
+
+	provider, err := vaultDyndns.NewVaultCredentialProvider(client, auth, config)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Msg("Testing authentication against vault")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	_, err = client.Auth().Login(ctx, auth)
+	if err != nil {
+		return nil, fmt.Errorf("could not authenticate against vault: %w", err)
+	}
+
+	return provider, nil
+}
+
+func buildVaultAuth(config *conf.VaultConfig) (vaultDyndns.Auth, error) {
+	switch config.AuthStrategy {
+	case conf.VaultAuthStrategyToken:
+		return vaultDyndns.NewTokenAuth(config.VaultToken)
+	case conf.VaultAuthStrategyApprole:
+		secretId := &approle.SecretID{
+			FromString: config.AppRoleSecretId,
+		}
+		return approle.NewAppRoleAuth(config.AppRoleId, secretId)
+	default:
+		return nil, errors.New("can't build vault auth")
+	}
 }
