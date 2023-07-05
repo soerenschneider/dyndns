@@ -22,29 +22,29 @@ import (
 	"github.com/soerenschneider/dyndns/internal/verification"
 )
 
-var configPathPreferences = []string{
-	"/etc/dyndns/client.json",
-	"~/.dyndns/config.json",
-}
+var (
+	configPathPreferences = []string{
+		"/etc/dyndns/client.json",
+		"~/.dyndns/config.json",
+	}
+	configPath string
+	once       bool
+	cmdVersion bool
+)
 
 func main() {
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
+	parseFlags()
 
-	configPath := flag.String("config", "", "Path to the config file")
-	once := flag.Bool("once", false, "Do not run as a daemon")
-	version := flag.Bool("version", false, "Print version and exit")
-	flag.Parse()
-
-	if *version {
+	if cmdVersion {
 		fmt.Printf("%s (commit: %s)", internal.BuildVersion, internal.CommitHash)
 		os.Exit(0)
 	}
 
 	util.InitLogging()
-	if *configPath == "" {
-		*configPath = getDefaultConfigFileOrEmpty()
+	if configPath == "" {
+		configPath = getDefaultConfigFileOrEmpty()
 	}
-	config, err := conf.ReadClientConfig(*configPath)
+	config, err := conf.ReadClientConfig(configPath)
 	if err != nil {
 		log.Fatal().Msgf("couldn't read config file: %v", err)
 	}
@@ -54,10 +54,18 @@ func main() {
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 
 	// supply once flag value
-	config.Once = *once
+	config.Once = once
 
 	conf.PrintFields(config, conf.SensitiveFields...)
 	RunClient(config)
+}
+
+func parseFlags() {
+	flag.StringVar(&configPath, "config", "", "Path to the config file")
+	flag.BoolVar(&once, "once", false, "Do not run as a daemon")
+	flag.BoolVar(&cmdVersion, "version", false, "Print version and exit")
+	flag.BoolVar(&cmdGenKeypair, "gen-keypair", false, "Generate keypair")
+	flag.Parse()
 }
 
 func getDefaultConfigFileOrEmpty() string {
@@ -90,6 +98,7 @@ func getUserHomeDirectory() string {
 }
 
 func RunClient(config *conf.ClientConf) {
+	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
 
 	if nil == config {
@@ -175,7 +184,7 @@ func getKeypair(path string) verification.SignatureKeypair {
 			log.Fatal().Msgf("Can not create keypair: %v", err)
 		}
 
-		err = verification.ToFile(path, keypair)
+		err = verification.WriteToFile(path, keypair)
 		if err != nil {
 			log.Fatal().Msgf("Could not save keypair: %v", err)
 		}
