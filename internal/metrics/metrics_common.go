@@ -2,12 +2,13 @@ package metrics
 
 import (
 	"errors"
+	"net/http"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
-	"net/http"
-	"time"
 )
 
 const (
@@ -60,6 +61,7 @@ func StartMetricsServer(addr string) {
 		ReadHeaderTimeout: 3 * time.Second,
 		WriteTimeout:      3 * time.Second,
 		IdleTimeout:       30 * time.Second,
+		Handler:           mux,
 	}
 
 	err := server.ListenAndServe()
