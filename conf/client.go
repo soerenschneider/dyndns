@@ -5,8 +5,9 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/soerenschneider/dyndns/internal/metrics"
 	"os"
+
+	"github.com/soerenschneider/dyndns/internal/metrics"
 )
 
 var defaultHttpResolverUrls = []string{
@@ -21,7 +22,7 @@ var defaultHttpResolverUrls = []string{
 
 type ClientConf struct {
 	Host            string   `json:"host,omitempty" env:"DYNDNS_HOST" validate:"required"`
-	AddrFamilies    []string `json:"address_families" env:"ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
+	AddrFamilies    []string `json:"address_families" env:"DYNDNS_ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
 	KeyPairPath     string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH" validate:"filepath"`
 	MetricsListener string   `json:"metrics_listen,omitempty" env:"DYNDNS_METRICS_LISTEN"`
 	PreferredUrls   []string `json:"http_resolver_preferred_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
