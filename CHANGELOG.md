@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.3](https://github.com/soerenschneider/dyndns/compare/v1.14.2...v1.14.3) (2023-07-06)
+
+
+### Bug Fixes
+
+* add missing mux handler to server ([909e46e](https://github.com/soerenschneider/dyndns/commit/909e46eff71f0969356a2448cdb35f2b973d5d8b))
+* encode public key for log output ([c0b1b77](https://github.com/soerenschneider/dyndns/commit/c0b1b77bb413ed170cc8bff451ad7f28c3581c4c))
+* use common prefix for env var ([66073b1](https://github.com/soerenschneider/dyndns/commit/66073b1f135957f60619689ecb3de6af1f31388f))
+
 ## [1.14.2](https://github.com/soerenschneider/dyndns/compare/v1.14.1...v1.14.2) (2023-07-05)
 
 
