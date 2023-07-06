@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"os"
@@ -187,7 +188,7 @@ func getKeypair(path string) verification.SignatureKeypair {
 		if err != nil {
 			log.Fatal().Msgf("Can not create keypair: %v", err)
 		}
-		log.Info().Msgf("Created keypair with pubkey '%s'", keypair.PubKey)
+		log.Info().Msgf("Created keypair with pubkey '%s'", base64.StdEncoding.EncodeToString(keypair.PubKey))
 
 		err = verification.WriteToFile(path, keypair)
 		if err != nil {
