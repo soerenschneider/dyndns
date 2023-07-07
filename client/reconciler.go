@@ -3,12 +3,14 @@ package client
 import (
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/metrics"
-	"sync"
-	"time"
+	"go.uber.org/multierr"
 )
 
 type Reconciler struct {
@@ -30,9 +32,9 @@ func NewReconciler(dispatchers map[string]events.EventDispatch) (*Reconciler, er
 	}, nil
 }
 
-func (r *Reconciler) RegisterUpdate(env *common.Envelope) []error {
+func (r *Reconciler) RegisterUpdate(env *common.Envelope) error {
 	if env == nil {
-		return []error{errors.New("nil env supplied")}
+		return errors.New("nil env supplied")
 	}
 
 	r.mutex.Lock()
@@ -48,7 +50,7 @@ func (r *Reconciler) RegisterUpdate(env *common.Envelope) []error {
 	return r.dispatch()
 }
 
-func (r *Reconciler) dispatch() []error {
+func (r *Reconciler) dispatch() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -62,7 +64,8 @@ func (r *Reconciler) dispatch() []error {
 	timeStart := time.Now()
 	wg := sync.WaitGroup{}
 	wg.Add(len(r.pendingChanges))
-	var errs []error
+	errLock := &sync.Mutex{}
+	var errs error
 	for key, dispatcher := range r.pendingChanges {
 		var disp = dispatcher
 		go func(key string) {
@@ -73,9 +76,9 @@ func (r *Reconciler) dispatch() []error {
 				metrics.UpdatesDispatched.Inc()
 				log.Info().Msgf("Reconciliation for dispatcher %s successful", key)
 			} else {
-				err = fmt.Errorf("reconciliation for dispatcher %s failed: %w", key, err)
-				errs = append(errs, err)
-				log.Warn().Msg(err.Error())
+				errLock.Lock()
+				errs = multierr.Append(errs, fmt.Errorf("reconciliation for dispatcher %s failed: %w", key, err))
+				errLock.Unlock()
 			}
 			wg.Done()
 		}(key)
@@ -94,6 +97,8 @@ func (r *Reconciler) Run() {
 	ticker := time.NewTicker(interval)
 
 	for range ticker.C {
-		r.dispatch()
+		if err := r.dispatch(); err != nil {
+			log.Error().Err(err).Msg("running reconciler produced errors")
+		}
 	}
 }

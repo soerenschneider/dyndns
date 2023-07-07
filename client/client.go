@@ -3,13 +3,14 @@ package client
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client/resolvers"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"time"
 )
 
 const DefaultResolveInterval = 45 * time.Second
@@ -59,11 +60,12 @@ func (client *Client) Run() {
 	ticker := time.NewTicker(DefaultResolveInterval)
 	var resolvedIp *common.ResolvedIp
 	tick := func() {
-		var errs []error
-		resolvedIp, errs = client.Resolve(resolvedIp)
-		if errs != nil {
-			log.Info().Msgf("Error while iteration: %v", errs)
+		var err error
+		resolvedIp, err = client.Resolve(resolvedIp)
+		if err != nil {
+			log.Info().Msgf("Error while iteration: %v", err)
 		}
+
 		if DefaultResolveInterval != client.state.WaitInterval() {
 			ticker.Reset(client.state.WaitInterval())
 		}
@@ -91,17 +93,13 @@ func (client *Client) resolveIp() (*common.ResolvedIp, error) {
 	return resolvedIp, err
 }
 
-func (client *Client) ResolveSingle() (*common.ResolvedIp, []error) {
-	return client.Resolve(nil)
-}
-
-func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, []error) {
+func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, error) {
 	resolvedIp, err := client.resolveIp()
 	if err != nil {
-		return prev, []error{err}
+		return prev, err
 	}
 
-	var errs []error
+	var errs error
 	if client.state.EvaluateState(client, resolvedIp) {
 		signature := client.signature.Sign(*resolvedIp)
 		env := &common.Envelope{

@@ -111,11 +111,8 @@ func RunClient(config *conf.ClientConf) {
 
 	go reconciler.Run()
 	if config.Once {
-		_, err := client.ResolveSingle()
-		if err != nil {
-			log.Info().Msgf("Error while resolving: %v", err)
-			os.Exit(1)
-		}
+		_, err := client.Resolve(nil)
+		dieOnError(err, "error resolving ip")
 	} else {
 		go metrics.StartMetricsServer(config.MetricsListener)
 		client.Run()
