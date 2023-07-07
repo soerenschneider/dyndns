@@ -72,7 +72,7 @@ func (server *Server) verifyMessage(env common.Envelope) error {
 	hostPublicKeys, ok := server.knownHosts[env.PublicIp.Host]
 	if !ok {
 		metrics.PublicKeyMissing.WithLabelValues(env.PublicIp.Host).Inc()
-		return fmt.Errorf("message for unknown domain '%s' received", env.PublicIp.Host)
+		return fmt.Errorf("message for unknown host '%s' received", env.PublicIp.Host)
 	}
 
 	for _, hostPublicKey := range hostPublicKeys {
