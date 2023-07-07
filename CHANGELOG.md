@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.15.0](https://github.com/soerenschneider/dyndns/compare/v1.14.3...v1.15.0) (2023-07-07)
+
+
+### Features
+
+* allow setting keypair via env variables / config file ([6fefcc5](https://github.com/soerenschneider/dyndns/commit/6fefcc50d1afee60ed8e420be1e1f2f7b0127274))
+* parse server config via env vars ([63248c0](https://github.com/soerenschneider/dyndns/commit/63248c0187b092e8aa397ed75a8e280f05d9f4a1))
+
+
+### Bug Fixes
+
+* forgot to call ParseEnvVariables ([6d744e8](https://github.com/soerenschneider/dyndns/commit/6d744e8bd79aa4a684c718efb24ccf01d6f7c2b2))
+* more precise log message ([9c68b32](https://github.com/soerenschneider/dyndns/commit/9c68b327cc8c2748e80c19d21a3e638b4cc7851f))
+* return default config when no file is given ([cefe358](https://github.com/soerenschneider/dyndns/commit/cefe358b029f2bddcc4c19e09e339628f764b973))
+* return error only when specified custom config path ([f22a814](https://github.com/soerenschneider/dyndns/commit/f22a8145bc6ceb38175ad7a50ba2f9df77cb606f))
+
 ## [1.14.3](https://github.com/soerenschneider/dyndns/compare/v1.14.2...v1.14.3) (2023-07-06)
 
 
