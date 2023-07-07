@@ -46,17 +46,13 @@ func main() {
 	}
 
 	config, err := conf.ReadClientConfig(configPath)
-	if err != nil {
-		log.Warn().Err(err).Msgf("couldn't read config file")
-	}
+	dieOnError(err, "couldn't read config file")
 
-	if err := env.Parse(config); err != nil {
-		log.Fatal().Err(err).Msg("could not parse env variables")
-	}
+	err = env.Parse(config)
+	dieOnError(err, "could not parse env variables")
 
-	if err := conf.ValidateConfig(config); err != nil {
-		log.Fatal().Msgf("Verification of config failed: %v", err)
-	}
+	err = conf.ValidateConfig(config)
+	dieOnError(err, "Verification of config failed")
 
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 
@@ -132,9 +128,7 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, error) {
 	if config.EmailConfig != nil {
 		err := config.EmailConfig.Validate()
-		if err != nil {
-			log.Fatal().Err(err).Msgf("Bad email config")
-		}
+		dieOnError(err, "Bad email config")
 		return util.NewEmailNotification(config.EmailConfig)
 	}
 
@@ -165,10 +159,10 @@ func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypai
 		return nil, fmt.Errorf("writer does not support creating a new keypair: %w", err)
 	}
 
-	log.Info().Msgf("Creating new keypair, as I couldn't read keypair: %v", err)
+	log.Info().Msgf("Creating new keypair, could not get existing keypair: %v", err)
 	keypair, err = verification.NewKeyPair()
 	if err != nil {
-		log.Fatal().Msgf("Can not create keypair: %v", err)
+		return nil, err
 	}
 	log.Info().Msgf("Created keypair with pubkey '%s'", base64.StdEncoding.EncodeToString(keypair.PubKey))
 
@@ -177,9 +171,8 @@ func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypai
 		return nil, err
 	}
 
-	err = provider.Write(jsonData)
-	if err != nil {
-		log.Fatal().Msgf("Could not save keypair: %v", err)
+	if err = provider.Write(jsonData); err != nil {
+		return nil, fmt.Errorf("could not save keypair: %w", err)
 	}
 
 	return keypair, nil
