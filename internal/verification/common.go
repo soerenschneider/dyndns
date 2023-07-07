@@ -2,6 +2,7 @@ package verification
 
 import (
 	"encoding/base64"
+
 	"github.com/soerenschneider/dyndns/internal/common"
 )
 
@@ -14,6 +15,7 @@ func EncodeBase64(input []byte) string {
 }
 
 type SignatureKeypair interface {
+	AsJson() ([]byte, error)
 	Sign(ip common.ResolvedIp) string
 	VerificationKey
 }

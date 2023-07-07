@@ -5,9 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 
-	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 )
 
@@ -28,7 +27,7 @@ func NewKeyPair() (*Ed25519Keypair, error) {
 	}, nil
 }
 
-func PubkeyFromString(pub string) (VerificationKey, error) {
+func PubkeyFromString(pub string) (*Ed25519Keypair, error) {
 	raw, err := DecodeBase64(pub)
 	if err != nil {
 		return nil, err
@@ -71,14 +70,15 @@ type serializedKeypair struct {
 	PrivateKey string `json:"private_key"`
 }
 
-func FromFile(path string) (*Ed25519Keypair, error) {
-	content, err := os.ReadFile(path)
+func FromReader(reader io.ReadCloser) (*Ed25519Keypair, error) {
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
+	_ = reader.Close()
 
 	var conf serializedKeypair
-	err = json.Unmarshal(content, &conf)
+	err = json.Unmarshal(data, &conf)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal json to config: %v", err)
 	}
@@ -93,22 +93,8 @@ func FromFile(path string) (*Ed25519Keypair, error) {
 		return nil, fmt.Errorf("couldn't decode public key: %v", err)
 	}
 
-	log.Info().Msgf("Read keypair with pub key '%s' from %s", conf.PubKey, path)
 	return &Ed25519Keypair{
 		PubKey:     pub,
 		privateKey: priv,
 	}, nil
-}
-
-func WriteToFile(path string, keypair *Ed25519Keypair) error {
-	marshalled, err := keypair.AsJson()
-	if err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(path, marshalled, 0600); err != nil {
-		return fmt.Errorf("can not write config to path %s: %v", path, err)
-	}
-
-	return nil
 }

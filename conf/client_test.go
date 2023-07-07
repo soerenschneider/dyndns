@@ -20,7 +20,7 @@ func TestReadClientConfig(t *testing.T) {
 			args: args{"../contrib/client.json"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
-				AddrFamilies:    []string{AddrFamilyIpv4, AddrFamilyIpv6},
+				AddrFamilies:    []string{AddrFamilyIpv4},
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: ":9191",
@@ -52,7 +52,7 @@ func TestReadClientConfig(t *testing.T) {
 		{
 			name:    "empty path",
 			args:    args{""},
-			want:    &ClientConf{},
+			want:    getDefaultClientConfig(),
 			wantErr: false,
 		},
 	}

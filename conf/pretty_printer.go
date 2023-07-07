@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var SensitiveFields = []string{"smtppassword"}
+var SensitiveFields = []string{"KeyPair"}
 
 func PrintFields(data any, ignoredKeys ...string) {
 	v := reflect.ValueOf(data)

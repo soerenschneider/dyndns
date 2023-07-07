@@ -5,9 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/user"
-	"path"
-	"strings"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
@@ -21,13 +18,10 @@ import (
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
+	"github.com/soerenschneider/dyndns/internal/verification/key_provider"
 )
 
 var (
-	configPathPreferences = []string{
-		"/etc/dyndns/client.json",
-		"~/.dyndns/config.json",
-	}
 	configPath    string
 	once          bool
 	cmdVersion    bool
@@ -48,14 +42,16 @@ func main() {
 
 	util.InitLogging()
 	if configPath == "" {
-		configPath = getDefaultConfigFileOrEmpty()
+		configPath = conf.GetDefaultConfigFileOrEmpty()
 	}
+
 	config, err := conf.ReadClientConfig(configPath)
 	if err != nil {
-		log.Fatal().Msgf("couldn't read config file: %v", err)
+		log.Warn().Err(err).Msgf("couldn't read config file")
 	}
+
 	if err := env.Parse(config); err != nil {
-		log.Fatal().Msgf("%+v\n", err)
+		log.Fatal().Err(err).Msg("could not parse env variables")
 	}
 
 	if err := conf.ValidateConfig(config); err != nil {
@@ -79,70 +75,39 @@ func parseFlags() {
 	flag.Parse()
 }
 
-func getDefaultConfigFileOrEmpty() string {
-	homeDir := getUserHomeDirectory()
-	for _, configPath := range configPathPreferences {
-		if homeDir != "" {
-			if strings.HasPrefix(configPath, "~/") {
-				configPath = path.Join(homeDir, configPath[2:])
-			} else if strings.HasPrefix(configPath, "$HOME/") {
-				configPath = path.Join(homeDir, configPath[6:])
-			}
-		}
-
-		if _, err := os.Stat(configPath); err == nil {
-			return configPath
-		}
+func dieOnError(err error, msg string) {
+	if err != nil {
+		log.Fatal().Err(err).Msg(msg)
 	}
-
-	return ""
-}
-
-func getUserHomeDirectory() string {
-	usr, err := user.Current()
-	if err != nil || usr == nil {
-		log.Warn().Msg("Could not find user home directory")
-		return ""
-	}
-	dir := usr.HomeDir
-	return dir
 }
 
 func RunClient(config *conf.ClientConf) {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
 
-	keypair := getKeypair(config.KeyPairPath)
+	provider, err := buildKeyProvider(config)
+	dieOnError(err, "can not build key key_provider")
+
+	keypair, err := getKeypair(provider)
+	dieOnError(err, "can not get keypair")
 
 	notificationImpl, err := buildNotificationImpl(config)
-	if err != nil {
-		log.Fatal().Err(err).Msgf("Can't build email notification")
-	}
+	dieOnError(err, "Can't build email notification")
 
 	resolver, err := buildResolver(config)
-	if err != nil {
-		log.Fatal().Err(err).Msg("could not build ip resolver")
-	}
+	dieOnError(err, "could not build ip resolver")
 
 	dispatchers := map[string]events.EventDispatch{}
 	for _, broker := range config.Brokers {
-		dispatcher, err := mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
-		if err != nil {
-			log.Error().Msgf("Could not build mqtt dispatcher: %v", err)
-		} else {
-			dispatchers[broker] = dispatcher
-		}
+		dispatchers[broker], err = mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
+		dieOnError(err, "Could not build mqtt dispatcher")
 	}
 
 	reconciler, err := client.NewReconciler(dispatchers)
-	if err != nil {
-		log.Fatal().Err(err).Msg("could not build reconciler")
-	}
+	dieOnError(err, "could not build reconciler")
 
 	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl)
-	if err != nil {
-		log.Fatal().Msgf("could not build client: %v", err)
-	}
+	dieOnError(err, "could not build client")
 
 	go reconciler.Run()
 	if config.Once {
@@ -179,24 +144,48 @@ func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, 
 	return &notification.DummyNotification{}, nil
 }
 
-func getKeypair(path string) verification.SignatureKeypair {
-	log.Info().Msgf("Trying to read keypair from file %s", path)
-	keypair, err := verification.FromFile(path)
-	if err != nil {
-		log.Info().Msgf("Creating new keypair, as I couldn't read keypair: %v", err)
-		keypair, err = verification.NewKeyPair()
-		if err != nil {
-			log.Fatal().Msgf("Can not create keypair: %v", err)
-		}
-		log.Info().Msgf("Created keypair with pubkey '%s'", base64.StdEncoding.EncodeToString(keypair.PubKey))
-
-		err = verification.WriteToFile(path, keypair)
-		if err != nil {
-			log.Fatal().Msgf("Could not save keypair: %v", err)
-		}
+func buildKeyProvider(config *conf.ClientConf) (key_provider.KeyProvider, error) {
+	if len(config.KeyPair) > 0 {
+		return key_provider.NewEnvProvider(config.KeyPair)
 	}
 
-	return keypair
+	return key_provider.NewFileProvider(config.KeyPairPath)
+}
+
+func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypair, error) {
+	log.Info().Msg("Trying to read keypair")
+	reader, err := provider.Reader()
+	if err != nil {
+		return nil, fmt.Errorf("could not acquire reader to read keypair: %w", err)
+	}
+
+	keypair, err := verification.FromReader(reader)
+	if err == nil {
+		return keypair, nil
+	}
+
+	if !provider.CanWrite() {
+		return nil, fmt.Errorf("writer does not support creating a new keypair: %w", err)
+	}
+
+	log.Info().Msgf("Creating new keypair, as I couldn't read keypair: %v", err)
+	keypair, err = verification.NewKeyPair()
+	if err != nil {
+		log.Fatal().Msgf("Can not create keypair: %v", err)
+	}
+	log.Info().Msgf("Created keypair with pubkey '%s'", base64.StdEncoding.EncodeToString(keypair.PubKey))
+
+	jsonData, err := keypair.AsJson()
+	if err != nil {
+		return nil, err
+	}
+
+	err = provider.Write(jsonData)
+	if err != nil {
+		log.Fatal().Msgf("Could not save keypair: %v", err)
+	}
+
+	return keypair, nil
 }
 
 func generateKeypair() {
