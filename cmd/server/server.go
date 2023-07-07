@@ -55,6 +55,9 @@ func main() {
 		log.Warn().Err(err).Msgf("couldn't read config file")
 	}
 
+	err = conf.ParseEnvVariables(config)
+	dieOnError(err, "could not parse env variables")
+
 	err = conf.ValidateConfig(config)
 	dieOnError(err, "Config validation failed")
 
