@@ -158,7 +158,7 @@ func RunClient(config *conf.ClientConf) {
 }
 
 func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
-	if conf.InterfaceConfig != nil {
+	if len(conf.NetworkInterface) > 0 {
 		log.Info().Msgf("Building new resolver for interface %s", conf.NetworkInterface)
 		return resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
 	}
