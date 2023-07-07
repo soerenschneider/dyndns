@@ -5,16 +5,19 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
+	"os"
+	"reflect"
+
+	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"hash/fnv"
-	"os"
 )
 
 type ServerConf struct {
-	KnownHosts      map[string][]string `json:"known_hosts" validate:"required"`
-	HostedZoneId    string              `json:"hosted_zone_id" validate:"required"`
+	KnownHosts      map[string][]string `json:"known_hosts" env:"DYNDNS_KNOWN_HOSTS" validate:"required"`
+	HostedZoneId    string              `json:"hosted_zone_id" env:"DYNDNS_HOSTED_ZONE_ID" validate:"required"`
 	MetricsListener string              `json:"metrics_listen,omitempty"`
 	*MqttConfig
 	*VaultConfig
@@ -44,6 +47,17 @@ func ReadServerConfig(path string) (*ServerConf, error) {
 	}
 
 	return conf, nil
+}
+
+func ParseEnvVariables(serverConf *ServerConf) error {
+	funk := map[reflect.Type]env.ParserFunc{}
+
+	funk[reflect.TypeOf(map[string][]string{})] = func(input string) (any, error) {
+		var ret = map[string][]string{}
+		return ret, json.Unmarshal([]byte(input), &ret)
+	}
+
+	return env.ParseWithFuncs(serverConf, funk)
 }
 
 func (conf *ServerConf) DecodePublicKeys() map[string][]verification.VerificationKey {

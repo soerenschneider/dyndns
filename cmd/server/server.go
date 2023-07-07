@@ -29,8 +29,13 @@ import (
 const defaultConfigPath = "/etc/dyndns/config.json"
 const notificationTopic = "dyndns/+"
 
+func dieOnError(err error, msg string) {
+	if err != nil {
+		log.Fatal().Err(err).Msg(msg)
+	}
+}
+
 func main() {
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
 	version := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
@@ -41,21 +46,17 @@ func main() {
 	}
 
 	util.InitLogging()
-	if len(*configPath) == 0 {
-		log.Fatal().Msgf("No config path supplied")
-	}
 
+	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
 
 	config, err := conf.ReadServerConfig(*configPath)
 	if err != nil {
-		log.Fatal().Msgf("couldn't read config file: %v", err)
+		log.Warn().Err(err).Msgf("couldn't read config file")
 	}
 
 	err = conf.ValidateConfig(config)
-	if err != nil {
-		log.Fatal().Msgf("Config validation failed: %v", err)
-	}
+	dieOnError(err, "Config validation failed")
 
 	RunServer(config)
 }
@@ -65,17 +66,13 @@ func RunServer(config *conf.ServerConf) {
 	conf.PrintFields(config, conf.SensitiveFields...)
 
 	notificationImpl, err := buildNotificationImpl(config)
-	if err != nil {
-		log.Fatal().Err(err).Msgf("Can't build notification impl")
-	}
+	dieOnError(err, "Can't build notification impl")
 
 	var requestsChannel = make(chan common.Envelope)
 	var servers []*mqtt.MqttBus
 	for _, broker := range config.Brokers {
 		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requestsChannel)
-		if err != nil {
-			log.Fatal().Msgf("Could not build mqtt dispatcher: %v", err)
-		}
+		dieOnError(err, "Could not build mqtt dispatcher")
 		servers = append(servers, mqttServer)
 	}
 
@@ -92,19 +89,14 @@ func RunServer(config *conf.ServerConf) {
 	}
 
 	provider, err := buildProvider(config)
-	if err != nil {
-		log.Fatal().Err(err).Msg("could not build credentials provider")
-	}
+	dieOnError(err, "could not build credentials provider")
 
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Could not build dns propagation implementation")
-	}
+	dieOnError(err, "Could not build dns propagation implementation")
 
 	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
-	if err != nil {
-		log.Fatal().Err(err).Msg("could not build dyndns server")
-	}
+	dieOnError(err, "could not build dyndns server")
+
 	go dyndnsServer.Listen()
 
 	term := make(chan os.Signal, 1)
@@ -127,12 +119,13 @@ func buildProvider(config *conf.ServerConf) (credentials.Provider, error) {
 
 	client, err := buildVaultClient(config.VaultConfig)
 	if err != nil {
-		log.Fatal().Err(err).Msg("could not build vault client")
+		return nil, err
 	}
 	auth, err := buildVaultAuth(config.VaultConfig)
 	if err != nil {
-		log.Fatal().Err(err).Msg("could not build auth")
+		return nil, err
 	}
+
 	return buildCredentialProvider(config.VaultConfig, client, auth)
 }
 

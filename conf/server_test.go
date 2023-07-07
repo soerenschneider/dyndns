@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -51,6 +52,69 @@ func TestReadServerConfig(t *testing.T) {
 				t.Errorf("ReadServerConfig() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestServerConf_ParseEnvVariables_KnownHosts(t *testing.T) {
+	envKey := "DYNDNS_KNOWN_HOSTS"
+	os.Setenv(envKey, "{\"key1\": [\"value1\", \"value2\"], \"key2\": [\"value3\", \"value4\"]}")
+	// unset after running test
+	defer os.Setenv(envKey, "")
+
+	empty := &ServerConf{}
+	err := ParseEnvVariables(empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := map[string][]string{
+		"key1": []string{"value1", "value2"},
+		"key2": []string{"value3", "value4"},
+	}
+
+	if !reflect.DeepEqual(empty.KnownHosts, expected) {
+		t.Fatalf("expected %v, got %v", expected, empty.KnownHosts)
+	}
+}
+
+func TestServerConf_ParseEnvVariables_AuthStrategy(t *testing.T) {
+	envKey := "DYNDNS_VAULT_AUTH_STRATEGY"
+	os.Setenv(envKey, "approle")
+	// unset after running test
+	defer os.Setenv(envKey, "")
+
+	empty := &ServerConf{
+		VaultConfig: &VaultConfig{},
+	}
+	err := ParseEnvVariables(empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := VaultAuthStrategyApprole
+	if !reflect.DeepEqual(empty.AuthStrategy, expected) {
+		t.Fatalf("expected %v, got %v", expected, empty.AuthStrategy)
+	}
+}
+
+func TestServerConf_ParseEnvVariables_AuthStrategy_Invalid(t *testing.T) {
+	envKey := "DYNDNS_VAULT_AUTH_STRATEGY"
+	os.Setenv(envKey, "unknown")
+	// unset after running test
+	defer os.Setenv(envKey, "")
+
+	empty := &ServerConf{
+		VaultConfig: &VaultConfig{},
+	}
+	err := ParseEnvVariables(empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, not := range []VaultAuthStrategy{VaultAuthStrategyToken, VaultAuthStrategyKubernetes, VaultAuthStrategyApprole} {
+		if reflect.DeepEqual(empty.AuthStrategy, not) {
+			t.Fatalf("must not be %v, got %v", not, empty.AuthStrategy)
+		}
 	}
 }
 
