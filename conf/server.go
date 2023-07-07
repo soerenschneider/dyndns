@@ -35,14 +35,17 @@ func getDefaultServerConfig() *ServerConf {
 }
 
 func ReadServerConfig(path string) (*ServerConf, error) {
+	conf := getDefaultServerConfig()
+	if len(path) == 0 {
+		return conf, nil
+	}
+
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("could not read config file %s: %v", path, err)
 	}
 
-	conf := getDefaultServerConfig()
-	err = json.Unmarshal(content, &conf)
-	if err != nil {
+	if err := json.Unmarshal(content, &conf); err != nil {
 		return nil, fmt.Errorf("could not unmarshal json to config: %v", err)
 	}
 
