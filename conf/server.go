@@ -24,7 +24,7 @@ type ServerConf struct {
 	*EmailConfig `json:"notifications"`
 }
 
-func getDefaultServerConfig() *ServerConf {
+func GetDefaultServerConfig() *ServerConf {
 	return &ServerConf{
 		MetricsListener: metrics.DefaultListener,
 		MqttConfig: &MqttConfig{
@@ -35,7 +35,7 @@ func getDefaultServerConfig() *ServerConf {
 }
 
 func ReadServerConfig(path string) (*ServerConf, error) {
-	conf := getDefaultServerConfig()
+	conf := GetDefaultServerConfig()
 	if len(path) == 0 {
 		return conf, nil
 	}

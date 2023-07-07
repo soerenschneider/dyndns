@@ -52,7 +52,10 @@ func main() {
 
 	config, err := conf.ReadServerConfig(*configPath)
 	if err != nil {
-		log.Warn().Err(err).Msgf("couldn't read config file")
+		if *configPath != defaultConfigPath {
+			dieOnError(err, "couldn't read config file")
+		}
+		config = conf.GetDefaultServerConfig()
 	}
 
 	err = conf.ParseEnvVariables(config)
