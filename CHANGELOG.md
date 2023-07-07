@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/soerenschneider/dyndns/compare/v1.15.0...v1.15.1) (2023-07-07)
+
+
+### Bug Fixes
+
+* fix validate tag ([def1897](https://github.com/soerenschneider/dyndns/commit/def1897d100475fb7cba4353bde74013c75e3f0c))
+
 ## [1.15.0](https://github.com/soerenschneider/dyndns/compare/v1.14.3...v1.15.0) (2023-07-07)
 
 
