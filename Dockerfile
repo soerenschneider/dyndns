@@ -4,7 +4,12 @@ FROM golang:1.20.5 as builder
 ARG MODE
 ENV MODE="$MODE"
 ENV MODULE=github.com/soerenschneider/dyndns
+
 WORKDIR /build/
+
+ADD go.mod go.sum /build/
+RUN go mod download
+
 ADD . /build/
 RUN CGO_ENABLED=0 go build -ldflags="-X $MODULE/internal.BuildVersion=$(git describe --tags --abbrev=0 || echo dev) -X $MODULE/internal.CommitHash=$(git rev-parse HEAD)" -tags $MODE -o "dyndns-$MODE" "cmd/$MODE/$MODE.go"
 
