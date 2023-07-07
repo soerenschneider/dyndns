@@ -63,31 +63,29 @@ func ParseEnvVariables(serverConf *ServerConf) error {
 	return env.ParseWithFuncs(serverConf, funk)
 }
 
-func (conf *ServerConf) DecodePublicKeys() map[string][]verification.VerificationKey {
+func (conf *ServerConf) DecodePublicKeys() (map[string][]verification.VerificationKey, error) {
 	var ret = map[string][]verification.VerificationKey{}
 
 	for host, configuredPubkeys := range conf.KnownHosts {
 		if len(configuredPubkeys) == 0 {
-			metrics.PublicKeyErrors.Inc()
 			log.Info().Msgf("No publickey defined for host %s", host)
 			continue
 		}
 
-		for i, key := range configuredPubkeys {
+		for _, key := range configuredPubkeys {
 			publicKey, err := verification.PubkeyFromString(key)
 			if err != nil {
-				metrics.PublicKeyErrors.Inc()
-				log.Info().Msgf("Could not initialize %d. publicKey for host %s: %v", i, host, err)
-			} else {
-				if ret[host] == nil {
-					ret[host] = make([]verification.VerificationKey, 0, len(configuredPubkeys))
-				}
-				ret[host] = append(ret[host], publicKey)
+				return nil, fmt.Errorf("could not read pubkey: %w", err)
 			}
+
+			if ret[host] == nil {
+				ret[host] = make([]verification.VerificationKey, 0, len(configuredPubkeys))
+			}
+			ret[host] = append(ret[host], publicKey)
 		}
 	}
 
-	return ret
+	return ret, nil
 }
 
 func GetKnownHostsHash(knownHosts map[string][]string) (uint64, error) {

@@ -48,8 +48,13 @@ func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan 
 		notifyImpl = &notification.DummyNotification{}
 	}
 
+	decoded, err := config.DecodePublicKeys()
+	if err != nil {
+		return nil, err
+	}
+
 	server := Server{
-		knownHosts:       config.DecodePublicKeys(),
+		knownHosts:       decoded,
 		requests:         requests,
 		propagator:       propagator,
 		cache:            make(map[string]common.ResolvedIp, len(config.KnownHosts)),

@@ -4,10 +4,11 @@ package metrics
 
 import (
 	"context"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
 var (
@@ -81,12 +82,6 @@ var (
 		Namespace: namespace,
 		Subsystem: server,
 		Name:      "vault_token_expiry_time_seconds",
-	})
-
-	PublicKeyErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: server,
-		Name:      "config_public_key_errors_total",
 	})
 
 	MessageParsingFailed = promauto.NewCounter(prometheus.CounterOpts{
