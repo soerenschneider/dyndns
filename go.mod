@@ -8,7 +8,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/go-playground/validator/v10 v10.15.4
 	github.com/hashicorp/go-retryablehttp v0.7.4
-	github.com/hashicorp/vault/api v1.9.2
+	github.com/hashicorp/vault/api v1.10.0
 	github.com/hashicorp/vault/api/auth/approle v0.4.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rs/zerolog v1.30.0
