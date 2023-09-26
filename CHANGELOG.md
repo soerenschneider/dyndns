@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/soerenschneider/dyndns/compare/v1.15.1...v1.15.2) (2023-09-26)
+
+
+### Bug Fixes
+
+* **deps:** Bump github.com/aws/aws-sdk-go from 1.45.15 to 1.45.16 ([#310](https://github.com/soerenschneider/dyndns/issues/310)) ([a54e0de](https://github.com/soerenschneider/dyndns/commit/a54e0de9e2847a348bc9012d334103310e3362e3))
+
 ## [1.15.1](https://github.com/soerenschneider/dyndns/compare/v1.15.0...v1.15.1) (2023-07-07)
 
 
