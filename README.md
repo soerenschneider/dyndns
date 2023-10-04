@@ -8,12 +8,15 @@ Automatically updates DNS records for hosts that don't have a static IP
 
 ## Features
 
-📣 Dynamically updates a DNS record to match your public IP address<br/>
-🔍 Continuously checks for your public IP address<br/>
-🚏 Checks your network interface's IP address directly or calls HTTP APIs to detect your public IP<br/>
-🎭 Runs in client / server mode and communicates via MQTT to limit blast-radius<br/>
-🔐 Messages are cryptographically signed, therefore public MQTT brokers can be used<br/>
+📣 Dynamically updates DNS records to match their public IP address<br/>
 🏰 Built-in resiliency for different failure scenarios<br/>
+🚢 Server component supports running on AWS Lambda<br/>
+🚀 Dispatch update requests via MQTT and/or HTTP API calls<br/>
+🚏 Detect public IP address by network interface's status or by calling HTTP APIs<br/>
+🎭 Runs in client / server mode to limit blast-radius of leaked credentials<br/>
+🔧 Customizable list of HTTP APIs to detect IP updates<br/>
+❤️ Specify HTTP APIs that detect IP updates which are preferred over other API endpoints<br/>
+🔐 Messages are cryptographically signed, therefore public MQTT brokers can be used<br/>
 🔑 Can use either dynamic credentials using Hashicorp Vault or static credentials<br/>
 🔭 Observability through Prometheus metrics
 
