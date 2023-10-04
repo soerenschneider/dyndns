@@ -15,7 +15,7 @@ const (
 	namespace       = "dyndns"
 	client          = "client"
 	server          = "server"
-	DefaultListener = ":9191"
+	DefaultListener = "0.0.0.0:9191"
 )
 
 var (
