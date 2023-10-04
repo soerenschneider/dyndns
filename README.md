@@ -22,7 +22,7 @@ Automatically updates DNS records for hosts that don't have a static IP
 
 ## Why would I need it?
 
-📌 You don't have a static public IP address<br/>
+📌 You don't have a static public IP address but want to connect to your home network<br/>
 🤹 Ideally, you have multiple endpoints you want to assign DNS records to<br/>
 
 ## Installation
