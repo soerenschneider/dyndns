@@ -2,9 +2,10 @@ package resolvers
 
 import (
 	"fmt"
-	"github.com/soerenschneider/dyndns/internal/common"
 	"net"
 	"time"
+
+	"github.com/soerenschneider/dyndns/internal/common"
 )
 
 type InterfaceResolver struct {
@@ -27,13 +28,13 @@ func (resolver *InterfaceResolver) Host() string {
 	return resolver.host
 }
 
-func (resolver *InterfaceResolver) Resolve() (*common.ResolvedIp, error) {
+func (resolver *InterfaceResolver) Resolve() (*common.DnsRecord, error) {
 	ipv4, err := GetInterfaceIpv4Addr(resolver.watchedInterface)
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve ip for interface: %v", err)
 	}
 
-	return &common.ResolvedIp{
+	return &common.DnsRecord{
 		IpV4:      ipv4,
 		Host:      resolver.host,
 		Timestamp: time.Now(),

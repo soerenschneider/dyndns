@@ -5,7 +5,7 @@ import (
 )
 
 type IpResolver interface {
-	Resolve() (*common.ResolvedIp, error)
+	Resolve() (*common.DnsRecord, error)
 	Name() string
 	Host() string
 }

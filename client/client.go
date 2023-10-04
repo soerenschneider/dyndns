@@ -18,7 +18,7 @@ const DefaultResolveInterval = 45 * time.Second
 type State interface {
 	// EvaluateState evaluates the current state and returns true if the client should proceed sending a change request
 	// using the currently detected ip
-	EvaluateState(client *Client, ip *common.ResolvedIp) bool
+	EvaluateState(client *Client, ip *common.DnsRecord) bool
 	// WaitInterval returns the amount of time to sleep after a tick.
 	WaitInterval() time.Duration
 	Name() string
@@ -58,7 +58,7 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 
 func (client *Client) Run() {
 	ticker := time.NewTicker(DefaultResolveInterval)
-	var resolvedIp *common.ResolvedIp
+	var resolvedIp *common.DnsRecord
 	tick := func() {
 		var err error
 		resolvedIp, err = client.Resolve(resolvedIp)
@@ -77,7 +77,7 @@ func (client *Client) Run() {
 	}
 }
 
-func (client *Client) resolveIp() (*common.ResolvedIp, error) {
+func (client *Client) resolveIp() (*common.DnsRecord, error) {
 	resolvedIp, err := client.resolver.Resolve()
 	metrics.LastCheck.WithLabelValues(client.resolver.Host(), client.resolver.Name()).SetToCurrentTime()
 
@@ -93,7 +93,7 @@ func (client *Client) resolveIp() (*common.ResolvedIp, error) {
 	return resolvedIp, err
 }
 
-func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, error) {
+func (client *Client) Resolve(prev *common.DnsRecord) (*common.DnsRecord, error) {
 	resolvedIp, err := client.resolveIp()
 	if err != nil {
 		return prev, err
@@ -102,7 +102,7 @@ func (client *Client) Resolve(prev *common.ResolvedIp) (*common.ResolvedIp, erro
 	var errs error
 	if client.state.EvaluateState(client, resolvedIp) {
 		signature := client.signature.Sign(*resolvedIp)
-		env := &common.Envelope{
+		env := &common.UpdateRecordRequest{
 			PublicIp:  *resolvedIp,
 			Signature: signature,
 		}

@@ -2,11 +2,12 @@ package client
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/util"
-	"time"
 )
 
 type initialState struct{}
@@ -19,7 +20,7 @@ func (state *initialState) Name() string {
 	return state.String()
 }
 
-func (state *initialState) EvaluateState(context *Client, resolved *common.ResolvedIp) bool {
+func (state *initialState) EvaluateState(context *Client, resolved *common.DnsRecord) bool {
 	// This is just a dummy state, we'll immediately set the next state and invoke it
 	context.setState(NewIpNotConfirmedState())
 	return context.state.EvaluateState(context, resolved)
@@ -51,7 +52,7 @@ func (state *ipNotConfirmedState) Name() string {
 	return "ipNotConfirmedState"
 }
 
-func (state *ipNotConfirmedState) EvaluateState(context *Client, resolved *common.ResolvedIp) bool {
+func (state *ipNotConfirmedState) EvaluateState(context *Client, resolved *common.DnsRecord) bool {
 	ips, err := util.LookupDns(resolved.Host)
 	if err != nil {
 		log.Info().Msgf("Error looking up dns record %s: %v", resolved.Host, err)
@@ -82,10 +83,10 @@ func (state *ipNotConfirmedState) WaitInterval() time.Duration {
 
 // ipConfirmedState is set after the dns record has been verified successfully
 type ipConfirmedState struct {
-	previouslyResolvedIp *common.ResolvedIp
+	previouslyResolvedIp *common.DnsRecord
 }
 
-func NewIpConfirmedState(prev *common.ResolvedIp) State {
+func NewIpConfirmedState(prev *common.DnsRecord) State {
 	return &ipConfirmedState{
 		previouslyResolvedIp: prev,
 	}
@@ -99,7 +100,7 @@ func (state *ipConfirmedState) Name() string {
 	return "ipConfirmedState"
 }
 
-func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.ResolvedIp) bool {
+func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.DnsRecord) bool {
 	hasIpChanged := !state.previouslyResolvedIp.Equals(resolved)
 	state.previouslyResolvedIp = resolved
 

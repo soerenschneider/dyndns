@@ -1,19 +1,20 @@
 package server
 
 import (
+	"testing"
+	"time"
+
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"github.com/soerenschneider/dyndns/server/dns"
-	"testing"
-	"time"
 )
 
 type SimpleVerifier struct {
 	verificationResult bool
 }
 
-func (s SimpleVerifier) Verify(signature string, ip common.ResolvedIp) bool {
+func (s SimpleVerifier) Verify(signature string, ip common.DnsRecord) bool {
 	return s.verificationResult
 }
 
@@ -21,12 +22,12 @@ func TestServer_verifyMessage(t *testing.T) {
 	type fields struct {
 		knownHosts map[string][]verification.VerificationKey
 		listener   events.EventListener
-		requests   chan common.Envelope
+		requests   chan common.UpdateRecordRequest
 		propagator dns.Propagator
-		cache      map[string]common.ResolvedIp
+		cache      map[string]common.DnsRecord
 	}
 	type args struct {
-		env common.Envelope
+		env common.UpdateRecordRequest
 	}
 	tests := []struct {
 		name    string
@@ -50,11 +51,11 @@ func TestServer_verifyMessage(t *testing.T) {
 				listener:   nil,
 				requests:   nil,
 				propagator: nil,
-				cache:      map[string]common.ResolvedIp{},
+				cache:      map[string]common.DnsRecord{},
 			},
 			args: args{
-				env: common.Envelope{
-					PublicIp: common.ResolvedIp{
+				env: common.UpdateRecordRequest{
+					PublicIp: common.DnsRecord{
 						IpV4:      "8.8.4.4",
 						Host:      "my-host.tld",
 						Timestamp: time.Now(),
@@ -79,11 +80,11 @@ func TestServer_verifyMessage(t *testing.T) {
 				listener:   nil,
 				requests:   nil,
 				propagator: nil,
-				cache:      map[string]common.ResolvedIp{},
+				cache:      map[string]common.DnsRecord{},
 			},
 			args: args{
-				env: common.Envelope{
-					PublicIp: common.ResolvedIp{
+				env: common.UpdateRecordRequest{
+					PublicIp: common.DnsRecord{
 						IpV4:      "8.8.4.4",
 						Host:      "my-host.tld",
 						Timestamp: time.Now(),
@@ -108,11 +109,11 @@ func TestServer_verifyMessage(t *testing.T) {
 				listener:   nil,
 				requests:   nil,
 				propagator: nil,
-				cache:      map[string]common.ResolvedIp{},
+				cache:      map[string]common.DnsRecord{},
 			},
 			args: args{
-				env: common.Envelope{
-					PublicIp: common.ResolvedIp{
+				env: common.UpdateRecordRequest{
+					PublicIp: common.DnsRecord{
 						IpV4:      "8.8.4.4",
 						Host:      "not-found.tld",
 						Timestamp: time.Now(),
@@ -127,7 +128,6 @@ func TestServer_verifyMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := &Server{
 				knownHosts: tt.fields.knownHosts,
-				listener:   tt.fields.listener,
 				requests:   tt.fields.requests,
 				propagator: tt.fields.propagator,
 				cache:      tt.fields.cache,

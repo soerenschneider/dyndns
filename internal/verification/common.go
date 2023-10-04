@@ -16,10 +16,10 @@ func EncodeBase64(input []byte) string {
 
 type SignatureKeypair interface {
 	AsJson() ([]byte, error)
-	Sign(ip common.ResolvedIp) string
+	Sign(ip common.DnsRecord) string
 	VerificationKey
 }
 
 type VerificationKey interface {
-	Verify(signature string, ip common.ResolvedIp) bool
+	Verify(signature string, ip common.DnsRecord) bool
 }

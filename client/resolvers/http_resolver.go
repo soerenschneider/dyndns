@@ -3,17 +3,18 @@ package resolvers
 import (
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/conf"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
 	"io"
 	"math/rand"
 	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/conf"
+	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 )
 
 const (
@@ -90,9 +91,9 @@ func (resolver *HttpResolver) Name() string {
 	return "HttpResolver"
 }
 
-func (resolver *HttpResolver) Resolve() (*common.ResolvedIp, error) {
+func (resolver *HttpResolver) Resolve() (*common.DnsRecord, error) {
 	resolver.shuffleProviders()
-	detectedIps := &common.ResolvedIp{
+	detectedIps := &common.DnsRecord{
 		Host:      resolver.host,
 		Timestamp: time.Now(),
 	}

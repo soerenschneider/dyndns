@@ -5,23 +5,24 @@ package mqtt
 import (
 	"crypto/tls"
 	"encoding/json"
+	"time"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
-	"time"
 )
 
 type MqttBus struct {
 	client            mqtt.Client
 	notificationTopic string
-	requests          chan common.Envelope
+	requests          chan common.UpdateRecordRequest
 }
 
 func (s *MqttBus) onMessage(client mqtt.Client, msg mqtt.Message) {
 	opts := client.OptionsReader()
 	log.Info().Msgf("Picked up message from broker %s", opts.Servers()[0])
-	var env common.Envelope
+	var env common.UpdateRecordRequest
 	err := json.Unmarshal(msg.Payload(), &env)
 	if err != nil {
 		metrics.MessageParsingFailed.Inc()
@@ -32,7 +33,7 @@ func (s *MqttBus) onMessage(client mqtt.Client, msg mqtt.Message) {
 	s.requests <- env
 }
 
-func NewMqttServer(broker string, clientId, notificationTopic string, tlsConfig *tls.Config, reqChan chan common.Envelope) (*MqttBus, error) {
+func NewMqttServer(broker string, clientId, notificationTopic string, tlsConfig *tls.Config, reqChan chan common.UpdateRecordRequest) (*MqttBus, error) {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(broker)
 

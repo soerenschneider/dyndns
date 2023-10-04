@@ -8,35 +8,35 @@ import (
 	"time"
 )
 
-type Envelope struct {
-	PublicIp  ResolvedIp `json:"public_ip"`
-	Signature string     `json:"signature"`
+type UpdateRecordRequest struct {
+	PublicIp  DnsRecord `json:"public_ip"`
+	Signature string    `json:"signature"`
 }
 
-func (env *Envelope) Validate() error {
-	if len(env.Signature) == 0 {
+func (r *UpdateRecordRequest) Validate() error {
+	if len(r.Signature) == 0 {
 		return errors.New("signature is missing")
 	}
 
-	return env.PublicIp.Validate()
+	return r.PublicIp.Validate()
 }
 
-type ResolvedIp struct {
+type DnsRecord struct {
 	IpV4      string    `json:"ipv4,omitempty"`
 	IpV6      string    `json:"ipv6,omitempty"`
 	Host      string    `json:"host"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
-func NewResolvedIp(host string) *ResolvedIp {
-	return &ResolvedIp{
+func NewResolvedIp(host string) *DnsRecord {
+	return &DnsRecord{
 		Host:      host,
 		Timestamp: time.Now(),
 	}
 }
 
 // Equals checks for equality and ignores timestamps
-func (resolved *ResolvedIp) Equals(ip *ResolvedIp) bool {
+func (resolved *DnsRecord) Equals(ip *DnsRecord) bool {
 	if ip == nil || resolved == nil {
 		return false
 	}
@@ -57,15 +57,15 @@ func (resolved *ResolvedIp) Equals(ip *ResolvedIp) bool {
 
 }
 
-func (resolved *ResolvedIp) HasIpV6() bool {
+func (resolved *DnsRecord) HasIpV6() bool {
 	return len(resolved.IpV6) > 0
 }
 
-func (resolved *ResolvedIp) HasIpV4() bool {
+func (resolved *DnsRecord) HasIpV4() bool {
 	return len(resolved.IpV4) > 0
 }
 
-func (resolved *ResolvedIp) IsValid() bool {
+func (resolved *DnsRecord) IsValid() bool {
 	if !resolved.HasIpV4() {
 		return false
 	}
@@ -85,7 +85,7 @@ func (resolved *ResolvedIp) IsValid() bool {
 	return true
 }
 
-func (resolved *ResolvedIp) String() string {
+func (resolved *DnsRecord) String() string {
 	if resolved.HasIpV4() && resolved.HasIpV6() {
 		return fmt.Sprintf("%s: %s (v4), %s (v6)", resolved.Host, resolved.IpV4, resolved.IpV6)
 	}
@@ -97,12 +97,12 @@ func (resolved *ResolvedIp) String() string {
 	return fmt.Sprintf("%s: %s (v6)", resolved.Host, resolved.IpV6)
 }
 
-func (resolved *ResolvedIp) Hash() string {
+func (resolved *DnsRecord) Hash() string {
 	value := fmt.Sprintf("%d%s%s%s", resolved.Timestamp.Unix(), resolved.Host, resolved.IpV4, resolved.IpV6)
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(value)))
 }
 
-func (resolved ResolvedIp) Validate() error {
+func (resolved *DnsRecord) Validate() error {
 	if len(resolved.Host) == 0 {
 		return errors.New("domain is missing")
 	}

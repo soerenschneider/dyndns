@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"gopkg.in/gomail.v2"
@@ -27,7 +28,7 @@ func NewEmailNotification(emailConf *conf.EmailConfig) (*EmailNotification, erro
 	}, nil
 }
 
-func (e *EmailNotification) NotifyUpdatedIpDetected(ip *common.ResolvedIp) error {
+func (e *EmailNotification) NotifyUpdatedIpDetected(ip *common.DnsRecord) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", e.From)
 	m.SetHeader("To", e.To...)
@@ -42,7 +43,7 @@ func (e *EmailNotification) NotifyUpdatedIpDetected(ip *common.ResolvedIp) error
 	return d.DialAndSend(m)
 }
 
-func (e *EmailNotification) NotifyUpdatedIpApplied(ip *common.ResolvedIp) error {
+func (e *EmailNotification) NotifyUpdatedIpApplied(ip *common.DnsRecord) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", e.From)
 	m.SetHeader("To", e.To...)

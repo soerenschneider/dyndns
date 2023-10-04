@@ -1,3 +1,5 @@
+//go:build app
+
 package main
 
 import (
@@ -74,7 +76,7 @@ func RunServer(config *conf.ServerConf) {
 	notificationImpl, err := buildNotificationImpl(config)
 	dieOnError(err, "Can't build notification impl")
 
-	var requestsChannel = make(chan common.Envelope)
+	var requestsChannel = make(chan common.UpdateRecordRequest)
 	var servers []*mqtt.MqttBus
 	for _, broker := range config.Brokers {
 		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requestsChannel)

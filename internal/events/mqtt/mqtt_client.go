@@ -56,7 +56,7 @@ func NewMqttClient(broker string, clientId, notificationTopic string, tlsConfig 
 	}, nil
 }
 
-func (d *MqttClientBus) Notify(msg *common.Envelope) error {
+func (d *MqttClientBus) Notify(msg *common.UpdateRecordRequest) error {
 	payload, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("could not marshal envelope: %v", err)

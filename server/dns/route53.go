@@ -3,13 +3,14 @@ package dns
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
-	"time"
 )
 
 type Route53Propagator struct {
@@ -38,7 +39,7 @@ func NewRoute53Propagator(hostedZoneId string, provider credentials.Provider) (*
 	}, nil
 }
 
-func (dns *Route53Propagator) PropagateChange(resolvedIp common.ResolvedIp) error {
+func (dns *Route53Propagator) PropagateChange(resolvedIp common.DnsRecord) error {
 	changes := getChanges(resolvedIp, dns.ttl)
 	if len(changes) == 0 {
 		return errors.New("empty list of changes")
@@ -87,7 +88,7 @@ func buildChange(host, value, recordType string, ttl int64) (*route53.Change, er
 	}, nil
 }
 
-func getChanges(resolved common.ResolvedIp, ttl int64) []*route53.Change {
+func getChanges(resolved common.DnsRecord, ttl int64) []*route53.Change {
 	var records []*route53.Change
 
 	if resolved.HasIpV4() {

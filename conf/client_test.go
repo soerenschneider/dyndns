@@ -23,7 +23,7 @@ func TestReadClientConfig(t *testing.T) {
 				AddrFamilies:    []string{AddrFamilyIpv4},
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
-				MetricsListener: ":9191",
+				MetricsListener: "0.0.0.0:9191",
 				MqttConfig: MqttConfig{
 					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",

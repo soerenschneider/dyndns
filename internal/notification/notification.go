@@ -5,16 +5,16 @@ import (
 )
 
 type Notification interface {
-	NotifyUpdatedIpDetected(ip *common.ResolvedIp) error
-	NotifyUpdatedIpApplied(ip *common.ResolvedIp) error
+	NotifyUpdatedIpDetected(ip *common.DnsRecord) error
+	NotifyUpdatedIpApplied(ip *common.DnsRecord) error
 }
 
 type DummyNotification struct{}
 
-func (d *DummyNotification) NotifyUpdatedIpDetected(ip *common.ResolvedIp) error {
+func (d *DummyNotification) NotifyUpdatedIpDetected(ip *common.DnsRecord) error {
 	return nil
 }
 
-func (d *DummyNotification) NotifyUpdatedIpApplied(ip *common.ResolvedIp) error {
+func (d *DummyNotification) NotifyUpdatedIpApplied(ip *common.DnsRecord) error {
 	return nil
 }

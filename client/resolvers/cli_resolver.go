@@ -24,8 +24,8 @@ func (resolver *CliResolver) Host() string {
 	return resolver.host
 }
 
-func (resolver *CliResolver) Resolve() (*common.ResolvedIp, error) {
-	return &common.ResolvedIp{
+func (resolver *CliResolver) Resolve() (*common.DnsRecord, error) {
+	return &common.DnsRecord{
 		IpV4: resolver.ipv4,
 		IpV6: resolver.ipv6,
 		Host: resolver.host,

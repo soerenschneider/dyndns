@@ -38,7 +38,7 @@ func PubkeyFromString(pub string) (*Ed25519Keypair, error) {
 	}, nil
 }
 
-func (keypair *Ed25519Keypair) Verify(signature string, ip common.ResolvedIp) bool {
+func (keypair *Ed25519Keypair) Verify(signature string, ip common.DnsRecord) bool {
 	signatureRaw, err := DecodeBase64(signature)
 	if err != nil {
 		return false
@@ -47,7 +47,7 @@ func (keypair *Ed25519Keypair) Verify(signature string, ip common.ResolvedIp) bo
 	return ed25519.Verify(keypair.PubKey, []byte(ip.Hash()), signatureRaw)
 }
 
-func (keypair *Ed25519Keypair) Sign(ip common.ResolvedIp) string {
+func (keypair *Ed25519Keypair) Sign(ip common.DnsRecord) string {
 	if nil == keypair.privateKey {
 		return ""
 	}

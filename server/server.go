@@ -3,12 +3,12 @@ package server
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
@@ -23,14 +23,15 @@ var ErrorMessageTooOld = errors.New("message timestamp is too old")
 
 type Server struct {
 	knownHosts       map[string][]verification.VerificationKey
-	listener         events.EventListener
-	requests         chan common.Envelope
+	requests         chan common.UpdateRecordRequest
 	propagator       dns.Propagator
-	cache            map[string]common.ResolvedIp
+	cache            map[string]common.DnsRecord
 	notificationImpl notification.Notification
+
+	lock sync.RWMutex
 }
 
-func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan common.Envelope, notifyImpl notification.Notification) (*Server, error) {
+func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan common.UpdateRecordRequest, notifyImpl notification.Notification) (*Server, error) {
 	err := conf.ValidateConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("invalid conf passed: %v", err)
@@ -57,14 +58,16 @@ func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan 
 		knownHosts:       decoded,
 		requests:         requests,
 		propagator:       propagator,
-		cache:            make(map[string]common.ResolvedIp, len(config.KnownHosts)),
+		cache:            make(map[string]common.DnsRecord, len(config.KnownHosts)),
 		notificationImpl: notifyImpl,
 	}
 
 	return &server, nil
 }
 
-func (server *Server) isCached(env common.Envelope) bool {
+func (server *Server) isCached(env common.UpdateRecordRequest) bool {
+	server.lock.RLock()
+	defer server.lock.Unlock()
 	entry, ok := server.cache[env.PublicIp.Host]
 	if !ok {
 		return false
@@ -73,7 +76,7 @@ func (server *Server) isCached(env common.Envelope) bool {
 	return entry.Equals(&env.PublicIp)
 }
 
-func (server *Server) verifyMessage(env common.Envelope) error {
+func (server *Server) verifyMessage(env common.UpdateRecordRequest) error {
 	hostPublicKeys, ok := server.knownHosts[env.PublicIp.Host]
 	if !ok {
 		metrics.PublicKeyMissing.WithLabelValues(env.PublicIp.Host).Inc()
@@ -91,7 +94,7 @@ func (server *Server) verifyMessage(env common.Envelope) error {
 	return fmt.Errorf("verifying signature FAILED for host '%s'", env.PublicIp.Host)
 }
 
-func (server *Server) handlePropagateRequest(env common.Envelope) error {
+func (server *Server) HandlePropagateRequest(env common.UpdateRecordRequest) error {
 	if err := env.Validate(); err != nil {
 		metrics.MessageValidationsFailed.WithLabelValues(env.PublicIp.Host, "invalid_fields").Inc()
 		return fmt.Errorf("invalid envelope received: %v", err)
@@ -143,7 +146,7 @@ func (server *Server) Listen() {
 		metrics.LatestMessageTimestamp.SetToCurrentTime()
 
 		log.Info().Msg("Picked up a new change request")
-		err := server.handlePropagateRequest(request)
+		err := server.HandlePropagateRequest(request)
 		if err != nil && !errors.Is(err, ErrorMessageTooOld) {
 			log.Error().Msgf("Change has not been propagated: %v", err)
 		}

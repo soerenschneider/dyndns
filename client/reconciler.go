@@ -8,20 +8,19 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"go.uber.org/multierr"
 )
 
 type Reconciler struct {
-	env         *common.Envelope
-	dispatchers map[string]events.EventDispatch
+	env         *common.UpdateRecordRequest
+	dispatchers map[string]EventDispatch
 	mutex       sync.Mutex
 
-	pendingChanges map[string]events.EventDispatch
+	pendingChanges map[string]EventDispatch
 }
 
-func NewReconciler(dispatchers map[string]events.EventDispatch) (*Reconciler, error) {
+func NewReconciler(dispatchers map[string]EventDispatch) (*Reconciler, error) {
 	if len(dispatchers) < 1 {
 		return nil, errors.New("no dispatchers supplied")
 	}
@@ -32,7 +31,7 @@ func NewReconciler(dispatchers map[string]events.EventDispatch) (*Reconciler, er
 	}, nil
 }
 
-func (r *Reconciler) RegisterUpdate(env *common.Envelope) error {
+func (r *Reconciler) RegisterUpdate(env *common.UpdateRecordRequest) error {
 	if env == nil {
 		return errors.New("nil env supplied")
 	}
@@ -40,7 +39,7 @@ func (r *Reconciler) RegisterUpdate(env *common.Envelope) error {
 	r.mutex.Lock()
 	r.env = env
 
-	r.pendingChanges = make(map[string]events.EventDispatch, len(r.dispatchers))
+	r.pendingChanges = make(map[string]EventDispatch, len(r.dispatchers))
 	for i, dispatcher := range r.dispatchers {
 		r.pendingChanges[i] = dispatcher
 	}
