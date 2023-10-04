@@ -12,13 +12,13 @@ import (
 	"github.com/soerenschneider/dyndns/client/resolvers"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
-	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"github.com/soerenschneider/dyndns/internal/verification/key_provider"
+	"go.uber.org/multierr"
 )
 
 var (
@@ -77,6 +77,30 @@ func dieOnError(err error, msg string) {
 	}
 }
 
+func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, error) {
+	dispatchers := map[string]client.EventDispatch{}
+
+	var errs, err error
+	if len(config.Brokers) > 0 {
+		for _, broker := range config.Brokers {
+			dispatchers[broker], err = mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			}
+		}
+	}
+
+	if len(config.HttpConfig.Url) > 0 {
+		httpDispatcher, err := client.NewHttpDispatcher(config.HttpConfig.Url)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
+		dispatchers[config.HttpConfig.Url] = httpDispatcher
+	}
+
+	return dispatchers, errs
+}
+
 func RunClient(config *conf.ClientConf) {
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
@@ -93,10 +117,10 @@ func RunClient(config *conf.ClientConf) {
 	resolver, err := buildResolver(config)
 	dieOnError(err, "could not build ip resolver")
 
-	dispatchers := map[string]events.EventDispatch{}
-	for _, broker := range config.Brokers {
-		dispatchers[broker], err = mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
-		dieOnError(err, "Could not build mqtt dispatcher")
+	dispatchers, err := buildNotifiers(config)
+	dieOnError(err, "Could not build mqtt dispatcher")
+	if len(dispatchers) == 0 {
+		log.Fatal().Msg("no dispatchers defined")
 	}
 
 	reconciler, err := client.NewReconciler(dispatchers)

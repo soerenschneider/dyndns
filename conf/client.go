@@ -40,6 +40,10 @@ type ClientConf struct {
 	FallbackUrls     []string `json:"http_resolver_fallback_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
 	NetworkInterface string   `json:"interface,omitempty"`
 	Once             bool     // this is not parsed via json, it's an cli flag
+
+	HttpConfig struct {
+		Url string `json:"url"`
+	} `json:"http"`
 	MqttConfig
 	*EmailConfig `json:"notifications"`
 }
