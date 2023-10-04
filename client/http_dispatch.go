@@ -37,6 +37,9 @@ func (h *HttpDispatch) Notify(msg *common.UpdateRecordRequest) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	log.Info().Int("status", response.StatusCode).Msg("Received reply")
 	return nil

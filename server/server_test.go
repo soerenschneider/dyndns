@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/events"
 	"github.com/soerenschneider/dyndns/internal/verification"
 	"github.com/soerenschneider/dyndns/server/dns"
 )
@@ -21,7 +20,6 @@ func (s SimpleVerifier) Verify(signature string, ip common.DnsRecord) bool {
 func TestServer_verifyMessage(t *testing.T) {
 	type fields struct {
 		knownHosts map[string][]verification.VerificationKey
-		listener   events.EventListener
 		requests   chan common.UpdateRecordRequest
 		propagator dns.Propagator
 		cache      map[string]common.DnsRecord
@@ -48,7 +46,6 @@ func TestServer_verifyMessage(t *testing.T) {
 						&SimpleVerifier{true},
 					},
 				},
-				listener:   nil,
 				requests:   nil,
 				propagator: nil,
 				cache:      map[string]common.DnsRecord{},
@@ -77,7 +74,6 @@ func TestServer_verifyMessage(t *testing.T) {
 						&SimpleVerifier{false},
 					},
 				},
-				listener:   nil,
 				requests:   nil,
 				propagator: nil,
 				cache:      map[string]common.DnsRecord{},
@@ -106,7 +102,6 @@ func TestServer_verifyMessage(t *testing.T) {
 						&SimpleVerifier{false},
 					},
 				},
-				listener:   nil,
 				requests:   nil,
 				propagator: nil,
 				cache:      map[string]common.DnsRecord{},
