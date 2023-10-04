@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.16.0](https://github.com/soerenschneider/dyndns/compare/v1.15.1...v1.16.0) (2023-10-04)
+
+
+### Features
+
+* client interacts with server running on Lambda ([858b1e2](https://github.com/soerenschneider/dyndns/commit/858b1e2fc53d9637763c7f1fd6225e2019bee84e))
+* detect drift on dns records ([709caf6](https://github.com/soerenschneider/dyndns/commit/709caf665c08faf2d0d8c2245b5fe98188fa0c31))
+* make server run on AWS lambda ([bfe821f](https://github.com/soerenschneider/dyndns/commit/bfe821f58ec27a17aab23991cfb6f4e9c1575cfd))
+
+
+### Bug Fixes
+
+* **deps:** Bump github.com/aws/aws-sdk-go from 1.45.15 to 1.45.16 ([#310](https://github.com/soerenschneider/dyndns/issues/310)) ([a54e0de](https://github.com/soerenschneider/dyndns/commit/a54e0de9e2847a348bc9012d334103310e3362e3))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.45.16 to 1.45.21 ([#321](https://github.com/soerenschneider/dyndns/issues/321)) ([9e22e47](https://github.com/soerenschneider/dyndns/commit/9e22e4713dd875a4b5a516232fc10b8cc8df0f16))
+* **deps:** bump github.com/go-playground/validator/v10 ([#318](https://github.com/soerenschneider/dyndns/issues/318)) ([3a94897](https://github.com/soerenschneider/dyndns/commit/3a9489710dd5ada2c16995aa66a709692e843217))
+* **deps:** bump github.com/prometheus/client_golang ([#319](https://github.com/soerenschneider/dyndns/issues/319)) ([5cf1dd4](https://github.com/soerenschneider/dyndns/commit/5cf1dd4cc086dcfd34feeca4e3a5927f65c457b4))
+
 ## [1.15.1](https://github.com/soerenschneider/dyndns/compare/v1.15.0...v1.15.1) (2023-07-07)
 
 
