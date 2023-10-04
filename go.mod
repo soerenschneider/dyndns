@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-lambda-go v1.41.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

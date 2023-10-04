@@ -4,16 +4,17 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
 type MqttConfig struct {
-	Brokers        []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";" validate:"required,broker"`
-	ClientId       string   `json:"client_id" env:"DYNDNS_CLIENT_ID" validate:"required"`
+	Brokers        []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";" validate:"broker"`
+	ClientId       string   `json:"client_id" env:"DYNDNS_CLIENT_ID" validate:"required_with=Brokers ''"`
 	CaCertFile     string   `json:"tls_ca_cert" env:"DYNDNS_TLS_CA" validate:"omitempty,file"`
-	ClientCertFile string   `json:"tls_client_cert" env:"DYNDNS_TLS_CERT" validate:"omitempty,file"`
-	ClientKeyFile  string   `json:"tls_client_key" env:"DYNDNS_TLS_KEY" validate:"omitempty,file"`
+	ClientCertFile string   `json:"tls_client_cert" env:"DYNDNS_TLS_CERT" validate:"omitempty,required_unless=ClientKeyFile '',file"`
+	ClientKeyFile  string   `json:"tls_client_key" env:"DYNDNS_TLS_KEY" validate:"omitempty,required_unless=ClientCertFile '',file"`
 	TlsInsecure    bool     `json:"tls_insecure" env:"DYNDNS_TLS_INSECURE"`
 }
 
