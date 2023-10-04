@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -15,17 +14,10 @@ import (
 	"github.com/soerenschneider/dyndns/server/dns"
 )
 
-const defaultRegion = "us-east-1"
-
 var propagator dns.Propagator
 var server *server2.Server
 
 func init() {
-	region := os.Getenv("AWS_REGION")
-	if region == "" {
-		region = defaultRegion
-	}
-
 	conf := conf2.GetDefaultServerConfig()
 	if err := conf2.ParseEnvVariables(conf); err != nil {
 		log.Fatal().Err(err).Msg("could not parse config")
