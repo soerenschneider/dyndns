@@ -115,6 +115,21 @@ func (state *ipConfirmedState) EvaluateState(context *Client, resolved *common.D
 		}
 	}
 
+	ips, err := util.LookupDns(resolved.Host)
+	if err == nil {
+		found := false
+		for _, hostIp := range ips {
+			if hostIp == resolved.IpV4 || hostIp == resolved.IpV6 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			log.Info().Msgf("Detected changed DNS record: %s", resolved)
+			context.setState(NewIpNotConfirmedState())
+		}
+	}
+
 	return hasIpChanged
 }
 
