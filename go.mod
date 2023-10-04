@@ -3,7 +3,8 @@ module github.com/soerenschneider/dyndns
 go 1.18
 
 require (
-	github.com/aws/aws-sdk-go v1.45.16
+	github.com/aws/aws-lambda-go v1.41.0
+	github.com/aws/aws-sdk-go v1.45.21
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/go-playground/validator/v10 v10.15.4
@@ -17,7 +18,6 @@ require (
 )
 
 require (
-	github.com/aws/aws-lambda-go v1.41.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
