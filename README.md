@@ -27,11 +27,20 @@ Automatically updates DNS records for hosts that don't have a static IP
 
 ## Installation
 
+### AWS Lambda
+Run the `lambda-server` Makefile target to build an archive for the `provided.al2` Lambda runtime and the `arm64` architecture. Either create a Lambda function using AWS cli / Console or run the Terraform code to create an API Gateway instance and Lambda function.
+
+```shell
+$ make lambda-server # build the server component
+$ terraform -chdir=deployment/terraform/envs/dev apply # this command will deploy a dyndns-server as a Lambda function which is reachable via a new API Gateway instance
+$ terraform -chdir=deployment/terraform/envs/dev output -raw gateway-url # display the url of the API endpoint
+```
+
 ### Docker / Podman
-````shell
+```shell
 $ docker pull ghcr.io/soerenschneider/dyndns-server:main
 $ docker pull ghcr.io/soerenschneider/dyndns-client:main
-````
+```
 
 ### Binaries
 Head over to the [prebuilt binaries](https://github.com/soerenschneider/dyndns/releases) and download the correct binary for your system.
