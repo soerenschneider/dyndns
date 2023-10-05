@@ -57,16 +57,20 @@ $ docker run ghcr.io/soerenschneider/dyndns-client -gen-keypair
 
 # Architecture
 
+## Client Internals
+Client states and client failure scenarios and their remediation is found [here](docs/client.md).
+
 ## Message format
 
 Data sent over the wire is expected to have the following format, encoded as a JSON message.
 
-| Field Name  | Description                                 | JSON Key      | Data Type | Optional |
-|-------------|---------------------------------------------|---------------|-----------|----------|
-| `PublicIp`  | The resolved IP address.                    | `"public_ip"` | Object    | No       |
-| `Signature` | The signature associated with the envelope. | `"signature"` | String    | No       |
+### `UpdateRecordRequest` reference
+| Field Name  | Description                                 | JSON Key      | Data Type   | Optional |
+|-------------|---------------------------------------------|---------------|-------------|----------|
+| `PublicIp`  | The resolved IP address.                    | `"public_ip"` | `DnsRecord` | No       |
+| `Signature` | The signature associated with the envelope. | `"signature"` | String      | No       |
 
-
+### `DnsRecord` reference
 | Field Name  | Description                                           | JSON Key      | Data Type | Optional |
 |-------------|-------------------------------------------------------|---------------|-----------|----------|
 | `IpV4`      | The IPv4 address (optional).                          | `"ipv4"`      | String    | Yes      |
