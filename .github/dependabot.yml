@@ -15,6 +15,11 @@ updates:
     commit-message:
       prefix: "fix(deps)"
 
+  - package-ecosystem: "terraform"
+    directory: "/deployment"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
