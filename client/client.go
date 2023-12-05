@@ -7,6 +7,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client/resolvers"
+	"github.com/soerenschneider/dyndns/client/states"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
@@ -15,20 +16,11 @@ import (
 
 const DefaultResolveInterval = 45 * time.Second
 
-type State interface {
-	// EvaluateState evaluates the current state and returns true if the client should proceed sending a change request
-	// using the currently detected ip
-	EvaluateState(client *Client, ip *common.DnsRecord) bool
-	// WaitInterval returns the amount of time to sleep after a tick.
-	WaitInterval() time.Duration
-	Name() string
-}
-
 type Client struct {
 	signature        verification.SignatureKeypair
 	resolver         resolvers.IpResolver
 	reconciler       *Reconciler
-	state            State
+	state            states.State
 	lastStateChange  time.Time
 	notificationImpl notification.Notification
 }
@@ -48,7 +40,7 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 		resolver:         resolver,
 		reconciler:       reconciler,
 		signature:        signature,
-		state:            &initialState{},
+		state:            states.NewInitialState(),
 		lastStateChange:  time.Now(),
 		notificationImpl: notifyImpl,
 	}
@@ -112,7 +104,15 @@ func (client *Client) Resolve(prev *common.DnsRecord) (*common.DnsRecord, error)
 	return resolvedIp, errs
 }
 
-func (client *Client) setState(state State) {
+func (client *Client) GetState() states.State {
+	return client.state
+}
+
+func (client *Client) GetLastStateChange() time.Time {
+	return client.lastStateChange
+}
+
+func (client *Client) SetState(state states.State) {
 	stateChangeTime := time.Now()
 	oldState := client.state
 	log.Info().Msgf("State changed from %s -> %s after %s", oldState, state, stateChangeTime.Sub(client.lastStateChange))
