@@ -12,42 +12,38 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
 )
 
-const publishWaitTimeout = 2 * time.Minute
+const publishWaitTimeout = 10 * time.Second
 
 type MqttClientBus struct {
 	client            mqtt.Client
 	notificationTopic string
 }
 
-var onConnectHandler = func(c mqtt.Client) {
-	opts := c.OptionsReader()
-	log.Info().Msgf("Connected to brokers %v", opts.Servers())
-	mutex.Lock()
-	metrics.MqttBrokersConnectedTotal.Add(1)
-	mutex.Unlock()
-}
-
 func NewMqttClient(broker string, clientId, notificationTopic string, tlsConfig *tls.Config) (*MqttClientBus, error) {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(broker)
 	opts.SetClientID(clientId)
-
-	opts.OnConnectionLost = connectLostHandler
-	opts.OnConnect = onConnectHandler
-	opts.AutoReconnect = true
-	opts.ConnectRetry = true
-
 	if tlsConfig != nil {
 		opts.SetTLSConfig(tlsConfig)
 	}
 
+	opts.SetAutoReconnect(true)
+	opts.SetMaxReconnectInterval(60 * time.Second)
+	opts.SetConnectRetry(true)
+	opts.SetClientID(clientId)
+
+	opts.OnConnectionLost = connectLostHandler
+	opts.OnConnectAttempt = onConnectAttemptHandler
+	opts.OnConnect = onConnectHandler
+	opts.OnReconnecting = onReconnectHandler
+
 	client := mqtt.NewClient(opts)
 	token := client.Connect()
-	if token.WaitTimeout(60*time.Second) && token.Error() != nil {
-		return nil, fmt.Errorf("could not connect to %s: %v", broker, token.Error())
+	finishedWithinTimeout := token.WaitTimeout(10 * time.Second)
+	if token.Error() != nil || !finishedWithinTimeout {
+		log.Error().Err(token.Error()).Msgf("Connection to broker %q failed, continuing in background", broker)
 	}
 
 	return &MqttClientBus{

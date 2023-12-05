@@ -28,10 +28,17 @@ var (
 		Namespace: namespace,
 		Name:      "start_time_seconds",
 	})
+
 	MqttBrokersConfiguredTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: "mqtt",
 		Name:      "brokers_configured_total",
+	})
+
+	MqttReconnectionsTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: "mqtt",
+		Name:      "reconnections_total",
 	})
 
 	MqttBrokersConnectedTotal = promauto.NewGauge(prometheus.GaugeOpts{
