@@ -67,7 +67,7 @@ func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan 
 
 func (server *Server) isCached(env common.UpdateRecordRequest) bool {
 	server.lock.RLock()
-	defer server.lock.Unlock()
+	defer server.lock.RUnlock()
 	entry, ok := server.cache[env.PublicIp.Host]
 	if !ok {
 		return false
