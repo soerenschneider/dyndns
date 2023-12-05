@@ -41,11 +41,13 @@ type ClientConf struct {
 	NetworkInterface string   `json:"interface,omitempty"`
 	Once             bool     // this is not parsed via json, it's an cli flag
 
-	HttpConfig struct {
-		Url string `json:"url"`
-	} `json:"http"`
+	HttpConf []HttpConfig `json:"http"`
 	MqttConfig
 	*EmailConfig `json:"notifications"`
+}
+
+type HttpConfig struct {
+	Url string `json:"url"`
 }
 
 func ReadClientConfig(path string) (*ClientConf, error) {

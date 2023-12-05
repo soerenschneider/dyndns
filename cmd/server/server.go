@@ -19,6 +19,7 @@ import (
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/events/http"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
@@ -80,8 +81,16 @@ func RunServer(config *conf.ServerConf) {
 	var servers []*mqtt.MqttBus
 	for _, broker := range config.Brokers {
 		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requestsChannel)
-		dieOnError(err, "Could not build mqtt dispatcher")
-		servers = append(servers, mqttServer)
+		if err != nil {
+			log.Error().Err(err).Msg("could not connect to mqtt")
+		} else {
+			servers = append(servers, mqttServer)
+		}
+	}
+
+	log.Info().Msgf("Configured %d servers", len(servers))
+	if len(servers) == 0 {
+		log.Fatal().Err(err).Msg("not connected to a single mqtt server")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -105,6 +114,7 @@ func RunServer(config *conf.ServerConf) {
 	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	dieOnError(err, "could not build dyndns server")
 
+	log.Info().Msg("Ready, listening for incoming requests")
 	go dyndnsServer.Listen()
 
 	term := make(chan os.Signal, 1)
@@ -143,6 +153,15 @@ func buildVaultClient(conf *conf.VaultConfig) (*api.Client, error) {
 	config.Timeout = 30 * time.Second
 
 	return api.NewClient(config)
+}
+
+func buildHttpServer(conf *conf.ServerConf, req chan common.UpdateRecordRequest) (*http.HttpServer, error) {
+	http, err := http.New(conf.HttpServer.Addr, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return http, nil
 }
 
 // buildCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault

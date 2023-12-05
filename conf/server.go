@@ -19,6 +19,11 @@ type ServerConf struct {
 	KnownHosts      map[string][]string `json:"known_hosts" env:"DYNDNS_KNOWN_HOSTS" validate:"required"`
 	HostedZoneId    string              `json:"hosted_zone_id" env:"DYNDNS_HOSTED_ZONE_ID" validate:"required"`
 	MetricsListener string              `json:"metrics_listen,omitempty" validate:"omitempty,tcp_addr"`
+	HttpServer      struct {
+		Addr    string `json:"http"`
+		TlsCert string `json:"tls_cert"`
+		TlsKey  string `json:"tls_key"`
+	}
 	*MqttConfig
 	*VaultConfig
 	*EmailConfig `json:"notifications"`

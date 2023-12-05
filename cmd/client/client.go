@@ -80,22 +80,27 @@ func dieOnError(err error, msg string) {
 func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, error) {
 	dispatchers := map[string]client.EventDispatch{}
 
-	var errs, err error
+	var errs error
 	if len(config.Brokers) > 0 {
 		for _, broker := range config.Brokers {
-			dispatchers[broker], err = mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
+			dispatcher, err := mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
 			if err != nil {
 				errs = multierr.Append(errs, err)
+			} else {
+				dispatchers[broker] = dispatcher
 			}
 		}
 	}
 
-	if len(config.HttpConfig.Url) > 0 {
-		httpDispatcher, err := client.NewHttpDispatcher(config.HttpConfig.Url)
-		if err != nil {
-			errs = multierr.Append(errs, err)
+	if len(config.HttpConf) > 0 {
+		for _, dispatcher := range config.HttpConf {
+			httpDispatcher, err := client.NewHttpDispatcher(dispatcher.Url)
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			} else {
+				dispatchers[dispatcher.Url] = httpDispatcher
+			}
 		}
-		dispatchers[config.HttpConfig.Url] = httpDispatcher
 	}
 
 	return dispatchers, errs
@@ -118,9 +123,11 @@ func RunClient(config *conf.ClientConf) {
 	dieOnError(err, "could not build ip resolver")
 
 	dispatchers, err := buildNotifiers(config)
-	dieOnError(err, "Could not build mqtt dispatcher")
 	if len(dispatchers) == 0 {
-		log.Fatal().Msg("no dispatchers defined")
+		log.Fatal().Err(err).Msg("no dispatchers built")
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("could not build all dispatchers")
 	}
 
 	reconciler, err := client.NewReconciler(dispatchers)
