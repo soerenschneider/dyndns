@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.17.0](https://github.com/soerenschneider/dyndns/compare/v1.16.0...v1.17.0) (2023-12-24)
+
+
+### Features
+
+* increase resilience by isolating brokers ([0ab3ae2](https://github.com/soerenschneider/dyndns/commit/0ab3ae20bff92c97094c58cd0943068e0e7765d2))
+* suppor for parsing http dispatcher conf via env variables ([230c6de](https://github.com/soerenschneider/dyndns/commit/230c6dea1f297dc1751dddfb76dc5d5636369ac1))
+* support http client- and server ([3862498](https://github.com/soerenschneider/dyndns/commit/38624987ab1a5c669edd442f0174866c45ed45c9))
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/aws/aws-sdk-go from 1.45.21 to 1.45.24 ([#322](https://github.com/soerenschneider/dyndns/issues/322)) ([22d85e4](https://github.com/soerenschneider/dyndns/commit/22d85e45376b32f2bc42aa4ea16693cdb74790f1))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.45.24 to 1.45.25 ([#326](https://github.com/soerenschneider/dyndns/issues/326)) ([157c9cf](https://github.com/soerenschneider/dyndns/commit/157c9cf1bbfd66b2888e50c0cbee80623de21c6c))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.45.25 to 1.48.0 ([#336](https://github.com/soerenschneider/dyndns/issues/336)) ([5a286e9](https://github.com/soerenschneider/dyndns/commit/5a286e972814cdf910ebd8974bb534df0b55765a))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.48.0 to 1.48.13 ([#341](https://github.com/soerenschneider/dyndns/issues/341)) ([1d52db1](https://github.com/soerenschneider/dyndns/commit/1d52db14bc72d29ce0729e9a1bbcfb1a58467024))
+* **deps:** bump github.com/go-playground/validator/v10 ([#329](https://github.com/soerenschneider/dyndns/issues/329)) ([f130c9f](https://github.com/soerenschneider/dyndns/commit/f130c9f3175ef0cd40a156582510e2fd3d12d56f))
+* **deps:** bump github.com/hashicorp/go-retryablehttp ([#332](https://github.com/soerenschneider/dyndns/issues/332)) ([392057c](https://github.com/soerenschneider/dyndns/commit/392057c6ca2a1b30c825174937381353da10648d))
+* **deps:** bump golang from 1.21.1 to 1.21.2 ([#323](https://github.com/soerenschneider/dyndns/issues/323)) ([ce28f8a](https://github.com/soerenschneider/dyndns/commit/ce28f8a055803a49a7613dc196bf23de7da3e1dc))
+* **deps:** bump golang from 1.21.2 to 1.21.3 ([#325](https://github.com/soerenschneider/dyndns/issues/325)) ([0d804f6](https://github.com/soerenschneider/dyndns/commit/0d804f6ce50802d09f4e4485dc293dd2308cfbc7))
+* **deps:** bump golang from 1.21.3 to 1.21.4 ([#334](https://github.com/soerenschneider/dyndns/issues/334)) ([2734d61](https://github.com/soerenschneider/dyndns/commit/2734d61d3fe313906ec432b33b11e49b4190238e))
+* fix panic due to calling the wrong unlock method ([f537adc](https://github.com/soerenschneider/dyndns/commit/f537adc31e1d2fae978e405f3876aadd1a1d5c1d))
+
 ## [1.16.0](https://github.com/soerenschneider/dyndns/compare/v1.15.1...v1.16.0) (2023-10-04)
 
 
