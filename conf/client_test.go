@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -67,5 +68,31 @@ func TestReadClientConfig(t *testing.T) {
 				t.Errorf("ReadClientConfig() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestParseClientConfEnv(t *testing.T) {
+	envKey := "DYNDNS_HTTP_DISPATCHER_CONF"
+	os.Setenv(envKey, "[{\"url\":\"https://one\"}, {\"url\":\"https://two\"}]")
+	// unset after running test
+	defer os.Setenv(envKey, "")
+
+	empty := &ClientConf{}
+	err := ParseClientConfEnv(empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := []HttpDispatcherConfig{
+		{
+			Url: "https://one",
+		},
+		{
+			Url: "https://two",
+		},
+	}
+
+	if !reflect.DeepEqual(empty.HttpDispatcherConf, expected) {
+		t.Fatalf("expected %v, got %v", expected, empty.HttpDispatcherConf)
 	}
 }

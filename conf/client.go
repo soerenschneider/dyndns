@@ -7,8 +7,10 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"reflect"
 	"strings"
 
+	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 )
@@ -41,12 +43,12 @@ type ClientConf struct {
 	NetworkInterface string   `json:"interface,omitempty"`
 	Once             bool     // this is not parsed via json, it's an cli flag
 
-	HttpConf []HttpConfig `json:"http"`
+	HttpDispatcherConf []HttpDispatcherConfig `json:"http_dispatcher" env:"DYNDNS_HTTP_DISPATCHER_CONF"`
 	MqttConfig
 	*EmailConfig `json:"notifications"`
 }
 
-type HttpConfig struct {
+type HttpDispatcherConfig struct {
 	Url string `json:"url"`
 }
 
@@ -66,6 +68,17 @@ func ReadClientConfig(path string) (*ClientConf, error) {
 	}
 
 	return conf, nil
+}
+
+func ParseClientConfEnv(clientConf *ClientConf) error {
+	funk := map[reflect.Type]env.ParserFunc{}
+
+	funk[reflect.TypeOf([]HttpDispatcherConfig{})] = func(input string) (any, error) {
+		var ret []HttpDispatcherConfig
+		return ret, json.Unmarshal([]byte(input), &ret)
+	}
+
+	return env.ParseWithFuncs(clientConf, funk)
 }
 
 func getDefaultClientConfig() *ClientConf {

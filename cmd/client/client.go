@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client"
 	"github.com/soerenschneider/dyndns/client/resolvers"
@@ -48,7 +47,7 @@ func main() {
 	config, err := conf.ReadClientConfig(configPath)
 	dieOnError(err, "couldn't read config file")
 
-	err = env.Parse(config)
+	err = conf.ParseClientConfEnv(config)
 	dieOnError(err, "could not parse env variables")
 
 	err = conf.ValidateConfig(config)
@@ -92,8 +91,8 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 		}
 	}
 
-	if len(config.HttpConf) > 0 {
-		for _, dispatcher := range config.HttpConf {
+	if len(config.HttpDispatcherConf) > 0 {
+		for _, dispatcher := range config.HttpDispatcherConf {
 			httpDispatcher, err := client.NewHttpDispatcher(dispatcher.Url)
 			if err != nil {
 				errs = multierr.Append(errs, err)
