@@ -76,6 +76,7 @@ func (r *Reconciler) dispatch() error {
 				log.Info().Msgf("Reconciliation for dispatcher %s successful", key)
 			} else {
 				errLock.Lock()
+				metrics.UpdateDispatchErrors.WithLabelValues(key).Inc()
 				errs = multierr.Append(errs, fmt.Errorf("reconciliation for dispatcher %s failed: %w", key, err))
 				errLock.Unlock()
 			}
