@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.17.1](https://github.com/soerenschneider/dyndns/compare/v1.17.0...v1.17.1) (2024-01-15)
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/aws/aws-lambda-go from 1.41.0 to 1.43.0 ([#350](https://github.com/soerenschneider/dyndns/issues/350)) ([d0903c4](https://github.com/soerenschneider/dyndns/commit/d0903c49398b08c8a000d2e131199a5fda87dae8))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.48.13 to 1.49.4 ([#347](https://github.com/soerenschneider/dyndns/issues/347)) ([90da6f6](https://github.com/soerenschneider/dyndns/commit/90da6f689d0c1438334662ca6bb9346e2fcd9080))
+* **deps:** bump golang from 1.21.4 to 1.21.5 ([#344](https://github.com/soerenschneider/dyndns/issues/344)) ([163d012](https://github.com/soerenschneider/dyndns/commit/163d012e90d4f1c00c02630cdadced3cad48fecd))
+
 ## [1.17.0](https://github.com/soerenschneider/dyndns/compare/v1.16.0...v1.17.0) (2023-12-24)
 
 
