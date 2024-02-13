@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -41,6 +42,10 @@ func (h *HttpDispatch) Notify(msg *common.UpdateRecordRequest) error {
 		_ = response.Body.Close()
 	}()
 
-	log.Info().Int("status", response.StatusCode).Msg("Received reply")
+	if response.StatusCode != 200 {
+		log.Error().Int("status", response.StatusCode).Msg("http dispatcher received reply")
+		return fmt.Errorf("http dispatcher received status code %d", response.StatusCode)
+	}
+	log.Debug().Int("status", response.StatusCode).Msg("http dispatcher received reply")
 	return nil
 }

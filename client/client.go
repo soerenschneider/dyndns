@@ -12,6 +12,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/verification"
+	"go.uber.org/multierr"
 )
 
 const DefaultResolveInterval = 45 * time.Second
@@ -23,9 +24,12 @@ type Client struct {
 	state            states.State
 	lastStateChange  time.Time
 	notificationImpl notification.Notification
+	resolveInterval  time.Duration
 }
 
-func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler, notifyImpl notification.Notification) (*Client, error) {
+type Opts func(c *Client) error
+
+func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKeypair, reconciler *Reconciler, notifyImpl notification.Notification, opts ...Opts) (*Client, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver provided")
 	}
@@ -36,8 +40,9 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 		return nil, errors.New("no reconciler provided")
 	}
 
-	c := Client{
+	c := &Client{
 		resolver:         resolver,
+		resolveInterval:  DefaultResolveInterval,
 		reconciler:       reconciler,
 		signature:        signature,
 		state:            states.NewInitialState(),
@@ -45,11 +50,18 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 		notificationImpl: notifyImpl,
 	}
 
-	return &c, nil
+	var errs error
+	for _, opt := range opts {
+		if err := opt(c); err != nil {
+			errs = multierr.Append(errs, err)
+		}
+	}
+
+	return c, errs
 }
 
 func (client *Client) Run() {
-	ticker := time.NewTicker(DefaultResolveInterval)
+	ticker := time.NewTicker(client.resolveInterval)
 	var resolvedIp *common.DnsRecord
 	tick := func() {
 		var err error
@@ -58,7 +70,7 @@ func (client *Client) Run() {
 			log.Info().Msgf("Error while iteration: %v", err)
 		}
 
-		if DefaultResolveInterval != client.state.WaitInterval() {
+		if client.resolveInterval != client.state.WaitInterval() {
 			ticker.Reset(client.state.WaitInterval())
 		}
 	}
