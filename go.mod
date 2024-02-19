@@ -10,7 +10,7 @@ require (
 	github.com/go-playground/validator/v10 v10.18.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/hashicorp/vault/api v1.12.0
-	github.com/hashicorp/vault/api/auth/approle v0.5.0
+	github.com/hashicorp/vault/api/auth/approle v0.6.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/rs/zerolog v1.31.0
 	go.uber.org/multierr v1.11.0
