@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/client"
@@ -132,7 +133,11 @@ func RunClient(config *conf.ClientConf) {
 	reconciler, err := client.NewReconciler(dispatchers)
 	dieOnError(err, "could not build reconciler")
 
-	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl)
+	opts := []client.Opts{
+		client.WithInterval(15 * time.Second),
+	}
+
+	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl, opts...)
 	dieOnError(err, "could not build client")
 
 	go reconciler.Run()
