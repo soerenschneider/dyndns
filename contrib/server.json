@@ -7,8 +7,12 @@
   },
   "hosted_zone_id": "hosted-zone-id-x",
   "metrics_listen": ":6666",
-  "brokers": ["tcp://mqtt.eclipseprojects.io:1883"],
-  "client_id": "my-client-id",
+  "mqtt": {
+    "brokers": [
+      "tcp://mqtt.eclipseprojects.io:1883"
+    ],
+    "client_id": "my-client-id"
+  },
   "notifications": {
     "from": "from",
     "to": [

@@ -3,19 +3,18 @@ package conf
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"os"
 
 	"github.com/rs/zerolog/log"
 )
 
 type MqttConfig struct {
-	Brokers        []string `json:"brokers" env:"DYNDNS_BROKERS" envSeparator:";" validate:"broker"`
-	ClientId       string   `json:"client_id" env:"DYNDNS_CLIENT_ID" validate:"required_with=Brokers ''"`
-	CaCertFile     string   `json:"tls_ca_cert" env:"DYNDNS_TLS_CA" validate:"omitempty,file"`
-	ClientCertFile string   `json:"tls_client_cert" env:"DYNDNS_TLS_CERT" validate:"omitempty,required_unless=ClientKeyFile '',file"`
-	ClientKeyFile  string   `json:"tls_client_key" env:"DYNDNS_TLS_KEY" validate:"omitempty,required_unless=ClientCertFile '',file"`
-	TlsInsecure    bool     `json:"tls_insecure" env:"DYNDNS_TLS_INSECURE"`
+	Brokers        []string `yaml:"brokers" env:"BROKERS" envSeparator:";" validate:"broker"`
+	ClientId       string   `yaml:"client_id" env:"CLIENT_ID" validate:"required_with=Brokers ''"`
+	CaCertFile     string   `yaml:"tls_ca_cert" env:"TLS_CA" validate:"omitempty,file"`
+	ClientCertFile string   `yaml:"tls_client_cert" env:"TLS_CERT" validate:"omitempty,required_unless=ClientKeyFile '',file"`
+	ClientKeyFile  string   `yaml:"tls_client_key" env:"TLS_KEY" validate:"omitempty,required_unless=ClientCertFile '',file"`
+	TlsInsecure    bool     `yaml:"tls_insecure" env:"TLS_INSECURE"`
 }
 
 func (conf *MqttConfig) UsesTlsClientCerts() bool {
@@ -57,13 +56,4 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 	}
 
 	return tlsConf
-}
-
-func (conf MqttConfig) String() string {
-	base := fmt.Sprintf("brokers=%v, clientId=%s", conf.Brokers, conf.ClientId)
-	if conf.UsesTlsClientCerts() {
-		base += fmt.Sprintf("ca=%s, crt=%s, key=%s", conf.CaCertFile, conf.ClientCertFile, conf.ClientKeyFile)
-	}
-
-	return base
 }

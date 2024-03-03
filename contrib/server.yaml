@@ -1,0 +1,18 @@
+known_hosts:
+  host:
+    - key1
+    - key2
+hosted_zone_id: hosted-zone-id-x
+metrics_listen: :6666
+mqtt:
+  brokers:
+    - tcp://mqtt.eclipseprojects.io:1883
+  client_id: my-client-id
+notifications:
+  from: from
+  to:
+    - to-1
+  host: smtp-host
+  port: 465
+  user: username
+  password: password

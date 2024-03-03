@@ -13,6 +13,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -27,29 +28,29 @@ var (
 	}
 
 	configPathPreferences = []string{
-		"/etc/dyndns/client.json",
-		"~/.dyndns/config.json",
+		"/etc/dyndns/client.yaml",
+		"~/.dyndns/config.yaml",
 	}
 )
 
 type ClientConf struct {
-	Host             string   `json:"host,omitempty" env:"DYNDNS_HOST" validate:"required"`
-	AddrFamilies     []string `json:"address_families" env:"DYNDNS_ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
-	KeyPairPath      string   `json:"keypair_path,omitempty" env:"DYNDNS_KEYPAIR_PATH" validate:"required_if=KeyPair '',omitempty,filepath"`
-	KeyPair          string   `json:"keypair,omitempty" env:"DYNDNS_KEYPAIR" validate:"required_if=KeyPairPath ''"`
-	MetricsListener  string   `json:"metrics_listen,omitempty" env:"DYNDNS_METRICS_LISTEN"`
-	PreferredUrls    []string `json:"http_resolver_preferred_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
-	FallbackUrls     []string `json:"http_resolver_fallback_urls,omitempty" env:"DYNDNS_HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
-	NetworkInterface string   `json:"interface,omitempty"`
+	Host             string   `yaml:"host,omitempty" env:"HOST" validate:"required"`
+	AddrFamilies     []string `yaml:"address_families" env:"ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
+	KeyPairPath      string   `yaml:"keypair_path,omitempty" env:"KEYPAIR_PATH" validate:"required_if=KeyPair '',omitempty,filepath"`
+	KeyPair          string   `yaml:"keypair,omitempty" env:"KEYPAIR" validate:"required_if=KeyPairPath ''"`
+	MetricsListener  string   `yaml:"metrics_listen,omitempty" env:"METRICS_LISTEN"`
+	PreferredUrls    []string `yaml:"http_resolver_preferred_urls,omitempty" env:"HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
+	FallbackUrls     []string `yaml:"http_resolver_fallback_urls,omitempty" env:"HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
+	NetworkInterface string   `yaml:"interface,omitempty"`
 	Once             bool     // this is not parsed via json, it's an cli flag
 
-	HttpDispatcherConf []HttpDispatcherConfig `json:"http_dispatcher" env:"DYNDNS_HTTP_DISPATCHER_CONF"`
-	MqttConfig
-	*EmailConfig `json:"notifications"`
+	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
+	*MqttConfig        `yaml:"mqtt"`
+	*EmailConfig       `yaml:"notifications"`
 }
 
 type HttpDispatcherConfig struct {
-	Url string `json:"url"`
+	Url string `yaml:"url"`
 }
 
 func ReadClientConfig(path string) (*ClientConf, error) {
@@ -63,7 +64,7 @@ func ReadClientConfig(path string) (*ClientConf, error) {
 		return nil, err
 	}
 
-	if err := json.Unmarshal(content, &conf); err != nil {
+	if err := yaml.Unmarshal(content, &conf); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +79,11 @@ func ParseClientConfEnv(clientConf *ClientConf) error {
 		return ret, json.Unmarshal([]byte(input), &ret)
 	}
 
-	return env.ParseWithFuncs(clientConf, funk)
+	opts := env.Options{
+		Prefix: "DYNDNS_",
+	}
+
+	return env.ParseWithFuncs(clientConf, funk, opts)
 }
 
 func getDefaultClientConfig() *ClientConf {

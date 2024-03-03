@@ -13,20 +13,21 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/verification"
+	"gopkg.in/yaml.v3"
 )
 
 type ServerConf struct {
-	KnownHosts      map[string][]string `json:"known_hosts" env:"DYNDNS_KNOWN_HOSTS" validate:"required"`
-	HostedZoneId    string              `json:"hosted_zone_id" env:"DYNDNS_HOSTED_ZONE_ID" validate:"required"`
-	MetricsListener string              `json:"metrics_listen,omitempty" validate:"omitempty,tcp_addr"`
+	KnownHosts      map[string][]string `yaml:"known_hosts" env:"KNOWN_HOSTS" validate:"required"`
+	HostedZoneId    string              `yaml:"hosted_zone_id" env:"HOSTED_ZONE_ID" validate:"required"`
+	MetricsListener string              `yaml:"metrics_listen,omitempty" validate:"omitempty,tcp_addr"`
 	HttpServer      struct {
-		Addr    string `json:"http"`
-		TlsCert string `json:"tls_cert"`
-		TlsKey  string `json:"tls_key"`
+		Addr    string `yaml:"http"`
+		TlsCert string `yaml:"tls_cert"`
+		TlsKey  string `yaml:"tls_key"`
 	}
-	*MqttConfig
-	*VaultConfig
-	*EmailConfig `json:"notifications"`
+	*MqttConfig  `yaml:"mqtt"`
+	*VaultConfig `yaml:"vault"`
+	*EmailConfig `yaml:"notifications"`
 }
 
 func GetDefaultServerConfig() *ServerConf {
@@ -50,7 +51,7 @@ func ReadServerConfig(path string) (*ServerConf, error) {
 		return nil, fmt.Errorf("could not read config file %s: %v", path, err)
 	}
 
-	if err := json.Unmarshal(content, &conf); err != nil {
+	if err := yaml.Unmarshal(content, &conf); err != nil {
 		return nil, fmt.Errorf("could not unmarshal json to config: %v", err)
 	}
 
@@ -65,7 +66,11 @@ func ParseEnvVariables(serverConf *ServerConf) error {
 		return ret, json.Unmarshal([]byte(input), &ret)
 	}
 
-	return env.ParseWithFuncs(serverConf, funk)
+	opts := env.Options{
+		Prefix: "DYNDNS_",
+	}
+
+	return env.ParseWithFuncs(serverConf, funk, opts)
 }
 
 func (conf *ServerConf) DecodePublicKeys() (map[string][]verification.VerificationKey, error) {

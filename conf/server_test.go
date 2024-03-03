@@ -17,7 +17,31 @@ func TestReadServerConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "happy path",
+			name: "happy path - yaml",
+			args: args{"../contrib/server.yaml"},
+			want: &ServerConf{
+				KnownHosts: map[string][]string{
+					"host": []string{"key1", "key2"},
+				},
+				HostedZoneId:    "hosted-zone-id-x",
+				MetricsListener: ":6666",
+				MqttConfig: &MqttConfig{
+					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
+					ClientId: "my-client-id",
+				},
+				EmailConfig: &EmailConfig{
+					From:         "from",
+					To:           []string{"to-1"},
+					SmtpHost:     "smtp-host",
+					SmtpPort:     465,
+					SmtpUsername: "username",
+					SmtpPassword: "password",
+				},
+				VaultConfig: GetDefaultVaultConfig(),
+			},
+		},
+		{
+			name: "happy path - json",
 			args: args{"../contrib/server.json"},
 			want: &ServerConf{
 				KnownHosts: map[string][]string{

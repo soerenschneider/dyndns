@@ -1,8 +1,12 @@
 {
   "host": "my.host.tld",
   "keypair_path": "/tmp/keypair.json",
-  "client_id": "my-client-id",
-  "brokers": ["ssl://mqtt.eclipseprojects.io:8883"],
+  "mqtt": {
+    "brokers": [
+      "ssl://mqtt.eclipseprojects.io:8883"
+    ],
+    "client_id": "my-client-id"
+  },
   "email": {
     "from": "bla"
   }

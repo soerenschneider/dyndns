@@ -17,7 +17,23 @@ func TestReadClientConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "happy path",
+			name: "happy path - yaml",
+			args: args{"../contrib/client.yaml"},
+			want: &ClientConf{
+				Host:            "my.host.tld",
+				AddrFamilies:    []string{AddrFamilyIpv4},
+				KeyPairPath:     "/tmp/keypair.json",
+				PreferredUrls:   defaultHttpResolverUrls,
+				MetricsListener: "0.0.0.0:9191",
+				MqttConfig: &MqttConfig{
+					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
+					ClientId: "my-client-id",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "happy path - json",
 			args: args{"../contrib/client.json"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
@@ -25,7 +41,7 @@ func TestReadClientConfig(t *testing.T) {
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: "0.0.0.0:9191",
-				MqttConfig: MqttConfig{
+				MqttConfig: &MqttConfig{
 					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
@@ -45,8 +61,8 @@ func TestReadClientConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "empty json file content",
-			args:    args{"../contrib/empty.json"},
+			name:    "empty yaml file content",
+			args:    args{"../contrib/empty.yaml"},
 			want:    getDefaultClientConfig(),
 			wantErr: false,
 		},
