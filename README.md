@@ -11,7 +11,7 @@ Automatically updates DNS records for hosts that don't have a static IP
 📣 Dynamically updates DNS records to match their public IP address<br/>
 🏰 Built-in resiliency for different failure scenarios<br/>
 🚢 Server component supports running on AWS Lambda<br/>
-🚀 Dispatch update requests via MQTT and/or HTTP API calls<br/>
+🚀 Dispatch update requests via [AWS SQS](https://aws.amazon.com/sqs/), MQTT and/or HTTP API calls<br/>
 🚏 Detect public IP address by network interface's status or by calling HTTP APIs<br/>
 🎭 Runs in client / server mode to limit blast-radius of leaked credentials<br/>
 🔧 Customizable list of HTTP APIs to detect IP updates<br/>
