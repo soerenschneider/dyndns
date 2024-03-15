@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.50.35
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/eclipse/paho.mqtt.golang v1.4.3
-	github.com/go-playground/validator/v10 v10.18.0
+	github.com/go-playground/validator/v10 v10.19.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/hashicorp/vault/api v1.12.0
 	github.com/hashicorp/vault/api/auth/approle v0.5.0
