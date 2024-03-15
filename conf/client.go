@@ -45,7 +45,7 @@ type ClientConf struct {
 	Once             bool     // this is not parsed via json, it's an cli flag
 
 	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
-	SqsQueue           string                 `yaml:"sqs_queue" env:"SQS_QUEUE"`
+	SqsConfig          `yaml:"sqs"`
 	MqttConfig         `yaml:"mqtt"`
 	EmailConfig        `yaml:"notifications"`
 }
@@ -90,6 +90,7 @@ func ParseClientConfEnv(clientConf *ClientConf) error {
 func getDefaultClientConfig() *ClientConf {
 	return &ClientConf{
 		MetricsListener: metrics.DefaultListener,
+		SqsConfig:       DefaultSqsConfig(),
 		AddrFamilies:    []string{AddrFamilyIpv4},
 		PreferredUrls:   defaultHttpResolverUrls,
 	}

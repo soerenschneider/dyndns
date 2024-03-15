@@ -23,6 +23,7 @@ func TestReadServerConfig(t *testing.T) {
 				KnownHosts: map[string][]string{
 					"host": []string{"key1", "key2"},
 				},
+				SqsConfig:       DefaultSqsConfig(),
 				HostedZoneId:    "hosted-zone-id-x",
 				MetricsListener: ":6666",
 				MqttConfig: MqttConfig{
@@ -47,6 +48,7 @@ func TestReadServerConfig(t *testing.T) {
 				KnownHosts: map[string][]string{
 					"host": []string{"key1", "key2"},
 				},
+				SqsConfig:       DefaultSqsConfig(),
 				HostedZoneId:    "hosted-zone-id-x",
 				MetricsListener: ":6666",
 				MqttConfig: MqttConfig{

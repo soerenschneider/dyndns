@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
 )
 
@@ -17,8 +18,10 @@ type SqsDispatch struct {
 	queueUrl string
 }
 
-func NewSqsDispatcher(queueUrl string, provider credentials.Provider) (*SqsDispatch, error) {
-	awsConf := &aws.Config{}
+func NewSqsDispatcher(sqsConf conf.SqsConfig, provider credentials.Provider) (*SqsDispatch, error) {
+	awsConf := &aws.Config{
+		Region: aws.String(sqsConf.Region),
+	}
 	if provider != nil {
 		log.Info().Msg("Building AWS client using given credentials provider")
 		awsConf.Credentials = credentials.NewCredentials(provider)
@@ -26,7 +29,7 @@ func NewSqsDispatcher(queueUrl string, provider credentials.Provider) (*SqsDispa
 	awsSession := session.Must(session.NewSession(awsConf))
 
 	ret := &SqsDispatch{
-		queueUrl: queueUrl,
+		queueUrl: sqsConf.SqsQueue,
 	}
 	ret.client = sqs.New(awsSession)
 	return ret, nil

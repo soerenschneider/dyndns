@@ -20,7 +20,7 @@ type ServerConf struct {
 	KnownHosts      map[string][]string `yaml:"known_hosts" env:"KNOWN_HOSTS" validate:"required"`
 	HostedZoneId    string              `yaml:"hosted_zone_id" env:"HOSTED_ZONE_ID" validate:"required"`
 	MetricsListener string              `yaml:"metrics_listen,omitempty" validate:"omitempty,tcp_addr"`
-	SqsQueue        string              `yaml:"sqs_queue" env:"SQS_QUEUE"`
+	SqsConfig       `yaml:"sqs"`
 	HttpConfig      `yaml:"http"`
 	MqttConfig      `yaml:"mqtt"`
 	VaultConfig     `yaml:"vault"`
@@ -30,6 +30,7 @@ type ServerConf struct {
 func GetDefaultServerConfig() *ServerConf {
 	return &ServerConf{
 		MetricsListener: metrics.DefaultListener,
+		SqsConfig:       DefaultSqsConfig(),
 		MqttConfig: MqttConfig{
 			ClientId: "dyndns-server",
 		},

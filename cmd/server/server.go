@@ -137,7 +137,7 @@ func RunServer(config *conf.ServerConf) {
 }
 
 func buildSqs(config conf.ServerConf, requests chan common.UpdateRecordRequest, credProvider credentials.Provider) (*client.SqsListener, error) {
-	return client.NewSqsConsumer(config.SqsQueue, credProvider, requests)
+	return client.NewSqsConsumer(config.SqsConfig, credProvider, requests)
 }
 
 func buildMqtt(config conf.ServerConf, requests chan common.UpdateRecordRequest) ([]*mqtt.MqttBus, error) {

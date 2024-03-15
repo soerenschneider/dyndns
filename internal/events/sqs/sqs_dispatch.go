@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"go.uber.org/multierr"
@@ -26,13 +27,13 @@ type SqsListener struct {
 
 type SqsOpts func(consumer *SqsListener) error
 
-func NewSqsConsumer(queueUrl string, provider credentials.Provider, reqChan chan common.UpdateRecordRequest, opts ...SqsOpts) (*SqsListener, error) {
+func NewSqsConsumer(sqsConf conf.SqsConfig, provider credentials.Provider, reqChan chan common.UpdateRecordRequest, opts ...SqsOpts) (*SqsListener, error) {
 	if reqChan == nil {
 		return nil, errors.New("empty chan provided")
 	}
 
 	ret := &SqsListener{
-		queueUrl: queueUrl,
+		queueUrl: sqsConf.SqsQueue,
 		requests: reqChan,
 	}
 
@@ -47,7 +48,9 @@ func NewSqsConsumer(queueUrl string, provider credentials.Provider, reqChan chan
 		return nil, errs
 	}
 
-	awsConf := &aws.Config{}
+	awsConf := &aws.Config{
+		Region: aws.String(sqsConf.Region),
+	}
 
 	if provider != nil {
 		log.Info().Msg("Building AWS client using given credentials provider")

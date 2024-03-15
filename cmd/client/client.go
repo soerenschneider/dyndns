@@ -108,7 +108,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 
 	if len(config.SqsQueue) > 0 {
 		log.Info().Msg("Building AWS SQS notifier")
-		sqs, err := client.NewSqsDispatcher(config.SqsQueue, nil)
+		sqs, err := client.NewSqsDispatcher(config.SqsConfig, nil)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
