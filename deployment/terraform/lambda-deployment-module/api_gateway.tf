@@ -20,12 +20,12 @@ resource "aws_api_gateway_method" "dyndns-server" {
 }
 
 resource "aws_api_gateway_method_settings" "path_specific" {
-  rest_api_id            = aws_api_gateway_rest_api.dyndns-server.id
-  stage_name             = aws_api_gateway_stage.dyndns-server_v1.stage_name
-  method_path            = "*/*"
+  rest_api_id = aws_api_gateway_rest_api.dyndns-server.id
+  stage_name  = aws_api_gateway_stage.dyndns-server_v1.stage_name
+  method_path = "*/*"
 
   settings {
-    logging_level = "OFF"
+    logging_level          = "OFF"
     throttling_rate_limit  = 1
     throttling_burst_limit = 5
   }

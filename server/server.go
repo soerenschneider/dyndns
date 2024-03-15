@@ -21,7 +21,7 @@ const timestampGracePeriod = -24 * time.Hour
 
 var ErrorMessageTooOld = errors.New("message timestamp is too old")
 
-type Server struct {
+type DyndnsServer struct {
 	knownHosts       map[string][]verification.VerificationKey
 	requests         chan common.UpdateRecordRequest
 	propagator       dns.Propagator
@@ -31,7 +31,7 @@ type Server struct {
 	lock sync.RWMutex
 }
 
-func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan common.UpdateRecordRequest, notifyImpl notification.Notification) (*Server, error) {
+func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan common.UpdateRecordRequest, notifyImpl notification.Notification) (*DyndnsServer, error) {
 	err := conf.ValidateConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("invalid conf passed: %v", err)
@@ -54,7 +54,7 @@ func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan 
 		return nil, err
 	}
 
-	server := Server{
+	server := DyndnsServer{
 		knownHosts:       decoded,
 		requests:         requests,
 		propagator:       propagator,
@@ -65,7 +65,7 @@ func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan 
 	return &server, nil
 }
 
-func (server *Server) isCached(env common.UpdateRecordRequest) bool {
+func (server *DyndnsServer) isCached(env common.UpdateRecordRequest) bool {
 	server.lock.RLock()
 	defer server.lock.RUnlock()
 	entry, ok := server.cache[env.PublicIp.Host]
@@ -76,7 +76,7 @@ func (server *Server) isCached(env common.UpdateRecordRequest) bool {
 	return entry.Equals(&env.PublicIp)
 }
 
-func (server *Server) verifyMessage(env common.UpdateRecordRequest) error {
+func (server *DyndnsServer) verifyMessage(env common.UpdateRecordRequest) error {
 	hostPublicKeys, ok := server.knownHosts[env.PublicIp.Host]
 	if !ok {
 		metrics.PublicKeyMissing.WithLabelValues(env.PublicIp.Host).Inc()
@@ -94,7 +94,7 @@ func (server *Server) verifyMessage(env common.UpdateRecordRequest) error {
 	return fmt.Errorf("verifying signature FAILED for host '%s'", env.PublicIp.Host)
 }
 
-func (server *Server) HandlePropagateRequest(env common.UpdateRecordRequest) error {
+func (server *DyndnsServer) HandlePropagateRequest(env common.UpdateRecordRequest) error {
 	if err := env.Validate(); err != nil {
 		metrics.MessageValidationsFailed.WithLabelValues(env.PublicIp.Host, "invalid_fields").Inc()
 		return fmt.Errorf("invalid envelope received: %v", err)
@@ -140,7 +140,7 @@ func (server *Server) HandlePropagateRequest(env common.UpdateRecordRequest) err
 	return nil
 }
 
-func (server *Server) Listen() {
+func (server *DyndnsServer) Listen() {
 	for request := range server.requests {
 		metrics.MessagesReceivedTotal.Inc()
 		metrics.LatestMessageTimestamp.SetToCurrentTime()

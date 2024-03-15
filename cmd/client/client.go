@@ -47,6 +47,7 @@ func main() {
 
 	config, err := conf.ReadClientConfig(configPath)
 	dieOnError(err, "couldn't read config file")
+	fmt.Println(config)
 
 	err = conf.ParseClientConfEnv(config)
 	dieOnError(err, "could not parse env variables")
@@ -82,6 +83,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 
 	var errs error
 	if len(config.Brokers) > 0 {
+		log.Info().Msg("Building MQTT notifier(s)")
 		for _, broker := range config.Brokers {
 			dispatcher, err := mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
 			if err != nil {
@@ -93,6 +95,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 	}
 
 	if len(config.HttpDispatcherConf) > 0 {
+		log.Info().Msg("Building HTTP notifier")
 		for _, dispatcher := range config.HttpDispatcherConf {
 			httpDispatcher, err := client.NewHttpDispatcher(dispatcher.Url)
 			if err != nil {
@@ -100,6 +103,16 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 			} else {
 				dispatchers[dispatcher.Url] = httpDispatcher
 			}
+		}
+	}
+
+	if len(config.SqsQueue) > 0 {
+		log.Info().Msg("Building AWS SQS notifier")
+		sqs, err := client.NewSqsDispatcher(config.SqsQueue, nil)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		} else {
+			dispatchers["sqs"] = sqs
 		}
 	}
 
@@ -161,10 +174,10 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 }
 
 func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, error) {
-	if config.EmailConfig != nil {
+	if config.EmailConfig.IsConfigured() {
 		err := config.EmailConfig.Validate()
 		dieOnError(err, "Bad email config")
-		return util.NewEmailNotification(config.EmailConfig)
+		return util.NewEmailNotification(&config.EmailConfig)
 	}
 
 	return &notification.DummyNotification{}, nil

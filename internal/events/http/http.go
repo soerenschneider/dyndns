@@ -69,7 +69,7 @@ func (s *HttpServer) handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *HttpServer) Listen(ctx context.Context, events chan bool, wg *sync.WaitGroup) error {
+func (s *HttpServer) Listen(ctx context.Context, wg *sync.WaitGroup) error {
 	wg.Add(1)
 
 	mux := http.NewServeMux()

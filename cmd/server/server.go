@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -21,12 +22,14 @@ import (
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/events/http"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
+	client "github.com/soerenschneider/dyndns/internal/events/sqs"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
-	"github.com/soerenschneider/dyndns/server"
+	server2 "github.com/soerenschneider/dyndns/server"
 	"github.com/soerenschneider/dyndns/server/dns"
 	vaultDyndns "github.com/soerenschneider/dyndns/server/vault"
+	"go.uber.org/multierr"
 )
 
 const defaultConfigPath = "/etc/dyndns/config.json"
@@ -36,6 +39,10 @@ func dieOnError(err error, msg string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg(msg)
 	}
+}
+
+type Listener interface {
+	Listen(ctx context.Context, wg *sync.WaitGroup) error
 }
 
 func main() {
@@ -74,25 +81,10 @@ func RunServer(config *conf.ServerConf) {
 	metrics.MqttBrokersConfiguredTotal.Set(float64(len(config.Brokers)))
 	conf.PrintFields(config, conf.SensitiveFields...)
 
-	notificationImpl, err := buildNotificationImpl(config)
+	notificationImpl, err := buildNotificationImpl(*config)
 	dieOnError(err, "Can't build notification impl")
 
 	var requestsChannel = make(chan common.UpdateRecordRequest)
-	var servers []*mqtt.MqttBus
-	for _, broker := range config.Brokers {
-		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requestsChannel)
-		if err != nil {
-			log.Error().Err(err).Msg("could not connect to mqtt")
-		} else {
-			servers = append(servers, mqttServer)
-		}
-	}
-
-	log.Info().Msgf("Configured %d servers", len(servers))
-	if len(servers) == 0 {
-		log.Fatal().Err(err).Msg("not connected to a single mqtt server")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go metrics.StartMetricsServer(config.MetricsListener)
@@ -105,32 +97,103 @@ func RunServer(config *conf.ServerConf) {
 		metrics.KnownHostsHash.Set(float64(hash))
 	}
 
-	provider, err := buildProvider(config)
+	provider, err := buildAwsCredentialsProvider(config)
 	dieOnError(err, "could not build credentials provider")
+
+	listeners, err := buildListeners(*config, requestsChannel, provider)
+	if err != nil {
+		log.Error().Err(err).Msg("could not build all listeners")
+	}
+	if len(listeners) == 0 {
+		log.Fatal().Err(err).Msg("no usable listener has been built")
+	}
 
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
 	dieOnError(err, "Could not build dns propagation implementation")
 
-	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
+	dyndnsServer, err := server2.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	dieOnError(err, "could not build dyndns server")
 
 	log.Info().Msg("Ready, listening for incoming requests")
 	go dyndnsServer.Listen()
+
+	wg := &sync.WaitGroup{}
+	for _, listener := range listeners {
+		go func() {
+			err := listener.Listen(ctx, wg)
+			if err != nil {
+				log.Fatal().Err(err).Msg("could not start listener")
+			}
+		}()
+	}
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, syscall.SIGINT, syscall.SIGTERM)
 	<-term
 	log.Info().Msg("Caught signal, cancelling context")
 	cancel()
-	for index := range servers {
-		mqttServer := servers[index]
-		mqttServer.Disconnect()
-	}
-
+	wg.Wait()
 	close(requestsChannel)
 }
 
-func buildProvider(config *conf.ServerConf) (credentials.Provider, error) {
+func buildSqs(config conf.ServerConf, requests chan common.UpdateRecordRequest, credProvider credentials.Provider) (*client.SqsListener, error) {
+	return client.NewSqsConsumer(config.SqsQueue, credProvider, requests)
+}
+
+func buildMqtt(config conf.ServerConf, requests chan common.UpdateRecordRequest) ([]*mqtt.MqttBus, error) {
+	var servers []*mqtt.MqttBus
+	for _, broker := range config.Brokers {
+		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requests)
+		if err != nil {
+			log.Error().Err(err).Msg("could not connect to mqtt")
+		} else {
+			servers = append(servers, mqttServer)
+		}
+	}
+
+	return servers, nil
+}
+
+func buildListeners(config conf.ServerConf, requests chan common.UpdateRecordRequest, creds credentials.Provider) ([]Listener, error) {
+	var listeners []Listener
+	var errs error
+
+	if len(config.MqttConfig.Brokers) > 0 {
+		log.Info().Msg("Building MQTT listener(s)...")
+		mqttListeners, err := buildMqtt(config, requests)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
+		for _, listener := range mqttListeners {
+			listener := listener
+			listeners = append(listeners, listener)
+		}
+	}
+
+	if len(config.SqsQueue) > 0 {
+		log.Info().Msg("Building AWS SQS listener...")
+		sqs, err := buildSqs(config, requests, creds)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		} else {
+			listeners = append(listeners, sqs)
+		}
+	}
+
+	if len(config.HttpConfig.ListenAddr) > 0 {
+		log.Info().Msg("Building HTTP listener...")
+		httpServer, err := buildHttpServer(config, requests)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		} else {
+			listeners = append(listeners, httpServer)
+		}
+	}
+
+	return listeners, errs
+}
+
+func buildAwsCredentialsProvider(config *conf.ServerConf) (credentials.Provider, error) {
 	if !config.UseVaultCredentialsProvider() {
 		return nil, nil
 	}
@@ -144,10 +207,10 @@ func buildProvider(config *conf.ServerConf) (credentials.Provider, error) {
 		return nil, err
 	}
 
-	return buildCredentialProvider(config.VaultConfig, client, auth)
+	return buildAwsVaultCredentialProvider(&config.VaultConfig, client, auth)
 }
 
-func buildVaultClient(conf *conf.VaultConfig) (*api.Client, error) {
+func buildVaultClient(conf conf.VaultConfig) (*api.Client, error) {
 	config := api.DefaultConfig()
 	config.Address = conf.VaultAddr
 	config.Timeout = 30 * time.Second
@@ -155,8 +218,8 @@ func buildVaultClient(conf *conf.VaultConfig) (*api.Client, error) {
 	return api.NewClient(config)
 }
 
-func buildHttpServer(conf *conf.ServerConf, req chan common.UpdateRecordRequest) (*http.HttpServer, error) {
-	http, err := http.New(conf.HttpServer.Addr, req)
+func buildHttpServer(conf conf.ServerConf, req chan common.UpdateRecordRequest) (*http.HttpServer, error) {
+	http, err := http.New(conf.HttpConfig.ListenAddr, req)
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +227,9 @@ func buildHttpServer(conf *conf.ServerConf, req chan common.UpdateRecordRequest)
 	return http, nil
 }
 
-// buildCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
+// buildAwsVaultCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
 // otherwise the default credentials provider by AWS is used, trying to be resilient
-func buildCredentialProvider(config *conf.VaultConfig, client *api.Client, auth vaultDyndns.Auth) (credentials.Provider, error) {
+func buildAwsVaultCredentialProvider(config *conf.VaultConfig, client *api.Client, auth vaultDyndns.Auth) (credentials.Provider, error) {
 	if config == nil {
 		return nil, errors.New("nil config provided")
 	}
@@ -188,7 +251,7 @@ func buildCredentialProvider(config *conf.VaultConfig, client *api.Client, auth 
 	return provider, nil
 }
 
-func buildVaultAuth(config *conf.VaultConfig) (vaultDyndns.Auth, error) {
+func buildVaultAuth(config conf.VaultConfig) (vaultDyndns.Auth, error) {
 	switch config.AuthStrategy {
 	case conf.VaultAuthStrategyToken:
 		return vaultDyndns.NewTokenAuth(config.VaultToken)
@@ -201,13 +264,13 @@ func buildVaultAuth(config *conf.VaultConfig) (vaultDyndns.Auth, error) {
 		return nil, errors.New("can't build vault auth")
 	}
 }
-func buildNotificationImpl(config *conf.ServerConf) (notification.Notification, error) {
-	if config.EmailConfig != nil {
+func buildNotificationImpl(config conf.ServerConf) (notification.Notification, error) {
+	if config.EmailConfig.IsConfigured() {
 		err := config.EmailConfig.Validate()
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Bad email config")
 		}
-		return util.NewEmailNotification(config.EmailConfig)
+		return util.NewEmailNotification(&config.EmailConfig)
 	}
 
 	return &notification.DummyNotification{}, nil

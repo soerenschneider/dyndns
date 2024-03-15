@@ -6,15 +6,15 @@ terraform {
     }
 
     sops = {
-      source = "carlpett/sops"
+      source  = "carlpett/sops"
       version = "1.0.0"
     }
   }
 
   backend "s3" {
-    bucket               = "soerenschneider-terraform"
-    key                  = "dyndns-server"
-    region               = "us-east-1"
+    bucket = "soerenschneider-terraform"
+    key    = "dyndns-server"
+    region = "us-east-1"
   }
 }
 

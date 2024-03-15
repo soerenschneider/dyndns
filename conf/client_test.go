@@ -25,7 +25,7 @@ func TestReadClientConfig(t *testing.T) {
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: "0.0.0.0:9191",
-				MqttConfig: &MqttConfig{
+				MqttConfig: MqttConfig{
 					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
@@ -41,7 +41,7 @@ func TestReadClientConfig(t *testing.T) {
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: "0.0.0.0:9191",
-				MqttConfig: &MqttConfig{
+				MqttConfig: MqttConfig{
 					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
