@@ -25,11 +25,11 @@ func TestReadServerConfig(t *testing.T) {
 				},
 				HostedZoneId:    "hosted-zone-id-x",
 				MetricsListener: ":6666",
-				MqttConfig: &MqttConfig{
+				MqttConfig: MqttConfig{
 					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
 					ClientId: "my-client-id",
 				},
-				EmailConfig: &EmailConfig{
+				EmailConfig: EmailConfig{
 					From:         "from",
 					To:           []string{"to-1"},
 					SmtpHost:     "smtp-host",
@@ -49,11 +49,11 @@ func TestReadServerConfig(t *testing.T) {
 				},
 				HostedZoneId:    "hosted-zone-id-x",
 				MetricsListener: ":6666",
-				MqttConfig: &MqttConfig{
+				MqttConfig: MqttConfig{
 					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
 					ClientId: "my-client-id",
 				},
-				EmailConfig: &EmailConfig{
+				EmailConfig: EmailConfig{
 					From:         "from",
 					To:           []string{"to-1"},
 					SmtpHost:     "smtp-host",
@@ -108,7 +108,7 @@ func TestServerConf_ParseEnvVariables_AuthStrategy(t *testing.T) {
 	defer os.Setenv(envKey, "")
 
 	empty := &ServerConf{
-		VaultConfig: &VaultConfig{},
+		VaultConfig: VaultConfig{},
 	}
 	err := ParseEnvVariables(empty)
 	if err != nil {
@@ -128,7 +128,7 @@ func TestServerConf_ParseEnvVariables_AuthStrategy_Invalid(t *testing.T) {
 	defer os.Setenv(envKey, "")
 
 	empty := &ServerConf{
-		VaultConfig: &VaultConfig{},
+		VaultConfig: VaultConfig{},
 	}
 	err := ParseEnvVariables(empty)
 	if err != nil {

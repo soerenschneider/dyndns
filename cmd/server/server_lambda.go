@@ -15,7 +15,7 @@ import (
 )
 
 var propagator dns.Propagator
-var server *server2.Server
+var server *server2.DyndnsServer
 
 func init() {
 	conf := conf2.GetDefaultServerConfig()

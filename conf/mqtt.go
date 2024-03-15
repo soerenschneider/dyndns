@@ -39,11 +39,10 @@ func (conf *MqttConfig) TlsConfig() *tls.Config {
 		}
 	}
 
-	// #nosec G402
 	tlsConf := &tls.Config{
 		RootCAs:            certPool,
 		ClientAuth:         tls.RequestClientCert,
-		InsecureSkipVerify: conf.TlsInsecure,
+		InsecureSkipVerify: conf.TlsInsecure, // #nosec G402
 	}
 
 	clientCertDefined := len(conf.ClientCertFile) > 0

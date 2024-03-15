@@ -26,8 +26,8 @@ type VaultConfig struct {
 	VaultToken string `yaml:"vault_token,omitempty" env:"VAULT_TOKEN"`
 }
 
-func GetDefaultVaultConfig() *VaultConfig {
-	return &VaultConfig{
+func GetDefaultVaultConfig() VaultConfig {
+	return VaultConfig{
 		AwsRoleName:  "dyndns",
 		AwsMountPath: "aws",
 		VaultAddr:    os.Getenv("VAULT_ADDR"),

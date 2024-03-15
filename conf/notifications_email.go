@@ -7,16 +7,20 @@ import (
 )
 
 type EmailConfig struct {
-	From             string   `yaml:"from" env:"EMAIL_FROM" validate:"required_without=FromFile"`
-	FromFile         string   `yaml:"from_file" env:"EMAIL_FROM_FILE" validate:"required_without=From"`
-	To               []string `yaml:"to"   env:"EMAIL_TO" envSeparator:";" validate:"required_without=ToFile"`
-	ToFile           string   `yaml:"to_file"   env:"EMAIL_TO" validate:"required_without=To"`
-	SmtpHost         string   `yaml:"host" env:"EMAIL_HOST" validate:"required"`
-	SmtpPort         int      `yaml:"port" env:"EMAIL_PORT" validate:"required"`
-	SmtpUsername     string   `yaml:"user" env:"EMAIL_USER" validate:"required_without=SmtpUsernameFile"`
-	SmtpUsernameFile string   `yaml:"user_file" env:"EMAIL_USER_FILE" validate:"required_without=smtpUsername"`
-	SmtpPassword     string   `yaml:"password" env:"EMAIL_PASSWORD" validate:"required_without=SmtpPasswordFile"`
-	SmtpPasswordFile string   `yaml:"password_file" env:"EMAIL_PASSWORD_FILE" validate:"required_without=SmtpPassword"`
+	From             string   `yaml:"from" env:"EMAIL_FROM" validate:"required_with=SmtpHost,omitempty,required_without=FromFile"`
+	FromFile         string   `yaml:"from_file" env:"EMAIL_FROM_FILE" validate:"required_with=SmtpHost,omitempty,required_without=From"`
+	To               []string `yaml:"to"   env:"EMAIL_TO" envSeparator:";" validate:"required_with=SmtpHost,omitempty,required_without=ToFile"`
+	ToFile           string   `yaml:"to_file"   env:"EMAIL_TO" validate:"required_with=SmtpHost,omitempty,required_without=To"`
+	SmtpHost         string   `yaml:"host" env:"EMAIL_HOST" validate:"omitempty,required"`
+	SmtpPort         int      `yaml:"port" env:"EMAIL_PORT" validate:"omitempty,required"`
+	SmtpUsername     string   `yaml:"user" env:"EMAIL_USER" validate:"required_with=SmtpHost,omitempty,required_without=SmtpUsernameFile"`
+	SmtpUsernameFile string   `yaml:"user_file" env:"EMAIL_USER_FILE" validate:"required_with=SmtpHost,omitempty,required_without=smtpUsername"`
+	SmtpPassword     string   `yaml:"password" env:"EMAIL_PASSWORD" validate:"required_with=SmtpHost,omitempty,required_without=SmtpPasswordFile"`
+	SmtpPasswordFile string   `yaml:"password_file" env:"EMAIL_PASSWORD_FILE" validate:"required_with=SmtpHost,omitempty,required_without=SmtpPassword"`
+}
+
+func (conf *EmailConfig) IsConfigured() bool {
+	return (len(conf.From) > 0 || len(conf.FromFile) > 0) && (len(conf.To) > 0 || len(conf.ToFile) > 0)
 }
 
 func (conf *EmailConfig) GetFrom() (string, error) {

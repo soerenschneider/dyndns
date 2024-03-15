@@ -3,8 +3,10 @@
 package mqtt
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -45,13 +47,18 @@ func NewMqttServer(broker string, clientId, notificationTopic string, tlsConfig 
 	opts.OnReconnecting = onReconnectHandler
 
 	bus.client = mqtt.NewClient(opts)
-	token := bus.client.Connect()
-	finishedWithinTimeout := token.WaitTimeout(10 * time.Second)
-	if token.Error() != nil || !finishedWithinTimeout {
-		log.Error().Err(token.Error()).Msgf("Connection to broker %q failed, continuing in background", broker)
-	}
 
 	return bus, nil
+}
+
+func (s *MqttBus) Listen(ctx context.Context, wg *sync.WaitGroup) error {
+	token := s.client.Connect()
+	finishedWithinTimeout := token.WaitTimeout(10 * time.Second)
+	if token.Error() != nil || !finishedWithinTimeout {
+		log.Error().Err(token.Error()).Msgf("Connection to broker %q failed, continuing in background", s.broker)
+	}
+
+	return nil
 }
 
 func (s *MqttBus) Disconnect() {
