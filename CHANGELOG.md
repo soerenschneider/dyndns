@@ -20,6 +20,33 @@
 * **deps:** bump github.com/go-playground/validator/v10 ([#371](https://github.com/soerenschneider/dyndns/issues/371)) ([cb3b248](https://github.com/soerenschneider/dyndns/commit/cb3b248b48c46a478d60f128b19f7c81b984c561))
 * **deps:** bump github.com/hashicorp/vault/api from 1.10.0 to 1.12.0 ([#370](https://github.com/soerenschneider/dyndns/issues/370)) ([8e0f8df](https://github.com/soerenschneider/dyndns/commit/8e0f8dfd6083f8ded3ee4926e15f2cd04bfc3df4))
 * **deps:** bump github.com/hashicorp/vault/api/auth/approle ([#375](https://github.com/soerenschneider/dyndns/issues/375)) ([d3668bc](https://github.com/soerenschneider/dyndns/commit/d3668bcbb8e7dc171f7a2a42cd271786278b67a1))
+* **deps:** bump github.com/prometheus/client_golang ([82b5af6](https://github.com/soerenschneider/dyndns/commit/82b5af6333f02584ca45ad14e8ac5a0fb12933df))
+* **deps:** bump github.com/prometheus/client_golang ([#353](https://github.com/soerenschneider/dyndns/issues/353)) ([c3b34e1](https://github.com/soerenschneider/dyndns/commit/c3b34e1117b87aa2c08475b9cc3be6ecd9a36ba0))
+* **deps:** bump github.com/rs/zerolog from 1.31.0 to 1.32.0 ([#374](https://github.com/soerenschneider/dyndns/issues/374)) ([d9b59f2](https://github.com/soerenschneider/dyndns/commit/d9b59f2961ecbb0cfd8eec07215c649546ea32d0))
+* **deps:** bump golang from 1.21.4 to 1.21.5 ([#344](https://github.com/soerenschneider/dyndns/issues/344)) ([163d012](https://github.com/soerenschneider/dyndns/commit/163d012e90d4f1c00c02630cdadced3cad48fecd))
+* **deps:** bump golang from 1.21.5 to 1.22.0 ([#368](https://github.com/soerenschneider/dyndns/issues/368)) ([a95378d](https://github.com/soerenschneider/dyndns/commit/a95378dd06fe1ee2942f6f8268d93cb9773c25fe))
+* **deps:** bump golang from 1.22.0 to 1.22.1 ([#381](https://github.com/soerenschneider/dyndns/issues/381)) ([2501216](https://github.com/soerenschneider/dyndns/commit/2501216b5dd1255010b405ed5d879057807bb999))
+
+## [1.18.0](https://github.com/soerenschneider/dyndns/compare/v1.17.0...v1.18.0) (2024-03-15)
+
+
+### Features
+
+* Add support for AWS SQS ([#384](https://github.com/soerenschneider/dyndns/issues/384)) ([06b9cd7](https://github.com/soerenschneider/dyndns/commit/06b9cd78d8154813af1b73c3c6f6329f2f4de6c8))
+* support yaml config files ([87248bb](https://github.com/soerenschneider/dyndns/commit/87248bbcff56a0cb7ce45d5b7c61defe2ab2b21f))
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/aws/aws-lambda-go from 1.41.0 to 1.43.0 ([#350](https://github.com/soerenschneider/dyndns/issues/350)) ([d0903c4](https://github.com/soerenschneider/dyndns/commit/d0903c49398b08c8a000d2e131199a5fda87dae8))
+* **deps:** bump github.com/aws/aws-lambda-go from 1.43.0 to 1.46.0 ([#366](https://github.com/soerenschneider/dyndns/issues/366)) ([e91095f](https://github.com/soerenschneider/dyndns/commit/e91095f84335cdee8e951c5296560636448c9c3b))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.48.13 to 1.49.4 ([#347](https://github.com/soerenschneider/dyndns/issues/347)) ([90da6f6](https://github.com/soerenschneider/dyndns/commit/90da6f689d0c1438334662ca6bb9346e2fcd9080))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.49.4 to 1.50.15 ([#372](https://github.com/soerenschneider/dyndns/issues/372)) ([d7560f2](https://github.com/soerenschneider/dyndns/commit/d7560f2b9bfab41024cee89d227851bcf018c32c))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.50.15 to 1.50.35 ([#383](https://github.com/soerenschneider/dyndns/issues/383)) ([a6d4451](https://github.com/soerenschneider/dyndns/commit/a6d4451843f53978af573ef04d2a6067dad41339))
+* **deps:** bump github.com/go-playground/validator/v10 ([cb064de](https://github.com/soerenschneider/dyndns/commit/cb064de4100de3a2efaca9033b8631f78b100bbe))
+* **deps:** bump github.com/go-playground/validator/v10 ([#371](https://github.com/soerenschneider/dyndns/issues/371)) ([cb3b248](https://github.com/soerenschneider/dyndns/commit/cb3b248b48c46a478d60f128b19f7c81b984c561))
+* **deps:** bump github.com/hashicorp/vault/api from 1.10.0 to 1.12.0 ([#370](https://github.com/soerenschneider/dyndns/issues/370)) ([8e0f8df](https://github.com/soerenschneider/dyndns/commit/8e0f8dfd6083f8ded3ee4926e15f2cd04bfc3df4))
+* **deps:** bump github.com/hashicorp/vault/api/auth/approle ([#375](https://github.com/soerenschneider/dyndns/issues/375)) ([d3668bc](https://github.com/soerenschneider/dyndns/commit/d3668bcbb8e7dc171f7a2a42cd271786278b67a1))
 * **deps:** bump github.com/prometheus/client_golang ([#353](https://github.com/soerenschneider/dyndns/issues/353)) ([c3b34e1](https://github.com/soerenschneider/dyndns/commit/c3b34e1117b87aa2c08475b9cc3be6ecd9a36ba0))
 * **deps:** bump github.com/rs/zerolog from 1.31.0 to 1.32.0 ([#374](https://github.com/soerenschneider/dyndns/issues/374)) ([d9b59f2](https://github.com/soerenschneider/dyndns/commit/d9b59f2961ecbb0cfd8eec07215c649546ea32d0))
 * **deps:** bump golang from 1.21.4 to 1.21.5 ([#344](https://github.com/soerenschneider/dyndns/issues/344)) ([163d012](https://github.com/soerenschneider/dyndns/commit/163d012e90d4f1c00c02630cdadced3cad48fecd))
