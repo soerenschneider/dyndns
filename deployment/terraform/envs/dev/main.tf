@@ -9,13 +9,13 @@ locals {
         ]
       }
 EOT
-      , "\n", ""), " ", "")
+    , "\n", ""), " ", "")
   }
 }
 
 module "dyndns-server" {
-  source = "../../lambda-deployment-module"
-  env_vars = local.env_vars
+  source      = "../../lambda-deployment-module"
+  env_vars    = local.env_vars
   hosted_zone = local.hosted_zone
 }
 
