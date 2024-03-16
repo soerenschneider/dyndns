@@ -143,7 +143,7 @@ func RunClient(config *conf.ClientConf) {
 		log.Error().Err(err).Msg("could not build all dispatchers")
 	}
 
-	reconciler, err := client.NewReconciler(dispatchers)
+	reconciler, err := client.NewReconciler(dispatchers, true)
 	dieOnError(err, "could not build reconciler")
 
 	opts := []client.Opts{

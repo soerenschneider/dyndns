@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -17,17 +18,19 @@ type Reconciler struct {
 	dispatchers map[string]EventDispatch
 	mutex       sync.Mutex
 
-	pendingChanges map[string]EventDispatch
+	stopAfterFirstSuccess bool
+	pendingChanges        map[string]EventDispatch
 }
 
-func NewReconciler(dispatchers map[string]EventDispatch) (*Reconciler, error) {
+func NewReconciler(dispatchers map[string]EventDispatch, stopAfterFirstSuccess bool) (*Reconciler, error) {
 	if len(dispatchers) < 1 {
 		return nil, errors.New("no dispatchers supplied")
 	}
 
 	return &Reconciler{
-		dispatchers: dispatchers,
-		mutex:       sync.Mutex{},
+		dispatchers:           dispatchers,
+		mutex:                 sync.Mutex{},
+		stopAfterFirstSuccess: stopAfterFirstSuccess,
 	}, nil
 }
 
@@ -65,11 +68,13 @@ func (r *Reconciler) dispatch() error {
 	wg.Add(len(r.pendingChanges))
 	errLock := &sync.Mutex{}
 	var errs error
+	var successFullDispatches atomic.Int32
 	for key, dispatcher := range r.pendingChanges {
 		var disp = dispatcher
 		go func(key string) {
 			err := disp.Notify(r.env)
 			if err == nil {
+				successFullDispatches.Add(1)
 				r.pendingChanges[key] = nil
 				delete(r.pendingChanges, key)
 				metrics.UpdatesDispatched.Inc()
@@ -86,6 +91,11 @@ func (r *Reconciler) dispatch() error {
 
 	wg.Wait()
 	timeSpent := time.Since(timeStart)
+
+	if r.stopAfterFirstSuccess && successFullDispatches.Load() > 0 && len(r.pendingChanges) > 0 {
+		log.Info().Msgf("Stopping reconciliation for %d pending changes due to %d successful dispatches", len(r.pendingChanges), successFullDispatches.Load())
+		r.pendingChanges = nil
+	}
 
 	log.Info().Msgf("Spent %v on reconciliation (%d dispatchers)", timeSpent, len(r.dispatchers))
 	metrics.ReconcilersActive.WithLabelValues(r.env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
