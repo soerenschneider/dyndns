@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 )
 
 type SqsDispatch struct {
@@ -43,6 +44,7 @@ func (h *SqsDispatch) Notify(msg *common.UpdateRecordRequest) error {
 
 	// TODO: change interface signature
 	ctx := context.Background()
+	metrics.SqsApiCalls.WithLabelValues("send_message").Inc()
 	result, err := h.client.SendMessageWithContext(ctx, &sqs.SendMessageInput{
 		MessageBody:  aws.String(string(data)),
 		QueueUrl:     aws.String(h.queueUrl),

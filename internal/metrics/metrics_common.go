@@ -56,6 +56,13 @@ var (
 		Namespace: namespace,
 		Name:      "notification_errors",
 	})
+
+	SqsApiCalls = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "sqs",
+		Help:      "The total amount of SQS API calls",
+		Name:      "api_calls_total",
+	}, []string{"operation"})
 )
 
 func StartMetricsServer(addr string) {
