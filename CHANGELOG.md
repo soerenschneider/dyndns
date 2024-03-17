@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.19.0](https://github.com/soerenschneider/dyndns/compare/v1.18.0...v1.19.0) (2024-03-16)
+
+
+### Features
+
+* add metrics for sqs api calls ([476c42a](https://github.com/soerenschneider/dyndns/commit/476c42ac015a767ad0bb51ec9bf84e5a70138104))
+* allow stopping reconciliation early after first successful update request dispatch ([7dbf766](https://github.com/soerenschneider/dyndns/commit/7dbf76672cfbd3c240f2c6e5d26efaf4353d47a5))
+
+
+### Bug Fixes
+
+* allow setting explicit aws region ([0fc9f15](https://github.com/soerenschneider/dyndns/commit/0fc9f15ed2506cf6fb310a89dfa04f6d6b2446a2))
+* fix config validation ([51012d3](https://github.com/soerenschneider/dyndns/commit/51012d3f3926382d7fe45fc79dcd06b63445a34e))
+
 ## [1.18.0](https://github.com/soerenschneider/dyndns/compare/v1.17.0...v1.18.0) (2024-03-15)
 
 
