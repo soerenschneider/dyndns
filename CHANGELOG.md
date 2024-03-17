@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/soerenschneider/dyndns/compare/v1.19.0...v1.20.0) (2024-03-17)
+
+
+### Features
+
+* improve logging ([181fc19](https://github.com/soerenschneider/dyndns/commit/181fc19f9cd6848c91f69b2a90ea54fafd12fab9))
+
 ## [1.19.0](https://github.com/soerenschneider/dyndns/compare/v1.18.0...v1.19.0) (2024-03-16)
 
 
