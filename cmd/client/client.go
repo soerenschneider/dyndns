@@ -24,6 +24,7 @@ import (
 var (
 	configPath    string
 	once          bool
+	debug         bool
 	cmdVersion    bool
 	cmdGenKeypair bool
 )
@@ -40,7 +41,7 @@ func main() {
 		generateKeypair()
 	}
 
-	util.InitLogging()
+	util.InitLogging(debug)
 	if configPath == "" {
 		configPath = conf.GetDefaultConfigFileOrEmpty()
 	}
@@ -69,6 +70,7 @@ func parseFlags() {
 	flag.BoolVar(&once, "once", false, "Do not run as a daemon")
 	flag.BoolVar(&cmdVersion, "version", false, "Print version and exit")
 	flag.BoolVar(&cmdGenKeypair, "gen-keypair", false, "Generate keypair")
+	flag.BoolVar(&debug, "debug", false, "Print debug logs")
 	flag.Parse()
 }
 

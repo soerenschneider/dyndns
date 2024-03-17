@@ -48,6 +48,7 @@ type Listener interface {
 func main() {
 	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
 	version := flag.Bool("version", false, "Print version and exit")
+	debug := flag.Bool("debug", false, "Print debug logs")
 	flag.Parse()
 
 	if *version {
@@ -55,7 +56,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	util.InitLogging()
+	util.InitLogging(*debug)
 
 	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
 	metrics.ProcessStartTime.SetToCurrentTime()
