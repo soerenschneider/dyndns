@@ -9,7 +9,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
-	github.com/hashicorp/vault/api v1.12.0
+	github.com/hashicorp/vault/api v1.12.1
 	github.com/hashicorp/vault/api/auth/approle v0.6.0
 	github.com/prometheus/client_golang v1.19.0
 	github.com/rs/zerolog v1.32.0
@@ -40,7 +40,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
