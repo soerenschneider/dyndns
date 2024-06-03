@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.20.1](https://github.com/soerenschneider/dyndns/compare/v1.20.0...v1.20.1) (2024-06-03)
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/aws/aws-lambda-go from 1.46.0 to 1.47.0 ([196de5a](https://github.com/soerenschneider/dyndns/commit/196de5a4b7b43d0e6e7bff356b9c4764983f0242))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.50.35 to 1.53.15 ([e55b5f5](https://github.com/soerenschneider/dyndns/commit/e55b5f5e6e67c7fcb7f43fb9983c21d5b1f4daa8))
+* **deps:** bump github.com/go-playground/validator/v10 ([6512b54](https://github.com/soerenschneider/dyndns/commit/6512b54f70442211a871ef034727f911a1e38e9d))
+* **deps:** bump golang from 1.22.1 to 1.22.3 ([bbdbee7](https://github.com/soerenschneider/dyndns/commit/bbdbee7d8aac69a3928677865bada55a95d7ed57))
+* **deps:** bump golang.org/x/term from 0.17.0 to 0.20.0 ([e63a958](https://github.com/soerenschneider/dyndns/commit/e63a95803cecbc1572260996b649c4350f48b438))
+
 ## [1.20.0](https://github.com/soerenschneider/dyndns/compare/v1.19.0...v1.20.0) (2024-03-17)
 
 
