@@ -4,14 +4,14 @@ go 1.18
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/aws/aws-sdk-go v1.53.15
+	github.com/aws/aws-sdk-go v1.54.19
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/go-playground/validator/v10 v10.21.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/hashicorp/vault/api v1.12.0
 	github.com/hashicorp/vault/api/auth/approle v0.6.0
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/rs/zerolog v1.32.0
 	go.uber.org/multierr v1.11.0
 	golang.org/x/term v0.20.0
@@ -27,6 +27,7 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -41,10 +42,11 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.48.0 // indirect
+	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
