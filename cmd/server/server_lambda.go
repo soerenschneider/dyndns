@@ -18,19 +18,19 @@ var propagator dns.Propagator
 var dyndnsServer *server.DyndnsServer
 
 func init() {
-	conf := conf.GetDefaultServerConfig()
-	if err := conf.ParseEnvVariables(conf); err != nil {
+	config := conf.GetDefaultServerConfig()
+	if err := conf.ParseEnvVariables(config); err != nil {
 		log.Fatal().Err(err).Msg("could not parse config")
 	}
 
 	var err error
-	propagator, err = dns.NewRoute53Propagator(conf.HostedZoneId, nil)
+	propagator, err = dns.NewRoute53Propagator(config.HostedZoneId, nil)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not build propagator")
 	}
 
 	c := make(chan common.UpdateRecordRequest)
-	dyndnsServer, err = server.NewServer(*conf, propagator, c, nil)
+	dyndnsServer, err = server.NewServer(*config, propagator, c, nil)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not build server")
 	}
@@ -45,7 +45,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		}, err
 	}
 
-	if err := server.HandlePropagateRequest(payload); err != nil {
+	if err := dyndnsServer.HandlePropagateRequest(payload); err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
 		}, err
