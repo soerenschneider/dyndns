@@ -19,3 +19,10 @@ func WithInterval(interval time.Duration) func(c *Client) error {
 		return nil
 	}
 }
+
+func WithForceSendUpdate() func(c *Client) error {
+	return func(c *Client) error {
+		c.forceSendUpdate = true
+		return nil
+	}
+}

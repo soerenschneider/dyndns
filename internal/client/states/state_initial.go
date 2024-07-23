@@ -3,13 +3,18 @@ package states
 import (
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
 )
 
-type initialState struct{}
+type initialState struct {
+	forceSendUpdate bool
+}
 
-func NewInitialState() *initialState {
-	return &initialState{}
+func NewInitialState(forceSendUpdate bool) *initialState {
+	return &initialState{
+		forceSendUpdate: forceSendUpdate,
+	}
 }
 
 func (state *initialState) String() string {
@@ -23,6 +28,10 @@ func (state *initialState) Name() string {
 func (state *initialState) EvaluateState(context Client, resolved *common.DnsRecord) bool {
 	// This is just a dummy state, we'll immediately set the next state and invoke it
 	context.SetState(NewIpNotConfirmedState())
+	if state.forceSendUpdate {
+		log.Info().Msg("forceSendUpdate is set, sending update")
+		return true
+	}
 	return context.GetState().EvaluateState(context, resolved)
 }
 

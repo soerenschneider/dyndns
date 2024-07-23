@@ -29,6 +29,7 @@ type Client struct {
 	lastStateChange  time.Time
 	notificationImpl notification.Notification
 	resolveInterval  time.Duration
+	forceSendUpdate  bool
 }
 
 type Opts func(c *Client) error
@@ -60,7 +61,7 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 		}
 	}
 
-	c.state = states.NewInitialState()
+	c.state = states.NewInitialState(c.forceSendUpdate)
 
 	return c, errs
 }

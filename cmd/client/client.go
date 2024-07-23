@@ -23,11 +23,12 @@ import (
 )
 
 var (
-	configPath    string
-	once          bool
-	debug         bool
-	cmdVersion    bool
-	cmdGenKeypair bool
+	configPath      string
+	once            bool
+	forceSendUpdate bool
+	debug           bool
+	cmdVersion      bool
+	cmdGenKeypair   bool
 )
 
 func main() {
@@ -69,6 +70,7 @@ func main() {
 func parseFlags() {
 	flag.StringVar(&configPath, "config", "", "Path to the config file")
 	flag.BoolVar(&once, "once", false, "Do not run as a daemon")
+	flag.BoolVar(&forceSendUpdate, "forceSendUpdate", false, "Force sending an update request at start")
 	flag.BoolVar(&cmdVersion, "version", false, "Print version and exit")
 	flag.BoolVar(&cmdGenKeypair, "gen-keypair", false, "Generate keypair")
 	flag.BoolVar(&debug, "debug", false, "Print debug logs")
@@ -151,6 +153,10 @@ func RunClient(config *conf.ClientConf) {
 
 	opts := []client.Opts{
 		client.WithInterval(15 * time.Second),
+	}
+
+	if forceSendUpdate {
+		opts = append(opts, client.WithForceSendUpdate())
 	}
 
 	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl, opts...)
