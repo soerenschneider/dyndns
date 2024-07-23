@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/client/resolvers"
-	"github.com/soerenschneider/dyndns/client/states"
+	"github.com/soerenschneider/dyndns/internal/client/resolvers"
+	"github.com/soerenschneider/dyndns/internal/client/states"
 	"github.com/soerenschneider/dyndns/internal/common"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
@@ -16,6 +16,10 @@ import (
 )
 
 const DefaultResolveInterval = 45 * time.Second
+
+type EventDispatch interface {
+	Notify(msg *common.UpdateRecordRequest) error
+}
 
 type Client struct {
 	signature        verification.SignatureKeypair
@@ -45,7 +49,6 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 		resolveInterval:  DefaultResolveInterval,
 		reconciler:       reconciler,
 		signature:        signature,
-		state:            states.NewInitialState(),
 		lastStateChange:  time.Now(),
 		notificationImpl: notifyImpl,
 	}
@@ -56,6 +59,8 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 			errs = multierr.Append(errs, err)
 		}
 	}
+
+	c.state = states.NewInitialState()
 
 	return c, errs
 }
@@ -106,11 +111,11 @@ func (client *Client) Resolve(prev *common.DnsRecord) (*common.DnsRecord, error)
 	var errs error
 	if client.state.EvaluateState(client, resolvedIp) {
 		signature := client.signature.Sign(*resolvedIp)
-		env := &common.UpdateRecordRequest{
+		req := &common.UpdateRecordRequest{
 			PublicIp:  *resolvedIp,
 			Signature: signature,
 		}
-		errs = client.reconciler.RegisterUpdate(env)
+		errs = client.reconciler.RegisterUpdate(req)
 	}
 
 	return resolvedIp, errs

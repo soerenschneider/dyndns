@@ -18,7 +18,7 @@ func TestReadServerConfig(t *testing.T) {
 	}{
 		{
 			name: "happy path - yaml",
-			args: args{"../contrib/server.yaml"},
+			args: args{"../../contrib/server.yaml"},
 			want: &ServerConf{
 				KnownHosts: map[string][]string{
 					"host": []string{"key1", "key2"},
@@ -43,7 +43,7 @@ func TestReadServerConfig(t *testing.T) {
 		},
 		{
 			name: "happy path - json",
-			args: args{"../contrib/server.json"},
+			args: args{"../../contrib/server.json"},
 			want: &ServerConf{
 				KnownHosts: map[string][]string{
 					"host": []string{"key1", "key2"},

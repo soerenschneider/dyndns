@@ -11,7 +11,12 @@ module "dyndns" {
 module "sqs" {
   source      = "../../sqs"
   hosted_zone = data.sops_file.vars.data["hosted_zone"]
-  clients     = ["router-dd", "k8s-dd"]
+  clients     = [
+    "router-dd",
+    "k8s-dd",
+    "router-ez",
+    "k8s-ez"
+  ]
   servers     = ["k8s-dd"]
   environment = "prod"
   queue_name  = "dyndns-prod"

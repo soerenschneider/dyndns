@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/server/dns"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"github.com/soerenschneider/dyndns/server/dns"
 )
 
 type SimpleVerifier struct {

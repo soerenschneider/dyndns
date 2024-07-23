@@ -1,11 +1,12 @@
 package conf
 
 import (
-	"github.com/go-playground/validator/v10"
-	"github.com/rs/zerolog/log"
 	"net/url"
 	"reflect"
 	"sync"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 const (

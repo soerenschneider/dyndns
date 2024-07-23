@@ -17,18 +17,18 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/api/auth/approle"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
 	"github.com/soerenschneider/dyndns/internal/common"
+	conf "github.com/soerenschneider/dyndns/internal/conf"
 	"github.com/soerenschneider/dyndns/internal/events/http"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
 	client "github.com/soerenschneider/dyndns/internal/events/sqs"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
+	"github.com/soerenschneider/dyndns/internal/server"
+	"github.com/soerenschneider/dyndns/internal/server/dns"
+	"github.com/soerenschneider/dyndns/internal/server/vault"
 	"github.com/soerenschneider/dyndns/internal/util"
-	server2 "github.com/soerenschneider/dyndns/server"
-	"github.com/soerenschneider/dyndns/server/dns"
-	vaultDyndns "github.com/soerenschneider/dyndns/server/vault"
 	"go.uber.org/multierr"
 )
 
@@ -112,7 +112,7 @@ func RunServer(config *conf.ServerConf) {
 	propagator, err := dns.NewRoute53Propagator(config.HostedZoneId, provider)
 	dieOnError(err, "Could not build dns propagation implementation")
 
-	dyndnsServer, err := server2.NewServer(*config, propagator, requestsChannel, notificationImpl)
+	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	dieOnError(err, "could not build dyndns server")
 
 	log.Info().Msg("Ready, listening for incoming requests")
@@ -230,12 +230,12 @@ func buildHttpServer(conf conf.ServerConf, req chan common.UpdateRecordRequest) 
 
 // buildAwsVaultCredentialProvider returns the vault credentials provider, but only if it succeeds to login at vault
 // otherwise the default credentials provider by AWS is used, trying to be resilient
-func buildAwsVaultCredentialProvider(config *conf.VaultConfig, client *api.Client, auth vaultDyndns.Auth) (credentials.Provider, error) {
+func buildAwsVaultCredentialProvider(config *conf.VaultConfig, client *api.Client, auth vault.Auth) (credentials.Provider, error) {
 	if config == nil {
 		return nil, errors.New("nil config provided")
 	}
 
-	provider, err := vaultDyndns.NewVaultCredentialProvider(client, auth, config)
+	provider, err := vault.NewVaultCredentialProvider(client, auth, config)
 	if err != nil {
 		return nil, err
 	}
@@ -252,10 +252,10 @@ func buildAwsVaultCredentialProvider(config *conf.VaultConfig, client *api.Clien
 	return provider, nil
 }
 
-func buildVaultAuth(config conf.VaultConfig) (vaultDyndns.Auth, error) {
+func buildVaultAuth(config conf.VaultConfig) (vault.Auth, error) {
 	switch config.AuthStrategy {
 	case conf.VaultAuthStrategyToken:
-		return vaultDyndns.NewTokenAuth(config.VaultToken)
+		return vault.NewTokenAuth(config.VaultToken)
 	case conf.VaultAuthStrategyApprole:
 		secretId := &approle.SecretID{
 			FromString: config.AppRoleSecretId,

@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/client"
-	"github.com/soerenschneider/dyndns/client/resolvers"
-	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal"
+	"github.com/soerenschneider/dyndns/internal/client"
+	"github.com/soerenschneider/dyndns/internal/client/dispatchers"
+	"github.com/soerenschneider/dyndns/internal/client/resolvers"
+	"github.com/soerenschneider/dyndns/internal/conf"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
@@ -81,7 +82,7 @@ func dieOnError(err error, msg string) {
 }
 
 func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, error) {
-	dispatchers := map[string]client.EventDispatch{}
+	disp := map[string]client.EventDispatch{}
 
 	var errs error
 	if len(config.Brokers) > 0 {
@@ -91,7 +92,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 			if err != nil {
 				errs = multierr.Append(errs, err)
 			} else {
-				dispatchers[broker] = dispatcher
+				disp[broker] = dispatcher
 			}
 		}
 	}
@@ -99,26 +100,26 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 	if len(config.HttpDispatcherConf) > 0 {
 		log.Info().Msg("Building HTTP notifier")
 		for _, dispatcher := range config.HttpDispatcherConf {
-			httpDispatcher, err := client.NewHttpDispatcher(dispatcher.Url)
+			httpDispatcher, err := dispatchers.NewHttpDispatcher(dispatcher.Url)
 			if err != nil {
 				errs = multierr.Append(errs, err)
 			} else {
-				dispatchers[dispatcher.Url] = httpDispatcher
+				disp[dispatcher.Url] = httpDispatcher
 			}
 		}
 	}
 
 	if len(config.SqsQueue) > 0 {
 		log.Info().Msg("Building AWS SQS notifier")
-		sqs, err := client.NewSqsDispatcher(config.SqsConfig, nil)
+		sqs, err := dispatchers.NewSqsDispatcher(config.SqsConfig, nil)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
-			dispatchers["sqs"] = sqs
+			disp["sqs"] = sqs
 		}
 	}
 
-	return dispatchers, errs
+	return disp, errs
 }
 
 func RunClient(config *conf.ClientConf) {

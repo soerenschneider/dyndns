@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
+	conf2 "github.com/soerenschneider/dyndns/internal/conf"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
+	"github.com/soerenschneider/dyndns/internal/server/dns"
 	"github.com/soerenschneider/dyndns/internal/util"
 	"github.com/soerenschneider/dyndns/internal/verification"
-	"github.com/soerenschneider/dyndns/server/dns"
 )
 
 // timestampGracePeriod must be a negative number
@@ -31,8 +31,8 @@ type DyndnsServer struct {
 	lock sync.RWMutex
 }
 
-func NewServer(config conf.ServerConf, propagator dns.Propagator, requests chan common.UpdateRecordRequest, notifyImpl notification.Notification) (*DyndnsServer, error) {
-	err := conf.ValidateConfig(config)
+func NewServer(config conf2.ServerConf, propagator dns.Propagator, requests chan common.UpdateRecordRequest, notifyImpl notification.Notification) (*DyndnsServer, error) {
+	err := conf2.ValidateConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("invalid conf passed: %v", err)
 	}

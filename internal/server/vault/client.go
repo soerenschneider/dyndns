@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/hashicorp/vault/api"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/conf"
+	"github.com/soerenschneider/dyndns/internal/conf"
 )
 
 const (

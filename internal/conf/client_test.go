@@ -18,7 +18,7 @@ func TestReadClientConfig(t *testing.T) {
 	}{
 		{
 			name: "happy path - yaml",
-			args: args{"../contrib/client.yaml"},
+			args: args{"../../contrib/client.yaml"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
 				AddrFamilies:    []string{AddrFamilyIpv4},
@@ -35,7 +35,7 @@ func TestReadClientConfig(t *testing.T) {
 		},
 		{
 			name: "happy path - json",
-			args: args{"../contrib/client.json"},
+			args: args{"../../contrib/client.json"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
 				AddrFamilies:    []string{AddrFamilyIpv4},
@@ -58,13 +58,13 @@ func TestReadClientConfig(t *testing.T) {
 		},
 		{
 			name:    "wrong format",
-			args:    args{"../contrib/textfile.txt"},
+			args:    args{"../../contrib/textfile.txt"},
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "empty yaml file content",
-			args:    args{"../contrib/empty.yaml"},
+			args:    args{"../../contrib/empty.yaml"},
 			want:    getDefaultClientConfig(),
 			wantErr: false,
 		},

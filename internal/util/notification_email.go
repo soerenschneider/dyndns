@@ -3,8 +3,8 @@ package util
 import (
 	"fmt"
 
-	"github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/conf"
 	"gopkg.in/gomail.v2"
 )
 

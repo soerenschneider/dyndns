@@ -8,18 +8,18 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/rs/zerolog/log"
-	conf2 "github.com/soerenschneider/dyndns/conf"
 	"github.com/soerenschneider/dyndns/internal/common"
-	server2 "github.com/soerenschneider/dyndns/server"
-	"github.com/soerenschneider/dyndns/server/dns"
+	"github.com/soerenschneider/dyndns/internal/conf"
+	"github.com/soerenschneider/dyndns/internal/server"
+	"github.com/soerenschneider/dyndns/internal/server/dns"
 )
 
 var propagator dns.Propagator
-var server *server2.DyndnsServer
+var dyndnsServer *server.DyndnsServer
 
 func init() {
-	conf := conf2.GetDefaultServerConfig()
-	if err := conf2.ParseEnvVariables(conf); err != nil {
+	conf := conf.GetDefaultServerConfig()
+	if err := conf.ParseEnvVariables(conf); err != nil {
 		log.Fatal().Err(err).Msg("could not parse config")
 	}
 
@@ -30,7 +30,7 @@ func init() {
 	}
 
 	c := make(chan common.UpdateRecordRequest)
-	server, err = server2.NewServer(*conf, propagator, c, nil)
+	dyndnsServer, err = server.NewServer(*conf, propagator, c, nil)
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not build server")
 	}
