@@ -70,7 +70,7 @@ func main() {
 func parseFlags() {
 	flag.StringVar(&configPath, "config", "", "Path to the config file")
 	flag.BoolVar(&once, "once", false, "Do not run as a daemon")
-	flag.BoolVar(&forceSendUpdate, "forceSendUpdate", false, "Force sending an update request at start")
+	flag.BoolVar(&forceSendUpdate, "force", false, "Force sending an update request at start")
 	flag.BoolVar(&cmdVersion, "version", false, "Print version and exit")
 	flag.BoolVar(&cmdGenKeypair, "gen-keypair", false, "Generate keypair")
 	flag.BoolVar(&debug, "debug", false, "Print debug logs")
