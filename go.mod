@@ -1,6 +1,8 @@
 module github.com/soerenschneider/dyndns
 
-go 1.18
+go 1.21
+
+toolchain go1.22.5
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
