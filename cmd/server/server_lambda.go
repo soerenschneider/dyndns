@@ -3,7 +3,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -36,7 +38,21 @@ func init() {
 	}
 }
 
-func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handleSQSEvent(_ context.Context, event events.SQSEvent) error {
+	for _, message := range event.Records {
+		payload := common.UpdateRecordRequest{}
+		if err := json.Unmarshal([]byte(message.Body), &payload); err != nil {
+			return err
+		}
+
+		if err := dyndnsServer.HandlePropagateRequest(payload); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func handleAPIGatewayRequest(_ context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	payload := common.UpdateRecordRequest{}
 	if err := json.Unmarshal([]byte(request.Body), &payload); err != nil {
 		return events.APIGatewayProxyResponse{
@@ -54,6 +70,22 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 	}, nil
+}
+
+func handler(ctx context.Context, rawEvent json.RawMessage) (interface{}, error) {
+	// Try to parse as APIGatewayProxyRequest
+	var apiGatewayRequest events.APIGatewayProxyRequest
+	if err := json.Unmarshal(rawEvent, &apiGatewayRequest); err == nil && apiGatewayRequest.HTTPMethod != "" {
+		return handleAPIGatewayRequest(ctx, apiGatewayRequest)
+	}
+
+	// Try to parse as SQSEvent
+	var sqsEvent events.SQSEvent
+	if err := json.Unmarshal(rawEvent, &sqsEvent); err == nil && len(sqsEvent.Records) > 0 {
+		return nil, handleSQSEvent(ctx, sqsEvent)
+	}
+
+	return nil, fmt.Errorf("unsupported event type")
 }
 
 func main() {
