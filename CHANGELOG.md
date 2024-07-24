@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.21.0](https://github.com/soerenschneider/dyndns/compare/v1.20.0...v1.21.0) (2024-07-24)
+
+
+### Features
+
+* allow force sending update request at application start ([80e0f77](https://github.com/soerenschneider/dyndns/commit/80e0f77f71316a1c437ce36578af9b2a4f0fb01d))
+* allow Lambda handler be triggered by SQS and API Gateway ([087319a](https://github.com/soerenschneider/dyndns/commit/087319a132a3bff6947b93df46365eae0091c496))
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/aws/aws-lambda-go from 1.46.0 to 1.47.0 ([196de5a](https://github.com/soerenschneider/dyndns/commit/196de5a4b7b43d0e6e7bff356b9c4764983f0242))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.50.35 to 1.53.15 ([e55b5f5](https://github.com/soerenschneider/dyndns/commit/e55b5f5e6e67c7fcb7f43fb9983c21d5b1f4daa8))
+* **deps:** bump github.com/aws/aws-sdk-go from 1.53.15 to 1.54.20 ([5e2977e](https://github.com/soerenschneider/dyndns/commit/5e2977ed0d2c5871fba0db49aa8d13508369fa94))
+* **deps:** bump github.com/go-playground/validator/v10 ([6512b54](https://github.com/soerenschneider/dyndns/commit/6512b54f70442211a871ef034727f911a1e38e9d))
+* **deps:** bump github.com/hashicorp/go-retryablehttp ([d3afcee](https://github.com/soerenschneider/dyndns/commit/d3afcee5f0a862437d6394de0c2d6c81b965e6a2))
+* **deps:** bump github.com/hashicorp/vault/api from 1.12.0 to 1.14.0 ([57601cf](https://github.com/soerenschneider/dyndns/commit/57601cf1b3d52075e7f0c199b9387e1f427e6123))
+* **deps:** bump github.com/prometheus/client_golang ([5150598](https://github.com/soerenschneider/dyndns/commit/51505984ab61cfeea3a4a113e224101e7a64ed9d))
+* **deps:** bump golang from 1.22.1 to 1.22.3 ([bbdbee7](https://github.com/soerenschneider/dyndns/commit/bbdbee7d8aac69a3928677865bada55a95d7ed57))
+* **deps:** bump golang from 1.22.3 to 1.22.5 ([066d4a7](https://github.com/soerenschneider/dyndns/commit/066d4a7dcf276c35ed7dfe0646641216c79565cf))
+* **deps:** bump golang.org/x/term from 0.17.0 to 0.20.0 ([e63a958](https://github.com/soerenschneider/dyndns/commit/e63a95803cecbc1572260996b649c4350f48b438))
+* **deps:** bump golang.org/x/term from 0.20.0 to 0.22.0 ([3b59825](https://github.com/soerenschneider/dyndns/commit/3b59825daa62ddb4dba68e3521f083939e754cf6))
+* fix syntax error ([21472d2](https://github.com/soerenschneider/dyndns/commit/21472d2e90136d3dc69740c56bbbdbfc634a2bc6))
+
 ## [1.20.0](https://github.com/soerenschneider/dyndns/compare/v1.19.0...v1.20.0) (2024-03-17)
 
 
