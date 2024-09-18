@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.21.1](https://github.com/soerenschneider/dyndns/compare/v1.21.0...v1.21.1) (2024-09-18)
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/aws/aws-sdk-go from 1.54.20 to 1.55.5 ([3e7d5ee](https://github.com/soerenschneider/dyndns/commit/3e7d5ee1b79d5e6345e546c1736460358e8cd37e))
+* **deps:** bump github.com/eclipse/paho.mqtt.golang from 1.4.3 to 1.5.0 ([22a59ba](https://github.com/soerenschneider/dyndns/commit/22a59ba05778a0055f4b7f113bade62e89cbaf3e))
+* **deps:** bump github.com/hashicorp/vault/api/auth/approle ([2d7963c](https://github.com/soerenschneider/dyndns/commit/2d7963c753ae012df92b033a585372ec24665c1c))
+* **deps:** bump github.com/rs/zerolog from 1.32.0 to 1.33.0 ([3474e37](https://github.com/soerenschneider/dyndns/commit/3474e37e1c463241ee36abe5da43be16342669cb))
+* **deps:** bump golang from 1.22.5 to 1.23.1 ([6dcbc90](https://github.com/soerenschneider/dyndns/commit/6dcbc90b009db18ba43a59af17db8dd1df9ec662))
+* fix validation for email configuration ([92a43ee](https://github.com/soerenschneider/dyndns/commit/92a43ee9bca448f7073d9e100f68c54437fe3d4c))
+
 ## [1.21.0](https://github.com/soerenschneider/dyndns/compare/v1.20.0...v1.21.0) (2024-07-24)
 
 
