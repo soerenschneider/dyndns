@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -31,17 +30,6 @@ func PrintFields(data any, ignoredKeys ...string) {
 			log.Info().Msgf("%s=%s", field.Name, fieldValueToString(field.Name, value))
 		}
 	}
-}
-
-// TODO: replace with a generic slice function in go > 1.20
-func sliceContains(slice []string, val string) bool {
-	val = strings.ToLower(val)
-	for _, entry := range slice {
-		if strings.ToLower(entry) == val {
-			return true
-		}
-	}
-	return false
 }
 
 func fieldValueToString(nam string, value reflect.Value) string {
