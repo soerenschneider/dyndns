@@ -10,6 +10,7 @@ import (
 )
 
 func InitLogging(debug bool) {
+	//#nosec:G115
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{
 			Out:        os.Stderr,

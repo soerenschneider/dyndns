@@ -109,6 +109,7 @@ func (conf *EmailConfig) Validate() error {
 	return ValidateConfig(conf)
 }
 
+//nolint:cyclop
 func EmailConfigStructLevelValidation(sl validator.StructLevel) {
 	config := sl.Current().Interface().(EmailConfig)
 
