@@ -28,6 +28,8 @@ func ValidateConfig[T any](c T) error {
 		if err := validate.RegisterValidation("broker", validateBrokers); err != nil {
 			log.Fatal().Err(err).Msg("could not build custom validation 'validateBrokers'")
 		}
+
+		validate.RegisterStructValidation(EmailConfigStructLevelValidation, EmailConfig{})
 	})
 
 	return validate.Struct(c)
