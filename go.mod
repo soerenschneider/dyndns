@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.22.5
 
 require (
-	github.com/aws/aws-lambda-go v1.47.0
+	github.com/aws/aws-lambda-go v1.48.0
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/eclipse/paho.mqtt.golang v1.5.0
