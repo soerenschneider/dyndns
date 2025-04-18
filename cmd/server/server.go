@@ -52,13 +52,13 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Printf("%s (commit: %s)", internal.BuildVersion, internal.CommitHash)
+		fmt.Printf("%s (commit: %s) go%s\n", internal.BuildVersion, internal.CommitHash, internal.GoVersion)
 		os.Exit(0)
 	}
 
 	util.InitLogging(*debug)
 
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
+	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.GoVersion).Set(1)
 	metrics.ProcessStartTime.SetToCurrentTime()
 
 	config, err := conf.ReadServerConfig(*configPath)

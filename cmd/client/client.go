@@ -35,7 +35,7 @@ func main() {
 	parseFlags()
 
 	if cmdVersion {
-		fmt.Printf("%s (commit: %s)", internal.BuildVersion, internal.CommitHash)
+		fmt.Printf("%s (commit: %s) go%s\n", internal.BuildVersion, internal.CommitHash, internal.GoVersion)
 		os.Exit(0)
 	}
 
@@ -125,7 +125,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 }
 
 func RunClient(config *conf.ClientConf) {
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash).SetToCurrentTime()
+	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.GoVersion).Set(1)
 	metrics.ProcessStartTime.SetToCurrentTime()
 
 	provider, err := buildKeyProvider(config)
@@ -183,8 +183,8 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 }
 
 func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, error) {
-	if config.EmailConfig.IsConfigured() {
-		err := config.EmailConfig.Validate()
+	if config.IsConfigured() {
+		err := config.Validate()
 		dieOnError(err, "Bad email config")
 		return util.NewEmailNotification(&config.EmailConfig)
 	}
