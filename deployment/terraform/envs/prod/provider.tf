@@ -2,12 +2,12 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.17.0"
+      version = "5.95.0"
     }
 
     sops = {
       source  = "carlpett/sops"
-      version = "1.0.0"
+      version = "1.2.0"
     }
   }
 

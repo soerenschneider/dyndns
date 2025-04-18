@@ -22,7 +22,7 @@ var (
 	Version = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Name:      "version",
-	}, []string{"version", "hash"})
+	}, []string{"version", "hash", "go"})
 
 	ProcessStartTime = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
