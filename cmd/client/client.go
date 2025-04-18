@@ -183,8 +183,8 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 }
 
 func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, error) {
-	if config.EmailConfig.IsConfigured() {
-		err := config.EmailConfig.Validate()
+	if config.IsConfigured() {
+		err := config.Validate()
 		dieOnError(err, "Bad email config")
 		return util.NewEmailNotification(&config.EmailConfig)
 	}

@@ -46,7 +46,7 @@ func (e *EmailConfig) String() string {
 
 func appendIfNotEmpty(sb *strings.Builder, fieldName, value string) {
 	if value != "" {
-		sb.WriteString(fmt.Sprintf(" %s: %s,", fieldName, value))
+		fmt.Fprintf(sb, " %s: %s,", fieldName, value)
 	}
 }
 
