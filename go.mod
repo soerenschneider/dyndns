@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rs/zerolog v1.33.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/term v0.22.0
+	golang.org/x/term v0.31.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
