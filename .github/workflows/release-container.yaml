@@ -19,7 +19,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v4.1.3
+      - uses: GoogleCloudPlatform/release-please-action@v4.2.0
         name: release
         id: release
         with:
@@ -28,11 +28,11 @@ jobs:
           package-name: ${{ github.repository }}
 
       - name: Checkout
-        uses: actions/checkout@v4.1.0
+        uses: actions/checkout@v4.2.2
         if: ${{ steps.release.outputs.release_created }}
 
       - name: Log in to the container registry
-        uses: docker/login-action@v3.3.0
+        uses: docker/login-action@v3.4.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -41,7 +41,7 @@ jobs:
 
       - name: Extract metadata for container
         id: meta
-        uses: docker/metadata-action@v5.5.1
+        uses: docker/metadata-action@v5.7.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -49,7 +49,7 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
 
       - name: Build and push container image
-        uses: docker/build-push-action@v6.7.0
+        uses: docker/build-push-action@v6.15.0
         with:
           context: .
           push: true
