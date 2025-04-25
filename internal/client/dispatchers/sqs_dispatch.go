@@ -24,7 +24,7 @@ func NewSqsDispatcher(sqsConf conf.SqsConfig, provider credentials.Provider) (*S
 		Region: aws.String(sqsConf.Region),
 	}
 	if provider != nil {
-		log.Info().Msg("Building AWS client using given credentials provider")
+		log.Info().Str("component", "sqs").Msg("Building AWS client using given credentials provider")
 		awsConf.Credentials = credentials.NewCredentials(provider)
 	}
 	awsSession := session.Must(session.NewSession(awsConf))
@@ -52,7 +52,7 @@ func (h *SqsDispatch) Notify(msg *common.UpdateRecordRequest) error {
 	})
 
 	if err == nil {
-		log.Info().Msgf("Successfully dispatched SQS message %s", *result.MessageId)
+		log.Info().Str("component", "sqs").Str("message_id", *result.MessageId).Msg("Successfully dispatched message")
 	}
 
 	return err

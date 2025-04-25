@@ -43,9 +43,9 @@ func (h *HttpDispatch) Notify(msg *common.UpdateRecordRequest) error {
 	}()
 
 	if response.StatusCode != 200 {
-		log.Error().Int("status", response.StatusCode).Msg("http dispatcher received reply")
+		log.Error().Str("component", "http_dispatch").Int("status", response.StatusCode).Msg("bad request")
 		return fmt.Errorf("http dispatcher received status code %d", response.StatusCode)
 	}
-	log.Debug().Int("status", response.StatusCode).Msg("http dispatcher received reply")
+	log.Debug().Str("component", "http_dispatch").Int("status", response.StatusCode).Msg("http dispatcher received reply")
 	return nil
 }

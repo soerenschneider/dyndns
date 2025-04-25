@@ -88,7 +88,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 
 	var errs error
 	if len(config.Brokers) > 0 {
-		log.Info().Msg("Building MQTT notifier(s)")
+		log.Info().Str("component", "client").Msg("Building MQTT notifier(s)")
 		for _, broker := range config.Brokers {
 			dispatcher, err := mqtt.NewMqttClient(broker, config.ClientId, fmt.Sprintf("dyndns/%s", config.Host), config.TlsConfig())
 			if err != nil {
@@ -100,7 +100,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 	}
 
 	if len(config.HttpDispatcherConf) > 0 {
-		log.Info().Msg("Building HTTP notifier")
+		log.Info().Str("component", "client").Msg("Building HTTP notifier")
 		for _, dispatcher := range config.HttpDispatcherConf {
 			httpDispatcher, err := dispatchers.NewHttpDispatcher(dispatcher.Url)
 			if err != nil {
@@ -112,7 +112,7 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 	}
 
 	if len(config.SqsQueue) > 0 {
-		log.Info().Msg("Building AWS SQS notifier")
+		log.Info().Str("component", "client").Msg("Building AWS SQS notifier")
 		sqs, err := dispatchers.NewSqsDispatcher(config.SqsConfig, nil)
 		if err != nil {
 			errs = multierr.Append(errs, err)
@@ -142,10 +142,10 @@ func RunClient(config *conf.ClientConf) {
 
 	dispatchers, err := buildNotifiers(config)
 	if len(dispatchers) == 0 {
-		log.Fatal().Err(err).Msg("no dispatchers built")
+		log.Fatal().Str("component", "client").Err(err).Msg("no dispatchers built")
 	}
 	if err != nil {
-		log.Error().Err(err).Msg("could not build all dispatchers")
+		log.Error().Str("component", "client").Err(err).Msg("could not build all dispatchers")
 	}
 
 	reconciler, err := client.NewReconciler(dispatchers, true)
@@ -174,11 +174,11 @@ func RunClient(config *conf.ClientConf) {
 
 func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 	if len(conf.NetworkInterface) > 0 {
-		log.Info().Msgf("Building new resolver for interface %s", conf.NetworkInterface)
+		log.Info().Str("component", "client").Msgf("Building new resolver for interface %s", conf.NetworkInterface)
 		return resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
 	}
 
-	log.Info().Msgf("Building HTTP resolver")
+	log.Info().Str("component", "client").Msg("Building HTTP resolver")
 	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls, conf.AddrFamilies)
 }
 
@@ -201,7 +201,7 @@ func buildKeyProvider(config *conf.ClientConf) (key_provider.KeyProvider, error)
 }
 
 func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypair, error) {
-	log.Info().Msg("Trying to read keypair")
+	log.Info().Str("component", "client").Msg("Trying to read keypair")
 	reader, err := provider.Reader()
 	if err != nil {
 		return nil, fmt.Errorf("could not acquire reader to read keypair: %w", err)
@@ -216,12 +216,12 @@ func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypai
 		return nil, fmt.Errorf("writer does not support creating a new keypair: %w", err)
 	}
 
-	log.Info().Msgf("Creating new keypair, could not get existing keypair: %v", err)
+	log.Info().Err(err).Str("component", "client").Msg("Creating new keypair, existing keypair could not be read")
 	keypair, err = verification.NewKeyPair()
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Msgf("Created keypair with pubkey '%s'", base64.StdEncoding.EncodeToString(keypair.PubKey))
+	log.Info().Str("component", "client").Str("public_key", base64.StdEncoding.EncodeToString(keypair.PubKey)).Msg("Created new keypair")
 
 	jsonData, err := keypair.AsJson()
 	if err != nil {
@@ -238,12 +238,12 @@ func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypai
 func generateKeypair() {
 	keypair, err := verification.NewKeyPair()
 	if err != nil {
-		log.Fatal().Msgf("Can not create keypair: %v", err)
+		log.Fatal().Str("component", "client").Err(err).Msg("Can not create keypair")
 	}
 
 	jsonEncoded, err := keypair.AsJson()
 	if err != nil {
-		log.Fatal().Err(err).Msg("could not marshall keypair")
+		log.Fatal().Str("component", "client").Err(err).Msg("could not marshall keypair")
 	}
 	fmt.Printf("%s\n", jsonEncoded)
 	os.Exit(0)
