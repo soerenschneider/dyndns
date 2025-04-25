@@ -34,7 +34,7 @@ func (state *ipConfirmedState) EvaluateState(context Client, resolved *common.Dn
 	state.previouslyResolvedIp = resolved
 
 	if hasIpChanged {
-		log.Info().Str("component", "state_machine").Str("state", "confirmed").Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("New IP detected")
+		log.Info().Str("component", "state_machine").Str("state", state.Name()).Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("New IP detected")
 		context.SetState(NewIpNotConfirmedState())
 
 		if err := context.NotifyUpdatedIpDetected(resolved); err != nil {
@@ -53,7 +53,7 @@ func (state *ipConfirmedState) EvaluateState(context Client, resolved *common.Dn
 			}
 		}
 		if !found {
-			log.Info().Str("component", "state_machine").Str("state", "confirmed").Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("Detected changed DNS record")
+			log.Info().Str("component", "state_machine").Str("state", state.Name()).Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("Detected changed DNS record")
 			context.SetState(NewIpNotConfirmedState())
 		}
 	}

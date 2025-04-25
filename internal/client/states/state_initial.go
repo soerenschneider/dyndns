@@ -29,7 +29,7 @@ func (state *initialState) EvaluateState(context Client, resolved *common.DnsRec
 	// This is just a dummy state, we'll immediately set the next state and invoke it
 	context.SetState(NewIpNotConfirmedState())
 	if state.forceSendUpdate {
-		log.Info().Str("component", "state_machine").Str("state", "initial").Msg("forceSendUpdate is set, sending update")
+		log.Info().Str("component", "state_machine").Str("state", state.Name()).Msg("forceSendUpdate is set, sending update")
 		return true
 	}
 	return context.GetState().EvaluateState(context, resolved)

@@ -55,24 +55,24 @@ func (s *MqttBus) Listen(ctx context.Context, wg *sync.WaitGroup) error {
 	token := s.client.Connect()
 	finishedWithinTimeout := token.WaitTimeout(10 * time.Second)
 	if token.Error() != nil || !finishedWithinTimeout {
-		log.Error().Err(token.Error()).Msgf("Connection to broker %q failed, continuing in background", s.broker)
+		log.Error().Err(token.Error()).Str("broker", s.broker).Msg("Connection to broker failed, continuing in background")
 	}
 
 	return nil
 }
 
 func (s *MqttBus) Disconnect() {
-	log.Info().Msgf("Disconnecting from mqtt broker %q", s.broker)
+	log.Info().Str("component", "mqtt").Str("broker", s.broker).Msg("Disconnecting from mqtt broker")
 	s.client.Disconnect(5000)
 }
 
 func (s *MqttBus) onMessage(_ mqtt.Client, msg mqtt.Message) {
-	log.Info().Msgf("Picked up message from broker %s", s.broker)
+	log.Info().Str("component", "mqtt").Str("broker", s.broker).Msg("Picked up message")
 	var env common.UpdateRecordRequest
 	err := json.Unmarshal(msg.Payload(), &env)
 	if err != nil {
 		metrics.MessageParsingFailed.Inc()
-		log.Warn().Msgf("Can't parse message: %v", err)
+		log.Warn().Err(err).Str("component", "mqtt").Str("broker", s.broker).Msg("Can't parse message")
 		return
 	}
 
@@ -80,14 +80,14 @@ func (s *MqttBus) onMessage(_ mqtt.Client, msg mqtt.Message) {
 }
 
 func (s *MqttBus) onConnect(client mqtt.Client) {
-	log.Info().Msgf("Connected to broker %s", s.broker)
+	log.Info().Str("component", "mqtt").Str("broker", s.broker).Msgf("Connected to broker")
 	token := client.Subscribe(s.notificationTopic, 1, s.onMessage)
 	if !token.WaitTimeout(60 * time.Second) {
 		log.Error().Msgf("Could not re-subscribe to %s", s.notificationTopic)
 		return
 	}
 
-	log.Info().Msgf("Subscribed to topic %s", s.notificationTopic)
+	log.Info().Str("component", "mqtt").Str("broker", s.broker).Str("topic", s.notificationTopic).Msg("Subscribed to topic")
 	mutex.Lock()
 	defer mutex.Unlock()
 	metrics.MqttBrokersConnectedTotal.Add(1)

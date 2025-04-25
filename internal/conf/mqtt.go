@@ -22,18 +22,18 @@ func (conf *MqttConfig) UsesTlsClientCerts() bool {
 }
 
 func (conf *MqttConfig) TlsConfig() *tls.Config {
-	log.Info().Msg("Building TLS config...")
+	log.Info().Str("component", "config").Msg("Building TLS config...")
 
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		log.Warn().Msgf("Could not get system cert pool")
+		log.Warn().Err(err).Str("component", "config").Msg("Could not get system cert pool")
 		certPool = x509.NewCertPool()
 	}
 
 	if conf.UsesTlsClientCerts() {
 		pemCerts, err := os.ReadFile(conf.CaCertFile)
 		if err != nil {
-			log.Error().Msgf("Could not read CA cert file: %v", err)
+			log.Error().Err(err).Str("component", "config").Msg("Could not read CA cert file")
 		} else {
 			certPool.AppendCertsFromPEM(pemCerts)
 		}

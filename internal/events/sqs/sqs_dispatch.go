@@ -57,7 +57,7 @@ func NewSqsConsumer(sqsConf conf.SqsConfig, provider credentials.Provider, reqCh
 	}
 
 	if provider != nil {
-		log.Info().Msg("Building AWS client using given credentials provider")
+		log.Info().Str("component", "sqs").Msg("Building AWS client using given credentials provider")
 		awsConf.Credentials = credentials.NewCredentials(provider)
 	}
 	awsSession := session.Must(session.NewSession(awsConf))

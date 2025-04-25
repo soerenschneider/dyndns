@@ -35,7 +35,11 @@ func onConnectAttemptHandler(broker *url.URL, tlsCfg *tls.Config) *tls.Config {
 
 var onConnectHandler = func(c mqtt.Client) {
 	opts := c.OptionsReader()
-	log.Info().Str("component", "mqtt").Any("brokers", opts.Servers()).Msg("Successfully connected")
+	brokers := make([]string, 0, len(opts.Servers()))
+	for _, broker := range opts.Servers() {
+		brokers = append(brokers, broker.Host)
+	}
+	log.Info().Str("component", "mqtt").Strs("brokers", brokers).Msg("Successfully connected")
 	mutex.Lock()
 	metrics.MqttBrokersConnectedTotal.Add(1)
 	mutex.Unlock()

@@ -140,7 +140,7 @@ func (client *Client) GetLastStateChange() time.Time {
 func (client *Client) SetState(state states.State) {
 	stateChangeTime := time.Now()
 	oldState := client.state
-	log.Info().Str("component", "client").Str("old_state", oldState.Name()).Str("new_state", state.Name()).Msgf("State changed from after %s", stateChangeTime.Sub(client.lastStateChange))
+	log.Info().Str("component", "client").Str("old_state", oldState.Name()).Str("new_state", state.Name()).Float64("duration_s", stateChangeTime.Sub(client.lastStateChange).Seconds()).Msgf("State changed")
 	metrics.StatusChangeTimestamp.WithLabelValues(client.resolver.Host(), oldState.Name(), state.Name()).Set(float64(stateChangeTime.Unix()))
 	metrics.CurrentStatus.WithLabelValues(client.resolver.Host(), client.state.Name()).Set(0)
 	metrics.CurrentStatus.WithLabelValues(client.resolver.Host(), state.Name()).Set(1)
