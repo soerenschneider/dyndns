@@ -122,6 +122,13 @@ func (client *Client) Resolve(prev *common.DnsRecord) (*common.DnsRecord, error)
 	return resolvedIp, errs
 }
 
+func (client *Client) NotifyUpdatedIpDetected(resolved *common.DnsRecord) error {
+	if client.notificationImpl == nil {
+		return nil
+	}
+	return client.notificationImpl.NotifyUpdatedIpDetected(resolved)
+}
+
 func (client *Client) GetState() states.State {
 	return client.state
 }

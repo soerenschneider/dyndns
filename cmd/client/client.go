@@ -14,6 +14,7 @@ import (
 	"github.com/soerenschneider/dyndns/internal/client/resolvers"
 	"github.com/soerenschneider/dyndns/internal/conf"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
+	sink "github.com/soerenschneider/dyndns/internal/events/nats"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
 	"github.com/soerenschneider/dyndns/internal/util"
@@ -83,6 +84,7 @@ func dieOnError(err error, msg string) {
 	}
 }
 
+// nolint cyclop
 func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, error) {
 	disp := map[string]client.EventDispatch{}
 
@@ -95,6 +97,21 @@ func buildNotifiers(config *conf.ClientConf) (map[string]client.EventDispatch, e
 				errs = multierr.Append(errs, err)
 			} else {
 				disp[broker] = dispatcher
+			}
+		}
+	}
+
+	if config.IsConfiguredForUpdates() {
+		log.Info().Msg("Building NATS notifier")
+		js, err := sink.Connect(config.NatsConfig)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		} else {
+			dispatcher, err := sink.NewNatsDyndnsClient(&config.NatsConfig, js)
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			} else {
+				disp[config.Url] = dispatcher
 			}
 		}
 	}
@@ -187,6 +204,12 @@ func buildNotificationImpl(config *conf.ClientConf) (notification.Notification, 
 		err := config.Validate()
 		dieOnError(err, "Bad email config")
 		return util.NewEmailNotification(&config.EmailConfig)
+	}
+
+	if config.SupportsCloudeventsDispatch() {
+		jetstream, err := sink.Connect(config.NatsConfig)
+		dieOnError(err, "could not build nats jetstream")
+		return sink.NewNatsCloudevents(&config.NatsConfig, jetstream)
 	}
 
 	return &notification.DummyNotification{}, nil

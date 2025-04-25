@@ -45,9 +45,10 @@ type ClientConf struct {
 	Once             bool     // this is not parsed via json, it's an cli flag
 
 	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
-	SqsConfig          `yaml:"sqs"`
+	SqsConfig          `yaml:"sqs" envPrefix:"SQS_"`
 	MqttConfig         `yaml:"mqtt"`
 	EmailConfig        `yaml:"notifications"`
+	NatsConfig         `yaml:"nats" envPrefix:"NATS_"`
 }
 
 type HttpDispatcherConfig struct {

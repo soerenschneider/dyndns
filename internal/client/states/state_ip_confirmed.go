@@ -6,6 +6,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/util"
 )
 
@@ -36,13 +37,10 @@ func (state *ipConfirmedState) EvaluateState(context Client, resolved *common.Dn
 		log.Info().Str("component", "state_machine").Str("state", "confirmed").Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("New IP detected")
 		context.SetState(NewIpNotConfirmedState())
 
-		/*
-			if context.notificationImpl != nil {
-				if err := context.notificationImpl.NotifyUpdatedIpDetected(resolved); err != nil {
-					metrics.NotificationErrors.Inc()
-				}
-			}
-		*/
+		if err := context.NotifyUpdatedIpDetected(resolved); err != nil {
+			log.Error().Err(err).Msg("could not send notification")
+			metrics.NotificationErrors.Inc()
+		}
 	}
 
 	ips, err := util.LookupDns(resolved.Host)

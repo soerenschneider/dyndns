@@ -22,6 +22,7 @@ import (
 	conf "github.com/soerenschneider/dyndns/internal/conf"
 	"github.com/soerenschneider/dyndns/internal/events/http"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
+	sink "github.com/soerenschneider/dyndns/internal/events/nats"
 	client "github.com/soerenschneider/dyndns/internal/events/sqs"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
@@ -115,7 +116,7 @@ func RunServer(config *conf.ServerConf) {
 	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	dieOnError(err, "could not build dyndns server")
 
-	log.Info().Msg("Ready, listening for incoming requests")
+	log.Info().Str("component", "server").Msg("Ready, listening for incoming requests")
 	go dyndnsServer.Listen()
 
 	wg := &sync.WaitGroup{}
@@ -131,7 +132,7 @@ func RunServer(config *conf.ServerConf) {
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, syscall.SIGINT, syscall.SIGTERM)
 	<-term
-	log.Info().Msg("Caught signal, cancelling context")
+	log.Info().Str("component", "server").Msg("Caught signal, cancelling context")
 	cancel()
 	wg.Wait()
 	close(requestsChannel)
@@ -155,6 +156,16 @@ func buildMqtt(config conf.ServerConf, requests chan common.UpdateRecordRequest)
 	return servers, nil
 }
 
+func buildNats(config conf.ServerConf, requests chan common.UpdateRecordRequest) (*sink.NatsDyndnsServer, error) {
+	log.Info().Msg("Building NATS notifier")
+	js, err := sink.Connect(config.NatsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return sink.NewNatsDyndnsServer(&config.NatsConfig, js, requests)
+}
+
 func buildListeners(config conf.ServerConf, requests chan common.UpdateRecordRequest, creds credentials.Provider) ([]Listener, error) {
 	var listeners []Listener
 	var errs error
@@ -169,6 +180,14 @@ func buildListeners(config conf.ServerConf, requests chan common.UpdateRecordReq
 			listener := listener
 			listeners = append(listeners, listener)
 		}
+	}
+
+	if config.NatsConfig.IsConfiguredForUpdates() {
+		nats, err := buildNats(config, requests)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
+		listeners = append(listeners, nats)
 	}
 
 	if len(config.SqsQueue) > 0 {
@@ -272,6 +291,14 @@ func buildNotificationImpl(config conf.ServerConf) (notification.Notification, e
 			log.Fatal().Err(err).Msgf("Bad email config")
 		}
 		return util.NewEmailNotification(&config.EmailConfig)
+	}
+
+	if config.NatsConfig.IsConfiguredAsListener() {
+		js, err := sink.Connect(config.NatsConfig)
+		if err != nil {
+			return nil, err
+		}
+		return sink.NewNatsCloudevents(&config.NatsConfig, js)
 	}
 
 	return &notification.DummyNotification{}, nil

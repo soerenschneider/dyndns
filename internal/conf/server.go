@@ -25,6 +25,7 @@ type ServerConf struct {
 	MqttConfig      `yaml:"mqtt"`
 	VaultConfig     `yaml:"vault"`
 	EmailConfig     `yaml:"notifications"`
+	NatsConfig      `yaml:"nats" envPrefix:"NATS_"`
 }
 
 func GetDefaultServerConfig() *ServerConf {

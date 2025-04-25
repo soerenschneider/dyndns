@@ -3,7 +3,9 @@ package conf
 import (
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -27,6 +29,12 @@ func ValidateConfig[T any](c T) error {
 		}
 		if err := validate.RegisterValidation("broker", validateBrokers); err != nil {
 			log.Fatal().Err(err).Msg("could not build custom validation 'validateBrokers'")
+		}
+		if err := validate.RegisterValidation("nats_url", validateNatsUrl); err != nil {
+			log.Fatal().Err(err).Msg("could not build custom validation 'nats_url'")
+		}
+		if err := validate.RegisterValidation("nats_subject", validateNatsSubject); err != nil {
+			log.Fatal().Err(err).Msg("could not build custom validation 'nats_subject'")
 		}
 
 		validate.RegisterStructValidation(EmailConfigStructLevelValidation, EmailConfig{})
@@ -71,7 +79,7 @@ func validateBrokers(fl validator.FieldLevel) bool {
 
 		// Convert to string and check its value
 		broker, ok := item.Interface().(string)
-		if !ok || !IsValidUrl(broker) {
+		if !ok || !IsValidMqttUrl(broker) {
 			return false
 		}
 	}
@@ -79,7 +87,7 @@ func validateBrokers(fl validator.FieldLevel) bool {
 	return true
 }
 
-func IsValidUrl(input string) bool {
+func IsValidMqttUrl(input string) bool {
 	_, err := url.ParseRequestURI(input)
 	if err != nil {
 		return false
@@ -88,6 +96,81 @@ func IsValidUrl(input string) bool {
 	u, err := url.Parse(input)
 	if err != nil || u.Scheme == "" || u.Host == "" || u.Port() == "" {
 		return false
+	}
+
+	return true
+}
+
+func validateNatsUrl(fl validator.FieldLevel) bool {
+	// Get the field value and check if it's a slice
+	field := fl.Field()
+	if field.Kind() != reflect.String {
+		return false
+	}
+
+	// Convert to string and check its value
+	url, ok := field.Interface().(string)
+	if !ok || !IsValidNatsUrl(url) {
+		return false
+	}
+
+	return true
+}
+
+func IsValidNatsUrl(input string) bool {
+	_, err := url.ParseRequestURI(input)
+	if err != nil {
+		return false
+	}
+
+	u, err := url.Parse(input)
+	if err != nil || u.Scheme != "nats" || u.Host == "" {
+		return false
+	}
+
+	return true
+}
+
+func validateNatsSubject(fl validator.FieldLevel) bool {
+	// Get the field value and check if it's a slice
+	field := fl.Field()
+	if field.Kind() != reflect.String {
+		return false
+	}
+
+	// Convert to string and check its value
+	url, ok := field.Interface().(string)
+	if !ok || !IsValidNatsSubject(url) {
+		return false
+	}
+
+	return true
+}
+
+func IsValidNatsSubject(subject string) bool {
+	if subject == "" {
+		return false
+	}
+
+	if strings.Contains(subject, ">") || strings.Contains(subject, "*") {
+		return false
+	}
+
+	tokens := strings.Split(subject, ".")
+	for _, token := range tokens {
+		if token == "" {
+			return false
+		}
+
+		if strings.ContainsAny(token, " \t\r\n") {
+			return false
+		}
+
+		for _, r := range token {
+			if unicode.IsControl(r) {
+				return false
+			}
+		}
 	}
 
 	return true

@@ -1,8 +1,8 @@
 package conf
 
 type SqsConfig struct {
-	SqsQueue string `yaml:"sqs_queue" env:"SQS_QUEUE"`
-	Region   string `yaml:"region" env:"SQS_REGION"`
+	SqsQueue string `yaml:"sqs_queue" env:"QUEUE"`
+	Region   string `yaml:"region" env:"REGION"`
 }
 
 func DefaultSqsConfig() SqsConfig {

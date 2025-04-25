@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -92,7 +91,6 @@ var (
 )
 
 func StartHeartbeat(ctx context.Context) {
-	log.Info().Msg("Starting metrics heartbeat ticker...")
 	ticker := time.NewTicker(60 * time.Second)
 
 	for {
