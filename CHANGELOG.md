@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.22.0](https://github.com/soerenschneider/dyndns/compare/v1.21.1...v1.22.0) (2025-05-08)
+
+
+### Features
+
+* include go version metric ([be3de59](https://github.com/soerenschneider/dyndns/commit/be3de59784b64e9acb1c0331f734330a875b8e58))
+* initial support for nats ([a53b222](https://github.com/soerenschneider/dyndns/commit/a53b2225a8728bf4c6d537540f6aff17f8181ec3))
+
+
+### Bug Fixes
+
+* fix linting issues ([f70711a](https://github.com/soerenschneider/dyndns/commit/f70711a15cdeb6c408c7f9bf3e7c645794a254e8))
+
 ## [1.21.1](https://github.com/soerenschneider/dyndns/compare/v1.21.0...v1.21.1) (2024-09-18)
 
 
