@@ -5,7 +5,7 @@ go 1.24
 toolchain go1.24.2
 
 require (
-	github.com/aws/aws-lambda-go v1.48.0
+	github.com/aws/aws-lambda-go v1.49.0
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/cloudevents/sdk-go/v2 v2.16.0
