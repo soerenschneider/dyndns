@@ -13,7 +13,7 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/vault/api v1.16.0
-	github.com/hashicorp/vault/api/auth/approle v0.9.0
+	github.com/hashicorp/vault/api/auth/approle v0.10.0
 	github.com/nats-io/nats.go v1.41.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0
