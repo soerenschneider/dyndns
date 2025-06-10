@@ -9,7 +9,7 @@
     },
     {
       "managers": ["gomod"],
-      "commitMessagePrefix": "fix: ",
+      "commitMessagePrefix": "fix(deps): ",
       "postUpdateOptions": ["gomodTidy"]
     }
   ]
