@@ -2,7 +2,7 @@ module github.com/soerenschneider/dyndns
 
 go 1.24
 
-toolchain go1.24.2
+toolchain go1.24.4
 
 require (
 	github.com/aws/aws-sdk-go v1.55.7
