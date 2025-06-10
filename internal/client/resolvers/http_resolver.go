@@ -101,7 +101,8 @@ func (resolver *HttpResolver) Resolve() (*common.DnsRecord, error) {
 	for _, addressFamily := range resolver.addressFamilies {
 		serverAddress, ok := serverAddresses[addressFamily]
 		if !ok {
-			log.Warn().Msgf("unknown address family: '%s', check your configuration", addressFamily)
+			// TODO: add metric?
+			log.Warn().Str("component", "http_resolver").Str("address_family", addressFamily).Msg("unknown address family, check your configuration")
 			continue
 		}
 
@@ -123,7 +124,7 @@ func (resolver *HttpResolver) Resolve() (*common.DnsRecord, error) {
 			if err == nil {
 				// Check if the resolved IP is actually a valid IP
 				if net.ParseIP(detectedIp) == nil {
-					log.Error().Msgf("could not parse IP address: %s", detectedIp)
+					log.Error().Str("component", "http_resolver").Str("detected_ip", detectedIp).Msg("could not parse detected IP address")
 					metrics.InvalidResolvedIps.WithLabelValues(resolver.Host(), resolver.Name(), url).Inc()
 					continue
 				}
@@ -138,9 +139,9 @@ func (resolver *HttpResolver) Resolve() (*common.DnsRecord, error) {
 				break
 			} else {
 				metrics.IpResolveErrors.WithLabelValues(resolver.host, resolver.Name(), url).Inc()
-				log.Error().Msgf("Error while resolving IP: %v", err)
+				log.Error().Err(err).Str("component", "http_resolver").Msg("Error while resolving IP")
 				if index == len(resolver.preferredProviders)-1 {
-					log.Warn().Msgf("Exhausted list of preferred providers")
+					log.Warn().Str("component", "http_resolver").Msgf("Exhausted list of preferred providers")
 				}
 			}
 		}
@@ -176,7 +177,9 @@ func resolveSingle(url string, client *http.Client) (string, error) {
 	timeTaken := time.Since(start)
 	metrics.ResponseTime.WithLabelValues(url).Observe(timeTaken.Seconds())
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("couldn't read response: %v", err)
@@ -186,5 +189,5 @@ func resolveSingle(url string, client *http.Client) (string, error) {
 }
 
 func repair(body string) string {
-	return strings.TrimSuffix(body, "\n")
+	return strings.TrimSpace(body)
 }

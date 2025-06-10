@@ -22,12 +22,12 @@ type Route53Propagator struct {
 func NewRoute53Propagator(hostedZoneId string, provider credentials.Provider) (*Route53Propagator, error) {
 	var awsSession *session.Session
 	if provider != nil {
-		log.Info().Msg("Building AWS client using given credentials provider")
+		log.Info().Str("component", "route53").Msg("Building AWS client using given credentials provider")
 		awsSession = session.Must(session.NewSession(&aws.Config{
 			Credentials: credentials.NewCredentials(provider),
 		}))
 	} else {
-		log.Info().Msg("Building AWS client session using default provider")
+		log.Info().Str("component", "route53").Msg("Building AWS client session using default provider")
 		awsSession = session.Must(session.NewSession())
 	}
 
@@ -94,7 +94,7 @@ func getChanges(resolved common.DnsRecord, ttl int64) []*route53.Change {
 	if resolved.HasIpV4() {
 		change, err := buildChange(resolved.Host, resolved.IpV4, route53.RRTypeA, ttl)
 		if err != nil {
-			log.Info().Msgf("couldn't build change for ipv4: %v", err)
+			log.Warn().Str("component", "route53").Err(err).Msg("couldn't build change for ipv4")
 		} else {
 			records = append(records, change)
 		}
@@ -103,7 +103,7 @@ func getChanges(resolved common.DnsRecord, ttl int64) []*route53.Change {
 	if resolved.HasIpV6() {
 		change, err := buildChange(resolved.Host, resolved.IpV6, route53.RRTypeAaaa, ttl)
 		if err != nil {
-			log.Info().Msgf("couldn't build change for ipv6: %v", err)
+			log.Warn().Str("component", "route53").Err(err).Msg("couldn't build change for ipv6")
 		} else {
 			records = append(records, change)
 		}

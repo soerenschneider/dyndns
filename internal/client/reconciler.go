@@ -61,7 +61,7 @@ func (r *Reconciler) dispatch() error {
 	}
 
 	metrics.ReconcilerTimestamp.WithLabelValues(r.env.PublicIp.Host).SetToCurrentTime()
-	log.Info().Msgf("Reconciling %d dispatchers", len(r.pendingChanges))
+	log.Info().Str("component", "reconciler").Int("num_dispatchers", len(r.pendingChanges)).Msg("Reconciling dispatchers")
 
 	timeStart := time.Now()
 	wg := sync.WaitGroup{}
@@ -78,7 +78,7 @@ func (r *Reconciler) dispatch() error {
 				r.pendingChanges[key] = nil
 				delete(r.pendingChanges, key)
 				metrics.UpdatesDispatched.Inc()
-				log.Info().Msgf("Reconciliation for dispatcher %s successful", key)
+				log.Info().Str("component", "reconciler").Str("dispatcher", key).Msg("Reconciliation successful")
 			} else {
 				errLock.Lock()
 				metrics.UpdateDispatchErrors.WithLabelValues(key).Inc()
@@ -93,11 +93,11 @@ func (r *Reconciler) dispatch() error {
 	timeSpent := time.Since(timeStart)
 
 	if r.stopAfterFirstSuccess && successFullDispatches.Load() > 0 && len(r.pendingChanges) > 0 {
-		log.Info().Msgf("Stopping reconciliation for %d pending changes due to %d successful dispatches", len(r.pendingChanges), successFullDispatches.Load())
+		log.Info().Str("component", "reconciler").Int("pending", len(r.pendingChanges)).Int32("successful_dispatches", successFullDispatches.Load()).Msg("Stopping reconciliation due to successful dispatches")
 		r.pendingChanges = nil
 	}
 
-	log.Info().Msgf("Spent %v on reconciliation (%d dispatchers)", timeSpent, len(r.dispatchers))
+	log.Info().Str("component", "reconciler").Float64("seconds", timeSpent.Seconds()).Int("num_dispatchers", len(r.dispatchers)).Msgf("Spent %v on reconciliation", timeSpent)
 	metrics.ReconcilersActive.WithLabelValues(r.env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
 	return errs
 }

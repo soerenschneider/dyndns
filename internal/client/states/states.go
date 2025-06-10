@@ -19,4 +19,5 @@ type Client interface {
 	SetState(newState State)
 	GetState() State
 	GetLastStateChange() time.Time
+	NotifyUpdatedIpDetected(resolved *common.DnsRecord) error
 }

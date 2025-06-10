@@ -110,16 +110,16 @@ func (server *DyndnsServer) HandlePropagateRequest(env common.UpdateRecordReques
 	}
 
 	if server.isCached(env) {
-		log.Info().Msgf("Request for host %s is cached, not performing changes", env.PublicIp.Host)
+		log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Msg("Request for host is cached, not performing changes")
 		return nil
 	}
 
 	if util.HostnameMatchesIp(env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6) {
-		log.Info().Msgf("Host %s already resolved to IPv4 %s / Ipv6 %s, not performing changes", env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6)
+		log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("host already has desired address, not updating")
 		return nil
 	}
 
-	log.Info().Msgf("Verifying signature succeeded for domain '%v', performing DNS change", env.PublicIp)
+	log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("Verifying signature succeeded, updating host")
 	if err := server.propagator.PropagateChange(env.PublicIp); err != nil {
 		metrics.DnsPropagationErrors.WithLabelValues(env.PublicIp.Host).Inc()
 		return fmt.Errorf("could not propagate dns change for domain '%s': %v", env.PublicIp.Host, err)
@@ -132,7 +132,7 @@ func (server *DyndnsServer) HandlePropagateRequest(env common.UpdateRecordReques
 			metrics.NotificationErrors.Inc()
 		}
 	}
-	log.Info().Msgf("Successfully propagated change '%s'", env.PublicIp.String())
+	log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("Successfully propagated change")
 	metrics.SuccessfulDnsPropagationsTotal.WithLabelValues(env.PublicIp.Host).Inc()
 
 	// Add to cache
@@ -145,10 +145,10 @@ func (server *DyndnsServer) Listen() {
 		metrics.MessagesReceivedTotal.Inc()
 		metrics.LatestMessageTimestamp.SetToCurrentTime()
 
-		log.Info().Msg("Picked up a new change request")
+		log.Info().Str("component", "server").Msg("Picked up a new change request")
 		err := server.HandlePropagateRequest(request)
 		if err != nil && !errors.Is(err, ErrorMessageTooOld) {
-			log.Error().Msgf("Change has not been propagated: %v", err)
+			log.Error().Err(err).Str("component", "server").Msg("Change has not been propagated")
 		}
 	}
 }

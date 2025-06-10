@@ -25,9 +25,9 @@ func PrintFields(data any, ignoredKeys ...string) {
 		}
 
 		if slices.Contains(ignoredKeys, field.Name) {
-			log.Info().Msgf("%s=%s", field.Name, "*** (redacted)")
+			log.Info().Str("component", "config").Str("key", field.Name).Str("val", "*** (redacted)").Msg("Using config value")
 		} else {
-			log.Info().Msgf("%s=%s", field.Name, fieldValueToString(field.Name, value))
+			log.Info().Str("component", "config").Str("key", field.Name).Str("val", fieldValueToString(field.Name, value)).Msg("Using config value")
 		}
 	}
 }

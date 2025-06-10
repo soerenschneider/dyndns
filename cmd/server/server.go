@@ -22,6 +22,7 @@ import (
 	conf "github.com/soerenschneider/dyndns/internal/conf"
 	"github.com/soerenschneider/dyndns/internal/events/http"
 	"github.com/soerenschneider/dyndns/internal/events/mqtt"
+	sink "github.com/soerenschneider/dyndns/internal/events/nats"
 	client "github.com/soerenschneider/dyndns/internal/events/sqs"
 	"github.com/soerenschneider/dyndns/internal/metrics"
 	"github.com/soerenschneider/dyndns/internal/notification"
@@ -94,7 +95,7 @@ func RunServer(config *conf.ServerConf) {
 	// set hash of known hosts
 	hash, err := conf.GetKnownHostsHash(config.KnownHosts)
 	if err != nil {
-		log.Warn().Err(err).Msg("could not reliably compute hash for known_hosts, alerts may trigger")
+		log.Warn().Err(err).Str("component", "server").Msg("could not reliably compute hash for known_hosts, alerts may trigger")
 		metrics.KnownHostsHash.Set(float64(hash))
 	}
 
@@ -115,7 +116,7 @@ func RunServer(config *conf.ServerConf) {
 	dyndnsServer, err := server.NewServer(*config, propagator, requestsChannel, notificationImpl)
 	dieOnError(err, "could not build dyndns server")
 
-	log.Info().Msg("Ready, listening for incoming requests")
+	log.Info().Str("component", "server").Msg("Ready, listening for incoming requests")
 	go dyndnsServer.Listen()
 
 	wg := &sync.WaitGroup{}
@@ -123,7 +124,7 @@ func RunServer(config *conf.ServerConf) {
 		go func() {
 			err := listener.Listen(ctx, wg)
 			if err != nil {
-				log.Fatal().Err(err).Msg("could not start listener")
+				log.Fatal().Err(err).Str("component", "server").Msg("could not start listener")
 			}
 		}()
 	}
@@ -131,7 +132,7 @@ func RunServer(config *conf.ServerConf) {
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, syscall.SIGINT, syscall.SIGTERM)
 	<-term
-	log.Info().Msg("Caught signal, cancelling context")
+	log.Info().Str("component", "server").Msg("Caught signal, cancelling context")
 	cancel()
 	wg.Wait()
 	close(requestsChannel)
@@ -146,7 +147,7 @@ func buildMqtt(config conf.ServerConf, requests chan common.UpdateRecordRequest)
 	for _, broker := range config.Brokers {
 		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requests)
 		if err != nil {
-			log.Error().Err(err).Msg("could not connect to mqtt")
+			log.Error().Err(err).Str("component", "server").Msg("could not connect to mqtt")
 		} else {
 			servers = append(servers, mqttServer)
 		}
@@ -155,12 +156,22 @@ func buildMqtt(config conf.ServerConf, requests chan common.UpdateRecordRequest)
 	return servers, nil
 }
 
+func buildNats(config conf.ServerConf, requests chan common.UpdateRecordRequest) (*sink.NatsDyndnsServer, error) {
+	log.Info().Msg("Building NATS notifier")
+	js, err := sink.Connect(config.NatsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return sink.NewNatsDyndnsServer(&config.NatsConfig, js, requests)
+}
+
 func buildListeners(config conf.ServerConf, requests chan common.UpdateRecordRequest, creds credentials.Provider) ([]Listener, error) {
 	var listeners []Listener
 	var errs error
 
 	if len(config.MqttConfig.Brokers) > 0 {
-		log.Info().Msg("Building MQTT listener(s)...")
+		log.Info().Str("component", "server").Msg("Building MQTT listener(s)...")
 		mqttListeners, err := buildMqtt(config, requests)
 		if err != nil {
 			errs = multierr.Append(errs, err)
@@ -171,8 +182,16 @@ func buildListeners(config conf.ServerConf, requests chan common.UpdateRecordReq
 		}
 	}
 
+	if config.NatsConfig.IsConfiguredForUpdates() {
+		nats, err := buildNats(config, requests)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
+		listeners = append(listeners, nats)
+	}
+
 	if len(config.SqsQueue) > 0 {
-		log.Info().Msg("Building AWS SQS listener...")
+		log.Info().Str("component", "server").Msg("Building AWS SQS listener...")
 		sqs, err := buildSqs(config, requests, creds)
 		if err != nil {
 			errs = multierr.Append(errs, err)
@@ -182,7 +201,7 @@ func buildListeners(config conf.ServerConf, requests chan common.UpdateRecordReq
 	}
 
 	if len(config.HttpConfig.ListenAddr) > 0 {
-		log.Info().Msg("Building HTTP listener...")
+		log.Info().Str("component", "server").Msg("Building HTTP listener...")
 		httpServer, err := buildHttpServer(config, requests)
 		if err != nil {
 			errs = multierr.Append(errs, err)
@@ -240,7 +259,7 @@ func buildAwsVaultCredentialProvider(config *conf.VaultConfig, client *api.Clien
 		return nil, err
 	}
 
-	log.Info().Msg("Testing authentication against vault")
+	log.Info().Str("component", "server").Msg("Testing authentication against vault")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -272,6 +291,14 @@ func buildNotificationImpl(config conf.ServerConf) (notification.Notification, e
 			log.Fatal().Err(err).Msgf("Bad email config")
 		}
 		return util.NewEmailNotification(&config.EmailConfig)
+	}
+
+	if config.NatsConfig.IsConfiguredAsListener() {
+		js, err := sink.Connect(config.NatsConfig)
+		if err != nil {
+			return nil, err
+		}
+		return sink.NewNatsCloudevents(&config.NatsConfig, js)
 	}
 
 	return &notification.DummyNotification{}, nil

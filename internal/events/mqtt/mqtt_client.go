@@ -43,7 +43,7 @@ func NewMqttClient(broker string, clientId, notificationTopic string, tlsConfig 
 	token := client.Connect()
 	finishedWithinTimeout := token.WaitTimeout(10 * time.Second)
 	if token.Error() != nil || !finishedWithinTimeout {
-		log.Error().Err(token.Error()).Msgf("Connection to broker %q failed, continuing in background", broker)
+		log.Error().Err(token.Error()).Str("component", "mqtt").Str("broker", broker).Msg("Connection to broker failed, continuing in background")
 	}
 
 	return &MqttClientBus{
@@ -65,7 +65,7 @@ func (d *MqttClientBus) Notify(msg *common.UpdateRecordRequest) error {
 	if !ok {
 		return errors.New("received timeout when trying to publish the message")
 	}
-	log.Debug().Msgf("Dispatched message to %v", opts.Servers())
+	log.Debug().Str("component", "mqtt").Any("brokers", opts.Servers()).Msg("Dispatched message")
 
 	return nil
 }

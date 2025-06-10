@@ -29,6 +29,24 @@ var (
 		Name:      "start_time_seconds",
 	})
 
+	NatsConnectionConfigured = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: "events",
+		Name:      "nats_connection_configured_bool",
+	})
+
+	NatsConnectionStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: "events",
+		Name:      "nats_connection_status",
+	}, []string{"url", "status"})
+
+	NatsErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: "events",
+		Name:      "nats_connection_errors_total",
+	}, []string{"url", "error"})
+
 	MqttBrokersConfiguredTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: "mqtt",
