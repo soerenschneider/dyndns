@@ -187,5 +187,5 @@ func resolveSingle(url string, client *http.Client) (string, error) {
 }
 
 func repair(body string) string {
-	return strings.TrimSuffix(body, "\n")
+	return strings.TrimSpace(body)
 }
