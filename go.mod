@@ -19,7 +19,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/soerenschneider/sc-agent v1.10.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/term v0.31.0
+	golang.org/x/term v0.32.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
