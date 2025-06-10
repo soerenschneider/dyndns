@@ -20,6 +20,7 @@ var (
 	defaultHttpResolverUrls = []string{
 		"https://icanhazip.com",
 		"https://ifconfig.me",
+		"https://ident.me",
 		"https://ifconfig.co",
 		"https://ipinfo.io/ip",
 		"https://api.ipify.org",

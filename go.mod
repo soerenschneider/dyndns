@@ -5,21 +5,21 @@ go 1.24
 toolchain go1.24.2
 
 require (
-	github.com/aws/aws-lambda-go v1.48.0
+	github.com/aws/aws-lambda-go v1.49.0
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/cloudevents/sdk-go/v2 v2.16.0
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/hashicorp/vault/api v1.16.0
-	github.com/hashicorp/vault/api/auth/approle v0.9.0
 	github.com/nats-io/nats.go v1.43.0
+	github.com/hashicorp/vault/api v1.20.0
+	github.com/hashicorp/vault/api/auth/approle v0.10.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0
 	github.com/soerenschneider/sc-agent v1.10.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/term v0.31.0
+	golang.org/x/term v0.32.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
