@@ -6,6 +6,10 @@
       "matchUpdateTypes": ["patch", "minor"],
       "groupName": "GitHub Actions Updates",
       "automerge": true
+    },
+    {
+      "managers": ["gomod"],
+      "commitMessagePrefix": "fix: "
     }
   ]
 }
