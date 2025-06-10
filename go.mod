@@ -13,13 +13,13 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/vault/api v1.20.0
-	github.com/hashicorp/vault/api/auth/approle v0.9.0
+	github.com/hashicorp/vault/api/auth/approle v0.10.0
 	github.com/nats-io/nats.go v1.41.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0
 	github.com/soerenschneider/sc-agent v1.10.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/term v0.31.0
+	golang.org/x/term v0.32.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
