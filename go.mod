@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/vault/api v1.20.0
 	github.com/hashicorp/vault/api/auth/approle v0.10.0
-	github.com/nats-io/nats.go v1.43.0
+	github.com/nats-io/nats.go v1.48.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0
 	github.com/soerenschneider/soeren.cloud-events v0.0.0-20250423164936-f1e30077892f
