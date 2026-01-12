@@ -1,6 +1,6 @@
 module github.com/soerenschneider/dyndns
 
-go 1.24
+go 1.24.0
 
 toolchain go1.24.4
 
@@ -19,7 +19,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/soerenschneider/soeren.cloud-events v0.0.0-20250423164936-f1e30077892f
 	go.uber.org/multierr v1.11.0
-	golang.org/x/term v0.32.0
+	golang.org/x/term v0.39.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -63,7 +63,7 @@ require (
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
