@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.22.0](https://github.com/soerenschneider/dyndns/compare/v1.21.1...v1.22.0) (2026-01-29)
+
+
+### Features
+
+* include go version metric ([be3de59](https://github.com/soerenschneider/dyndns/commit/be3de59784b64e9acb1c0331f734330a875b8e58))
+* initial support for nats ([a53b222](https://github.com/soerenschneider/dyndns/commit/a53b2225a8728bf4c6d537540f6aff17f8181ec3))
+* update list of built-in ip resolvers ([2269ef4](https://github.com/soerenschneider/dyndns/commit/2269ef40adab62760e3b56259029bb45091776b2))
+
+
+### Bug Fixes
+
+* **deps:** Update dependency go to v1.24.4 ([8133b2b](https://github.com/soerenschneider/dyndns/commit/8133b2b8ae3bba9cecf96d06a1c9ac1b0f12f321))
+* **deps:** Update module github.com/aws/aws-lambda-go to v1.49.0 ([286c1af](https://github.com/soerenschneider/dyndns/commit/286c1af8be081b6c0eaf548c850b5fcf8e081684))
+* **deps:** Update module github.com/aws/aws-sdk-go to v1.55.7 ([6e7654d](https://github.com/soerenschneider/dyndns/commit/6e7654d4f32c79b8b9008bcb919674b77753bdb2))
+* **deps:** Update module github.com/caarlos0/env/v6 to v11 ([a4e8bbe](https://github.com/soerenschneider/dyndns/commit/a4e8bbed813e24b3f001a5dbf828a8a6aee48050))
+* **deps:** Update module github.com/hashicorp/vault/api to v1.20.0 ([a004fdd](https://github.com/soerenschneider/dyndns/commit/a004fddff06445ed92c5db33099ceec6c2a0a704))
+* **deps:** Update module github.com/hashicorp/vault/api/auth/approle to v0.10.0 ([72b8b1a](https://github.com/soerenschneider/dyndns/commit/72b8b1a7d0782c25b7b0e2867a2e4cef56eb58f6))
+* **deps:** Update module github.com/nats-io/nats.go to v1.43.0 ([43b808c](https://github.com/soerenschneider/dyndns/commit/43b808cf33b6c9930af8594ce290d50c899341cd))
+* **deps:** Update module golang.org/x/term to v0.32.0 ([dd4cf50](https://github.com/soerenschneider/dyndns/commit/dd4cf50ac1d4d51502ecccdfff72d92539d0fd99))
+* fix linting issues ([f70711a](https://github.com/soerenschneider/dyndns/commit/f70711a15cdeb6c408c7f9bf3e7c645794a254e8))
+
 ## [1.21.1](https://github.com/soerenschneider/dyndns/compare/v1.21.0...v1.21.1) (2024-09-18)
 
 
