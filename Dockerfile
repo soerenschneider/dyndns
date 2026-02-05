@@ -1,6 +1,6 @@
 ARG MODE=client
 
-FROM golang:1.24.4 as builder
+FROM golang:1.25.7 as builder
 ARG MODE
 ENV MODE="$MODE"
 ENV MODULE=github.com/soerenschneider/dyndns
