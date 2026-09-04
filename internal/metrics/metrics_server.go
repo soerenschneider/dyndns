@@ -72,6 +72,7 @@ var (
 
 func StartHeartbeat(ctx context.Context) {
 	ticker := time.NewTicker(60 * time.Second)
+	Heartbeat.SetToCurrentTime()
 
 	for {
 		select {

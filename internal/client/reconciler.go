@@ -82,7 +82,7 @@ func (r *Reconciler) dispatch(ctx context.Context) error {
 				successFullDispatches.Add(1)
 				r.pendingChanges[key] = nil
 				delete(r.pendingChanges, key)
-				metrics.UpdatesDispatched.Inc()
+				metrics.UpdatesDispatched.WithLabelValues(r.env.PublicIp.Host).Inc()
 				log.Info().Str("component", "reconciler").Str("dispatcher", key).Msg("Reconciliation successful")
 			} else {
 				errLock.Lock()

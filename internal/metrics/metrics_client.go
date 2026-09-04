@@ -21,7 +21,7 @@ var (
 	ReconcilersActive = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: client,
-		Name:      "reconcilers_pending_changes_total",
+		Name:      "reconcilers_pending_changes",
 	}, []string{"host"})
 
 	ReconcilerTimestamp = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -48,22 +48,22 @@ var (
 		Name:      "updates_dispatch_errors_total",
 	}, []string{"host"})
 
-	UpdatesDispatched = promauto.NewCounter(prometheus.CounterOpts{
+	UpdatesDispatched = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: client,
 		Name:      "updates_dispatched_total",
-	})
+	}, []string{"host"})
 
 	StatusChangeTimestamp = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: client,
-		Name:      "state_changed_timestamp",
+		Name:      "state_changed_timestamp_seconds",
 	}, []string{"host", "from", "to"})
 
 	CurrentStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: client,
-		Name:      "current_state_bool",
+		Name:      "current_state",
 	}, []string{"host", "state"})
 
 	ResponseTime = promauto.NewHistogramVec(prometheus.HistogramOpts{

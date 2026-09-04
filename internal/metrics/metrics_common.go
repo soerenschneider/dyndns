@@ -54,36 +54,36 @@ var (
 
 	MqttBrokersConfiguredTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Subsystem: "mqtt",
-		Name:      "brokers_configured_total",
+		Subsystem: "events",
+		Name:      "mqtt_brokers_configured",
 	})
 
-	MqttReconnectionsTotal = promauto.NewGauge(prometheus.GaugeOpts{
+	MqttReconnectionsTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
-		Subsystem: "mqtt",
-		Name:      "reconnections_total",
+		Subsystem: "events",
+		Name:      "mqtt_reconnections_total",
 	})
 
 	MqttBrokersConnectedTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Subsystem: "mqtt",
-		Name:      "brokers_connected_total",
+		Subsystem: "events",
+		Name:      "mqtt_brokers_connected",
 	})
 
 	MqttConnectionsLostTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
+		Subsystem: "events",
 		Name:      "mqtt_connections_lost_total",
 	})
 
-	NotificationErrors = promauto.NewGauge(prometheus.GaugeOpts{
+	NotificationErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
-		Name:      "notification_errors",
+		Name:      "notification_errors_total",
 	})
 
 	SqsApiCalls = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: "sqs",
-		Help:      "The total amount of SQS API calls",
 		Name:      "api_calls_total",
 	}, []string{"operation"})
 )
