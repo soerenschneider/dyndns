@@ -4,6 +4,9 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/soerenschneider/dyndns/v2/internal"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 )
 
 func TestReadClientConfig(t *testing.T) {
@@ -21,12 +24,12 @@ func TestReadClientConfig(t *testing.T) {
 			args: args{"../../contrib/client.yaml"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
-				AddrFamilies:    []string{AddrFamilyIpv4},
+				AddrFamilies:    []string{internal.AddrFamilyIpv4},
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: "0.0.0.0:9191",
-				SqsConfig:       DefaultSqsConfig(),
-				MqttConfig: MqttConfig{
+				SqsConfig:       hybrid.DefaultSqsConfig(),
+				MqttConfig: hybrid.MqttConfig{
 					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
@@ -38,12 +41,12 @@ func TestReadClientConfig(t *testing.T) {
 			args: args{"../../contrib/client.json"},
 			want: &ClientConf{
 				Host:            "my.host.tld",
-				AddrFamilies:    []string{AddrFamilyIpv4},
+				AddrFamilies:    []string{internal.AddrFamilyIpv4},
 				KeyPairPath:     "/tmp/keypair.json",
 				PreferredUrls:   defaultHttpResolverUrls,
 				MetricsListener: "0.0.0.0:9191",
-				SqsConfig:       DefaultSqsConfig(),
-				MqttConfig: MqttConfig{
+				SqsConfig:       hybrid.DefaultSqsConfig(),
+				MqttConfig: hybrid.MqttConfig{
 					Brokers:  []string{"ssl://mqtt.eclipseprojects.io:8883"},
 					ClientId: "my-client-id",
 				},
@@ -95,8 +98,8 @@ func TestParseClientConfEnv(t *testing.T) {
 	// unset after running test
 	defer os.Setenv(envKey, "")
 
-	empty := &ClientConf{}
-	err := ParseClientConfEnv(empty)
+	empty := GetDefaultConfig()
+	err := ParseEnvVariables(empty)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +113,7 @@ func TestParseClientConfEnv(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(empty.HttpDispatcherConf, expected) {
-		t.Fatalf("expected %v, got %v", expected, empty.HttpDispatcherConf)
+	if !reflect.DeepEqual(empty.Client.HttpDispatcherConf, expected) {
+		t.Fatalf("expected %v, got %v", expected, empty.Client.HttpDispatcherConf)
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type Ed25519Keypair struct {
@@ -38,7 +38,7 @@ func PubkeyFromString(pub string) (*Ed25519Keypair, error) {
 	}, nil
 }
 
-func (keypair *Ed25519Keypair) Verify(signature string, ip common.DnsRecord) bool {
+func (keypair *Ed25519Keypair) Verify(signature string, ip update.DnsRecord) bool {
 	signatureRaw, err := DecodeBase64(signature)
 	if err != nil {
 		return false
@@ -47,7 +47,7 @@ func (keypair *Ed25519Keypair) Verify(signature string, ip common.DnsRecord) boo
 	return ed25519.Verify(keypair.PubKey, []byte(ip.Hash()), signatureRaw)
 }
 
-func (keypair *Ed25519Keypair) Sign(ip common.DnsRecord) string {
+func (keypair *Ed25519Keypair) Sign(ip update.DnsRecord) string {
 	if nil == keypair.privateKey {
 		return ""
 	}
@@ -62,6 +62,7 @@ func (keypair *Ed25519Keypair) AsJson() ([]byte, error) {
 		PrivateKey: EncodeBase64(keypair.privateKey),
 	}
 
+	//#nosec:G117
 	return json.Marshal(serialized)
 }
 

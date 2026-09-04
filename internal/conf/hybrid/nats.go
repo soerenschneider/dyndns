@@ -1,4 +1,4 @@
-package conf
+package hybrid
 
 type NatsConfig struct {
 	Url string `yaml:"url" env:"URL" validate:"required_with=EventsSubject DispatchUpdatesSubject ListenUpdatesSubjects,omitempty,nats_url"`

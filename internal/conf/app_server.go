@@ -1,5 +1,3 @@
-//go:build server
-
 package conf
 
 import (
@@ -11,36 +9,32 @@ import (
 
 	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/metrics"
-	"github.com/soerenschneider/dyndns/internal/verification"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/internal/verification"
 	"gopkg.in/yaml.v3"
 )
 
 type ServerConf struct {
-	KnownHosts      map[string][]string `yaml:"known_hosts" env:"KNOWN_HOSTS" validate:"required"`
-	HostedZoneId    string              `yaml:"hosted_zone_id" env:"HOSTED_ZONE_ID" validate:"required"`
-	MetricsListener string              `yaml:"metrics_listen,omitempty" validate:"omitempty,tcp_addr"`
-	SqsConfig       `yaml:"sqs"`
-	HttpConfig      `yaml:"http"`
-	MqttConfig      `yaml:"mqtt"`
-	VaultConfig     `yaml:"vault"`
-	EmailConfig     `yaml:"notifications"`
-	NatsConfig      `yaml:"nats" envPrefix:"NATS_"`
+	KnownHosts         map[string][]string `yaml:"known_hosts" env:"KNOWN_HOSTS"`
+	HostedZoneId       string              `yaml:"hosted_zone_id" env:"HOSTED_ZONE_ID"`
+	hybrid.SqsConfig   `yaml:"sqs"`
+	HttpConfig         `yaml:"http"`
+	hybrid.MqttConfig  `yaml:"mqtt"`
+	hybrid.EmailConfig `yaml:"notifications"`
+	hybrid.NatsConfig  `yaml:"nats" envPrefix:"NATS_"`
 }
 
 func GetDefaultServerConfig() *ServerConf {
 	return &ServerConf{
-		MetricsListener: metrics.DefaultListener,
-		SqsConfig:       DefaultSqsConfig(),
-		MqttConfig: MqttConfig{
+		SqsConfig: hybrid.DefaultSqsConfig(),
+		MqttConfig: hybrid.MqttConfig{
 			ClientId: "dyndns-server",
 		},
-		VaultConfig: GetDefaultVaultConfig(),
 	}
 }
 
-func ReadServerConfig(path string) (*ServerConf, error) {
-	conf := GetDefaultServerConfig()
+func ReadConfig(path string) (*Conf, error) {
+	conf := GetDefaultConfig()
 	if len(path) == 0 {
 		return conf, nil
 	}
@@ -57,7 +51,7 @@ func ReadServerConfig(path string) (*ServerConf, error) {
 	return conf, nil
 }
 
-func ParseEnvVariables(serverConf *ServerConf) error {
+func ParseEnvVariables(config *Conf) error {
 	funk := map[reflect.Type]env.ParserFunc{}
 
 	funk[reflect.TypeOf(map[string][]string{})] = func(input string) (any, error) {
@@ -65,11 +59,16 @@ func ParseEnvVariables(serverConf *ServerConf) error {
 		return ret, json.Unmarshal([]byte(input), &ret)
 	}
 
+	funk[reflect.TypeOf([]HttpDispatcherConfig{})] = func(input string) (any, error) {
+		var ret []HttpDispatcherConfig
+		return ret, json.Unmarshal([]byte(input), &ret)
+	}
+
 	opts := env.Options{
 		Prefix: "DYNDNS_",
 	}
 
-	return env.ParseWithFuncs(serverConf, funk, opts)
+	return env.ParseWithFuncs(config, funk, opts)
 }
 
 func (conf *ServerConf) DecodePublicKeys() (map[string][]verification.VerificationKey, error) {

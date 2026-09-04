@@ -2,6 +2,7 @@ package dispatchers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type HttpDispatch struct {
@@ -28,12 +29,13 @@ func NewHttpDispatcher(url string) (*HttpDispatch, error) {
 	}, nil
 }
 
-func (h *HttpDispatch) Notify(msg *common.UpdateRecordRequest) error {
+func (h *HttpDispatch) UpdateRecord(ctx context.Context, msg update.UpdateRecordRequest) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
+	// TODO ctx
 	response, err := h.client.Post(h.url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err

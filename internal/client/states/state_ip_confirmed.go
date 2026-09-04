@@ -5,17 +5,17 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
-	"github.com/soerenschneider/dyndns/internal/util"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/util"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 // ipConfirmedState is set after the dns record has been verified successfully
 type ipConfirmedState struct {
-	previouslyResolvedIp *common.DnsRecord
+	previouslyResolvedIp *update.DnsRecord
 }
 
-func NewIpConfirmedState(prev *common.DnsRecord) State {
+func NewIpConfirmedState(prev *update.DnsRecord) State {
 	return &ipConfirmedState{
 		previouslyResolvedIp: prev,
 	}
@@ -29,7 +29,7 @@ func (state *ipConfirmedState) Name() string {
 	return "ipConfirmedState"
 }
 
-func (state *ipConfirmedState) EvaluateState(context Client, resolved *common.DnsRecord) bool {
+func (state *ipConfirmedState) EvaluateState(context Client, resolved *update.DnsRecord) bool {
 	hasIpChanged := !state.previouslyResolvedIp.Equals(resolved)
 	state.previouslyResolvedIp = resolved
 

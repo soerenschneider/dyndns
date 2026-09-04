@@ -9,8 +9,8 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/conf"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
 )
 
 var (
@@ -34,7 +34,7 @@ func Close(ctx context.Context, js jetstream.JetStream) error {
 	return nil
 }
 
-func Connect(config conf.NatsConfig) (jetstream.JetStream, error) {
+func Connect(config hybrid.NatsConfig) (jetstream.JetStream, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 

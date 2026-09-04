@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/util"
+	"github.com/soerenschneider/dyndns/v2/internal/util"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 // ipNotConfirmedState is the state after we detect an ip update. we stay in this state until the dns record has been
@@ -31,7 +31,7 @@ func (state *ipNotConfirmedState) Name() string {
 	return "ipNotConfirmedState"
 }
 
-func (state *ipNotConfirmedState) EvaluateState(context Client, resolved *common.DnsRecord) bool {
+func (state *ipNotConfirmedState) EvaluateState(context Client, resolved *update.DnsRecord) bool {
 	ips, err := util.LookupDns(resolved.Host)
 	if err != nil {
 		log.Warn().Err(err).Str("component", "state_machine").Str("state", state.Name()).Str("host", resolved.Host).Msg("Error looking up dns record")

@@ -7,30 +7,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"go.uber.org/multierr"
 )
 
 const defaultWaitTimeSeconds = 20
 
 type SqsListener struct {
-	client   *sqs.SQS
+	client   *sqs.Client
 	queueUrl string
-	requests chan common.UpdateRecordRequest
+	requests chan update.UpdateRecordRequest
 
 	waitTimeSeconds int64
 }
 
 type SqsOpts func(consumer *SqsListener) error
 
-func NewSqsConsumer(sqsConf conf.SqsConfig, provider credentials.Provider, reqChan chan common.UpdateRecordRequest, opts ...SqsOpts) (*SqsListener, error) {
+func NewSqsConsumer(sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider, reqChan chan update.UpdateRecordRequest, opts ...SqsOpts) (*SqsListener, error) {
 	if reqChan == nil {
 		return nil, errors.New("empty chan provided")
 	}
@@ -52,17 +51,16 @@ func NewSqsConsumer(sqsConf conf.SqsConfig, provider credentials.Provider, reqCh
 		return nil, errs
 	}
 
-	awsConf := &aws.Config{
-		Region: aws.String(sqsConf.Region),
+	awsConf := aws.Config{
+		Region: sqsConf.Region,
 	}
 
 	if provider != nil {
 		log.Info().Str("component", "sqs").Msg("Building AWS client using given credentials provider")
-		awsConf.Credentials = credentials.NewCredentials(provider)
+		awsConf.Credentials = aws.NewCredentialsCache(provider)
 	}
-	awsSession := session.Must(session.NewSession(awsConf))
 
-	ret.client = sqs.New(awsSession)
+	ret.client = sqs.NewFromConfig(awsConf)
 	return ret, nil
 }
 
@@ -90,11 +88,11 @@ func (h *SqsListener) Listen(ctx context.Context, wg *sync.WaitGroup) error {
 func (h *SqsListener) fetchMessages(ctx context.Context) error {
 	log.Debug().Str("component", "sqs").Msg("Trying to receive messages")
 	metrics.SqsApiCalls.WithLabelValues("receive_message").Inc()
-	result, err := h.client.ReceiveMessageWithContext(ctx, &sqs.ReceiveMessageInput{
+	result, err := h.client.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(h.queueUrl),
-		MaxNumberOfMessages: aws.Int64(10),
-		VisibilityTimeout:   aws.Int64(30),
-		WaitTimeSeconds:     aws.Int64(h.waitTimeSeconds),
+		MaxNumberOfMessages: 10,
+		VisibilityTimeout:   30,
+		WaitTimeSeconds:     int32(h.waitTimeSeconds), //nolint G115
 	})
 	if err != nil {
 		return err
@@ -102,7 +100,7 @@ func (h *SqsListener) fetchMessages(ctx context.Context) error {
 
 	var errs error
 	for _, message := range result.Messages {
-		if err := h.handleMessage(message); err != nil {
+		if err := h.handleMessage(ctx, message); err != nil {
 			errs = multierr.Append(errs, err)
 		}
 	}
@@ -110,12 +108,12 @@ func (h *SqsListener) fetchMessages(ctx context.Context) error {
 	return errs
 }
 
-func (h *SqsListener) handleMessage(message *sqs.Message) error {
+func (h *SqsListener) handleMessage(ctx context.Context, message types.Message) error {
 	defer func() {
 		// the client is not going to stop ip update requests as long the ip has not been updated, so we have the luxury
 		// to not care about edge cases too much and delete the message after receiving it.
 		log.Debug().Str("component", "sqs").Str("message_id", *message.MessageId).Msg("Deleting message from queue")
-		_, err := h.client.DeleteMessage(&sqs.DeleteMessageInput{
+		_, err := h.client.DeleteMessage(context.Background(), &sqs.DeleteMessageInput{
 			QueueUrl:      aws.String(h.queueUrl),
 			ReceiptHandle: message.ReceiptHandle,
 		})
@@ -125,7 +123,7 @@ func (h *SqsListener) handleMessage(message *sqs.Message) error {
 		metrics.SqsApiCalls.WithLabelValues("delete_message").Inc()
 	}()
 
-	if message == nil || message.Body == nil {
+	if message.Body == nil {
 		log.Warn().Str("component", "sqs").Msg("Received empty message")
 		return nil
 	}
@@ -139,7 +137,7 @@ func (h *SqsListener) handleMessage(message *sqs.Message) error {
 }
 
 func (h *SqsListener) dispatch(msg []byte) error {
-	var env common.UpdateRecordRequest
+	var env update.UpdateRecordRequest
 	err := json.Unmarshal(msg, &env)
 	if err != nil {
 		metrics.MessageParsingFailed.Inc()

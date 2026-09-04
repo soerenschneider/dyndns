@@ -4,51 +4,46 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type SqsDispatch struct {
-	client   *sqs.SQS
+	client   *sqs.Client
 	queueUrl string
 }
 
-func NewSqsDispatcher(sqsConf conf.SqsConfig, provider credentials.Provider) (*SqsDispatch, error) {
-	awsConf := &aws.Config{
-		Region: aws.String(sqsConf.Region),
+func NewSqsDispatcher(sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider) (*SqsDispatch, error) {
+	awsConf := aws.Config{
+		Region: sqsConf.Region,
 	}
 	if provider != nil {
 		log.Info().Str("component", "sqs").Msg("Building AWS client using given credentials provider")
-		awsConf.Credentials = credentials.NewCredentials(provider)
+		awsConf.Credentials = aws.NewCredentialsCache(provider)
 	}
-	awsSession := session.Must(session.NewSession(awsConf))
 
 	ret := &SqsDispatch{
 		queueUrl: sqsConf.SqsQueue,
+		client:   sqs.NewFromConfig(awsConf),
 	}
-	ret.client = sqs.New(awsSession)
 	return ret, nil
 }
 
-func (h *SqsDispatch) Notify(msg *common.UpdateRecordRequest) error {
+func (h *SqsDispatch) UpdateRecord(ctx context.Context, msg update.UpdateRecordRequest) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
-	// TODO: change interface signature
-	ctx := context.Background()
 	metrics.SqsApiCalls.WithLabelValues("send_message").Inc()
-	result, err := h.client.SendMessageWithContext(ctx, &sqs.SendMessageInput{
+	result, err := h.client.SendMessage(ctx, &sqs.SendMessageInput{
 		MessageBody:  aws.String(string(data)),
 		QueueUrl:     aws.String(h.queueUrl),
-		DelaySeconds: aws.Int64(0),
+		DelaySeconds: 0,
 	})
 
 	if err == nil {

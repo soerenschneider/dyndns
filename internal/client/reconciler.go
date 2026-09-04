@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -8,33 +9,37 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"go.uber.org/multierr"
 )
 
-type Reconciler struct {
-	env         *common.UpdateRecordRequest
-	dispatchers map[string]EventDispatch
-	mutex       sync.Mutex
-
-	stopAfterFirstSuccess bool
-	pendingChanges        map[string]EventDispatch
+type RecordUpdater interface {
+	UpdateRecord(ctx context.Context, msg update.UpdateRecordRequest) error
 }
 
-func NewReconciler(dispatchers map[string]EventDispatch, stopAfterFirstSuccess bool) (*Reconciler, error) {
-	if len(dispatchers) < 1 {
+type Reconciler struct {
+	env      *update.UpdateRecordRequest
+	updaters map[string]RecordUpdater
+	mutex    sync.Mutex
+
+	stopAfterFirstSuccess bool
+	pendingChanges        map[string]RecordUpdater
+}
+
+func NewReconciler(updaters map[string]RecordUpdater, stopAfterFirstSuccess bool) (*Reconciler, error) {
+	if len(updaters) < 1 {
 		return nil, errors.New("no dispatchers supplied")
 	}
 
 	return &Reconciler{
-		dispatchers:           dispatchers,
+		updaters:              updaters,
 		mutex:                 sync.Mutex{},
 		stopAfterFirstSuccess: stopAfterFirstSuccess,
 	}, nil
 }
 
-func (r *Reconciler) RegisterUpdate(env *common.UpdateRecordRequest) error {
+func (r *Reconciler) RegisterUpdate(ctx context.Context, env *update.UpdateRecordRequest) error {
 	if env == nil {
 		return errors.New("nil env supplied")
 	}
@@ -42,17 +47,17 @@ func (r *Reconciler) RegisterUpdate(env *common.UpdateRecordRequest) error {
 	r.mutex.Lock()
 	r.env = env
 
-	r.pendingChanges = make(map[string]EventDispatch, len(r.dispatchers))
-	for i, dispatcher := range r.dispatchers {
+	r.pendingChanges = make(map[string]RecordUpdater, len(r.updaters))
+	for i, dispatcher := range r.updaters {
 		r.pendingChanges[i] = dispatcher
 	}
 	metrics.ReconcilersActive.WithLabelValues(env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
 
 	r.mutex.Unlock()
-	return r.dispatch()
+	return r.dispatch(ctx)
 }
 
-func (r *Reconciler) dispatch() error {
+func (r *Reconciler) dispatch(ctx context.Context) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -72,7 +77,7 @@ func (r *Reconciler) dispatch() error {
 	for key, dispatcher := range r.pendingChanges {
 		var disp = dispatcher
 		go func(key string) {
-			err := disp.Notify(r.env)
+			err := disp.UpdateRecord(ctx, *r.env)
 			if err == nil {
 				successFullDispatches.Add(1)
 				r.pendingChanges[key] = nil
@@ -97,17 +102,17 @@ func (r *Reconciler) dispatch() error {
 		r.pendingChanges = nil
 	}
 
-	log.Info().Str("component", "reconciler").Float64("seconds", timeSpent.Seconds()).Int("num_dispatchers", len(r.dispatchers)).Msgf("Spent %v on reconciliation", timeSpent)
+	log.Info().Str("component", "reconciler").Float64("seconds", timeSpent.Seconds()).Int("num_dispatchers", len(r.updaters)).Msgf("Spent %v on reconciliation", timeSpent)
 	metrics.ReconcilersActive.WithLabelValues(r.env.PublicIp.Host).Set(float64(len(r.pendingChanges)))
 	return errs
 }
 
-func (r *Reconciler) Run() {
+func (r *Reconciler) Run(ctx context.Context) {
 	interval := 1 * time.Minute
 	ticker := time.NewTicker(interval)
 
 	for range ticker.C {
-		if err := r.dispatch(); err != nil {
+		if err := r.dispatch(ctx); err != nil {
 			log.Error().Err(err).Msg("running reconciler produced errors")
 		}
 	}

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -8,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -23,6 +23,11 @@ var (
 		Namespace: namespace,
 		Name:      "version",
 	}, []string{"version", "hash", "go"})
+
+	Heartbeat = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Name:      "heartbeat_timestamp_seconds",
+	})
 
 	ProcessStartTime = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
@@ -83,7 +88,7 @@ var (
 	}, []string{"operation"})
 )
 
-func StartMetricsServer(addr string) {
+func StartMetricsServer(ctx context.Context, addr string) error {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
@@ -96,8 +101,22 @@ func StartMetricsServer(addr string) {
 		Handler:           mux,
 	}
 
-	err := server.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal().Err(err).Msg("can not start metrics server")
+	errChan := make(chan error)
+	go func() {
+		err := server.ListenAndServe()
+		if !errors.Is(err, http.ErrServerClosed) {
+			errChan <- err
+		}
+	}()
+
+	select {
+	case err := <-errChan:
+		return err
+	case <-ctx.Done():
+		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+		_ = server.Shutdown(ctx)
 	}
+
+	return nil
 }

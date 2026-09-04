@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type initialState struct {
@@ -25,7 +25,7 @@ func (state *initialState) Name() string {
 	return state.String()
 }
 
-func (state *initialState) EvaluateState(context Client, resolved *common.DnsRecord) bool {
+func (state *initialState) EvaluateState(context Client, resolved *update.DnsRecord) bool {
 	// This is just a dummy state, we'll immediately set the next state and invoke it
 	context.SetState(NewIpNotConfirmedState())
 	if state.forceSendUpdate {

@@ -1,5 +1,3 @@
-//go:build server
-
 package metrics
 
 import (
@@ -11,18 +9,6 @@ import (
 )
 
 var (
-	ServerHeartbeat = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Subsystem: server,
-		Name:      "heartbeat_timestamp_seconds",
-	})
-
-	KnownHostsHash = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Subsystem: server,
-		Name:      "known_hosts_configuration_hash",
-	})
-
 	DnsPropagationRequestsTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: server,
@@ -77,12 +63,6 @@ var (
 		Name:      "message_validations_failed_total",
 	}, []string{"host", "reason"})
 
-	VaultTokenLifetime = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Subsystem: server,
-		Name:      "vault_token_expiry_time_seconds",
-	})
-
 	MessageParsingFailed = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: server,
@@ -96,7 +76,7 @@ func StartHeartbeat(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			ServerHeartbeat.SetToCurrentTime()
+			Heartbeat.SetToCurrentTime()
 		case <-ctx.Done():
 			ticker.Stop()
 			return

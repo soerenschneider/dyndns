@@ -1,4 +1,4 @@
-package conf
+package hybrid
 
 type SqsConfig struct {
 	SqsQueue string `yaml:"sqs_queue" env:"QUEUE"`

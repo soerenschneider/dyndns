@@ -9,11 +9,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	AddrFamilyIpv6 = "ip6"
-	AddrFamilyIpv4 = "ip4"
+	"github.com/soerenschneider/dyndns/v2/internal"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 )
 
 var (
@@ -23,7 +20,11 @@ var (
 
 func ValidateConfig[T any](c T) error {
 	once.Do(func() {
-		validate = validator.New()
+		validate = validator.New(validator.WithRequiredStructEnabled())
+		if err := validate.RegisterValidation("required_for_mode", requiredForMode); err != nil {
+			log.Fatal().Err(err).Msg("could not build custom validation 'required_for_mode'")
+		}
+
 		if err := validate.RegisterValidation("addrfamilies", validateAddrFamilies); err != nil {
 			log.Fatal().Err(err).Msg("could not build custom validation 'addrfamilies'")
 		}
@@ -37,10 +38,85 @@ func ValidateConfig[T any](c T) error {
 			log.Fatal().Err(err).Msg("could not build custom validation 'nats_subject'")
 		}
 
-		validate.RegisterStructValidation(EmailConfigStructLevelValidation, EmailConfig{})
+		validate.RegisterStructValidation(validateEmailConfig, hybrid.EmailConfig{})
 	})
 
 	return validate.Struct(c)
+}
+
+const modeField = "Mode"
+
+// requiredForMode implements `required_for_mode=<mode>[ <mode>...]`.
+// The field must be non-empty when Conf.Mode matches one of the listed modes.
+func requiredForMode(fl validator.FieldLevel) bool {
+	top := fl.Top()
+	for top.Kind() == reflect.Pointer || top.Kind() == reflect.Interface {
+		if top.IsNil() {
+			return true
+		}
+		top = top.Elem()
+	}
+	if top.Kind() != reflect.Struct {
+		return true
+	}
+
+	f := top.FieldByName(modeField)
+	if !f.IsValid() || f.Kind() != reflect.String {
+		// Not validating from Conf — no mode to check against, so don't fail.
+		return true
+	}
+	mode := f.String()
+
+	var applies bool
+	for _, m := range strings.Fields(fl.Param()) {
+		if m == mode {
+			applies = true
+			break
+		}
+	}
+	if !applies {
+		return true
+	}
+	return hasValue(fl.Field())
+}
+
+func hasValue(field reflect.Value) bool {
+	switch field.Kind() {
+	case reflect.Slice, reflect.Map:
+		return !field.IsNil() && field.Len() > 0
+	case reflect.Pointer, reflect.Interface, reflect.Chan, reflect.Func:
+		return !field.IsNil()
+	default:
+		return field.IsValid() && !field.IsZero()
+	}
+}
+
+//nolint:cyclop
+func validateEmailConfig(sl validator.StructLevel) {
+	config := sl.Current().Interface().(hybrid.EmailConfig)
+
+	if config.SmtpPort == 0 && len(config.SmtpHost)+len(config.SmtpUsername)+len(config.SmtpUsernameFile)+len(config.SmtpPasswordFile)+len(config.SmtpPassword)+len(config.From)+len(config.FromFile)+len(config.To)+len(config.ToFile) == 0 {
+		return
+	}
+
+	if config.SmtpUsername == "" && config.SmtpUsernameFile == "" {
+		sl.ReportError(config.SmtpUsername, "SmtpUsername", "SmtpUsername", "usernameOrFileRequired", "")
+		sl.ReportError(config.SmtpUsernameFile, "SmtpUsernameFile", "SmtpUsernameFile", "usernameOrFileRequired", "")
+	}
+	if config.SmtpPassword == "" && config.SmtpPasswordFile == "" {
+		sl.ReportError(config.SmtpPassword, "SmtpPassword", "SmtpPassword", "passwordOrFileRequired", "")
+		sl.ReportError(config.SmtpPasswordFile, "SmtpPasswordFile", "SmtpPasswordFile", "passwordOrFileRequired", "")
+	}
+
+	if config.From == "" && config.FromFile == "" {
+		sl.ReportError(config.From, "From", "From", "requiredWithoutFromFile", "")
+		sl.ReportError(config.FromFile, "FromFile", "FromFile", "requiredWithoutFrom", "")
+	}
+
+	if len(config.To) == 0 && config.ToFile == "" {
+		sl.ReportError(config.To, "To", "To", "requiredWithoutToFile", "")
+		sl.ReportError(config.ToFile, "ToFile", "ToFile", "requiredWithoutTo", "")
+	}
 }
 
 func validateAddrFamilies(fl validator.FieldLevel) bool {
@@ -59,7 +135,7 @@ func validateAddrFamilies(fl validator.FieldLevel) bool {
 			return false
 		}
 
-		if str != AddrFamilyIpv4 && str != AddrFamilyIpv6 {
+		if str != internal.AddrFamilyIpv4 && str != internal.AddrFamilyIpv6 {
 			return false
 		}
 	}

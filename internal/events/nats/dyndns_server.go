@@ -1,5 +1,3 @@
-//go:build server
-
 package nats
 
 import (
@@ -14,20 +12,20 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type NatsDyndnsServer struct {
 	isInitialized  atomic.Bool
-	config         *conf.NatsConfig
+	config         *hybrid.NatsConfig
 	js             jetstream.JetStream
 	isOnlyListener bool
-	reqChan        chan common.UpdateRecordRequest
+	reqChan        chan update.UpdateRecordRequest
 }
 
-func NewNatsDyndnsServer(config *conf.NatsConfig, js jetstream.JetStream, reqChan chan common.UpdateRecordRequest) (*NatsDyndnsServer, error) {
+func NewNatsDyndnsServer(config *hybrid.NatsConfig, js jetstream.JetStream, reqChan chan update.UpdateRecordRequest) (*NatsDyndnsServer, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
@@ -116,7 +114,7 @@ func (n *NatsDyndnsServer) Listen(ctx context.Context, wg *sync.WaitGroup) error
 			return nil
 		default:
 			for msg := range msgs.Messages() {
-				var env common.UpdateRecordRequest
+				var env update.UpdateRecordRequest
 				if err := json.Unmarshal(msg.Data(), &env); err != nil {
 					metrics.MessageParsingFailed.Inc()
 					log.Warn().Msgf("Can't parse message: %v", err)

@@ -1,25 +1,22 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/client/resolvers"
-	"github.com/soerenschneider/dyndns/internal/client/states"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
-	"github.com/soerenschneider/dyndns/internal/notification"
-	"github.com/soerenschneider/dyndns/internal/verification"
+	"github.com/soerenschneider/dyndns/v2/internal/client/resolvers"
+	"github.com/soerenschneider/dyndns/v2/internal/client/states"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/notification"
+	"github.com/soerenschneider/dyndns/v2/internal/verification"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"go.uber.org/multierr"
 )
 
 const DefaultResolveInterval = 45 * time.Second
-
-type EventDispatch interface {
-	Notify(msg *common.UpdateRecordRequest) error
-}
 
 type Client struct {
 	signature        verification.SignatureKeypair
@@ -66,12 +63,12 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 	return c, errs
 }
 
-func (client *Client) Run() {
+func (client *Client) Run(ctx context.Context) {
 	ticker := time.NewTicker(client.resolveInterval)
-	var resolvedIp *common.DnsRecord
+	var resolvedIp *update.DnsRecord
 	tick := func() {
 		var err error
-		resolvedIp, err = client.Resolve(resolvedIp)
+		resolvedIp, err = client.Resolve(ctx, resolvedIp)
 		if err != nil {
 			log.Info().Err(err).Str("component", "client").Msg("error while iterating")
 		}
@@ -82,12 +79,17 @@ func (client *Client) Run() {
 	}
 
 	tick()
-	for range ticker.C {
-		tick()
+	for {
+		select {
+		case <-ticker.C:
+			tick()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
-func (client *Client) resolveIp() (*common.DnsRecord, error) {
+func (client *Client) resolveIp() (*update.DnsRecord, error) {
 	resolvedIp, err := client.resolver.Resolve()
 	metrics.LastCheck.WithLabelValues(client.resolver.Host(), client.resolver.Name()).SetToCurrentTime()
 
@@ -103,7 +105,7 @@ func (client *Client) resolveIp() (*common.DnsRecord, error) {
 	return resolvedIp, err
 }
 
-func (client *Client) Resolve(prev *common.DnsRecord) (*common.DnsRecord, error) {
+func (client *Client) Resolve(ctx context.Context, prev *update.DnsRecord) (*update.DnsRecord, error) {
 	resolvedIp, err := client.resolveIp()
 	if err != nil {
 		return prev, err
@@ -112,17 +114,17 @@ func (client *Client) Resolve(prev *common.DnsRecord) (*common.DnsRecord, error)
 	var errs error
 	if client.state.EvaluateState(client, resolvedIp) {
 		signature := client.signature.Sign(*resolvedIp)
-		req := &common.UpdateRecordRequest{
+		req := &update.UpdateRecordRequest{
 			PublicIp:  *resolvedIp,
 			Signature: signature,
 		}
-		errs = client.reconciler.RegisterUpdate(req)
+		errs = client.reconciler.RegisterUpdate(ctx, req)
 	}
 
 	return resolvedIp, errs
 }
 
-func (client *Client) NotifyUpdatedIpDetected(resolved *common.DnsRecord) error {
+func (client *Client) NotifyUpdatedIpDetected(resolved *update.DnsRecord) error {
 	if client.notificationImpl == nil {
 		return nil
 	}

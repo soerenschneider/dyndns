@@ -1,18 +1,14 @@
-//go:build client
-
 package conf
 
 import (
-	"encoding/json"
 	"os"
 	"os/user"
 	"path"
-	"reflect"
 	"strings"
 
-	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -37,8 +33,8 @@ var (
 type ClientConf struct {
 	Host             string   `yaml:"host,omitempty" env:"HOST" validate:"required"`
 	AddrFamilies     []string `yaml:"address_families" env:"ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
-	KeyPairPath      string   `yaml:"keypair_path,omitempty" env:"KEYPAIR_PATH" validate:"required_if=KeyPair '',omitempty,filepath"`
-	KeyPair          string   `yaml:"keypair,omitempty" env:"KEYPAIR" validate:"required_if=KeyPairPath ''"`
+	KeyPairPath      string   `yaml:"keypair_path,omitempty" env:"KEYPAIR_PATH" validate:"required_for_mode=client"`
+	KeyPair          string   `yaml:"keypair,omitempty" env:"KEYPAIR" validate:"required_for_mode=client"`
 	MetricsListener  string   `yaml:"metrics_listen,omitempty" env:"METRICS_LISTEN"`
 	PreferredUrls    []string `yaml:"http_resolver_preferred_urls,omitempty" env:"HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
 	FallbackUrls     []string `yaml:"http_resolver_fallback_urls,omitempty" env:"HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
@@ -46,10 +42,9 @@ type ClientConf struct {
 	Once             bool     // this is not parsed via json, it's an cli flag
 
 	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
-	SqsConfig          `yaml:"sqs" envPrefix:"SQS_"`
-	MqttConfig         `yaml:"mqtt"`
-	EmailConfig        `yaml:"notifications"`
-	NatsConfig         `yaml:"nats" envPrefix:"NATS_"`
+	hybrid.SqsConfig   `yaml:"sqs" envPrefix:"SQS_"`
+	hybrid.MqttConfig  `yaml:"mqtt"`
+	hybrid.NatsConfig  `yaml:"nats" envPrefix:"NATS_"`
 }
 
 type HttpDispatcherConfig struct {
@@ -74,27 +69,11 @@ func ReadClientConfig(path string) (*ClientConf, error) {
 	return conf, nil
 }
 
-func ParseClientConfEnv(clientConf *ClientConf) error {
-	funk := map[reflect.Type]env.ParserFunc{}
-
-	funk[reflect.TypeOf([]HttpDispatcherConfig{})] = func(input string) (any, error) {
-		var ret []HttpDispatcherConfig
-		return ret, json.Unmarshal([]byte(input), &ret)
-	}
-
-	opts := env.Options{
-		Prefix: "DYNDNS_",
-	}
-
-	return env.ParseWithFuncs(clientConf, funk, opts)
-}
-
 func getDefaultClientConfig() *ClientConf {
 	return &ClientConf{
-		MetricsListener: metrics.DefaultListener,
-		SqsConfig:       DefaultSqsConfig(),
-		AddrFamilies:    []string{AddrFamilyIpv4},
-		PreferredUrls:   defaultHttpResolverUrls,
+		SqsConfig:     hybrid.DefaultSqsConfig(),
+		AddrFamilies:  []string{internal.AddrFamilyIpv4},
+		PreferredUrls: defaultHttpResolverUrls,
 	}
 }
 

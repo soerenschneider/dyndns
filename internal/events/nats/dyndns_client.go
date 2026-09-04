@@ -12,18 +12,18 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type NatsDyndnsClient struct {
-	config *conf.NatsConfig
+	config *hybrid.NatsConfig
 
 	js            jetstream.JetStream
 	isInitialized atomic.Bool
 }
 
-func NewNatsDyndnsClient(config *conf.NatsConfig, js jetstream.JetStream) (*NatsDyndnsClient, error) {
+func NewNatsDyndnsClient(config *hybrid.NatsConfig, js jetstream.JetStream) (*NatsDyndnsClient, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
@@ -63,7 +63,7 @@ func (n *NatsDyndnsClient) Close(ctx context.Context) error {
 	return Close(ctx, n.js)
 }
 
-func (n *NatsDyndnsClient) Notify(msg *common.UpdateRecordRequest) error {
+func (n *NatsDyndnsClient) UpdateRecord(ctx context.Context, msg update.UpdateRecordRequest) error {
 	if !n.isInitialized.Load() {
 		return ErrNotInitialized
 	}
@@ -73,7 +73,6 @@ func (n *NatsDyndnsClient) Notify(msg *common.UpdateRecordRequest) error {
 		return fmt.Errorf("could not marshal envelope: %w", err)
 	}
 
-	ctx := context.Background()
 	ack, err := n.js.PublishMsg(ctx, &nats.Msg{
 		Data:    data,
 		Subject: n.config.DispatchUpdatesSubject,

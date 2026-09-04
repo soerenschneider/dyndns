@@ -4,6 +4,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 )
 
 func TestReadServerConfig(t *testing.T) {
@@ -23,14 +25,13 @@ func TestReadServerConfig(t *testing.T) {
 				KnownHosts: map[string][]string{
 					"host": []string{"key1", "key2"},
 				},
-				SqsConfig:       DefaultSqsConfig(),
-				HostedZoneId:    "hosted-zone-id-x",
-				MetricsListener: ":6666",
-				MqttConfig: MqttConfig{
+				SqsConfig:    hybrid.DefaultSqsConfig(),
+				HostedZoneId: "hosted-zone-id-x",
+				MqttConfig: hybrid.MqttConfig{
 					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
 					ClientId: "my-client-id",
 				},
-				EmailConfig: EmailConfig{
+				EmailConfig: hybrid.EmailConfig{
 					From:         "from",
 					To:           []string{"to-1"},
 					SmtpHost:     "smtp-host",
@@ -38,7 +39,6 @@ func TestReadServerConfig(t *testing.T) {
 					SmtpUsername: "username",
 					SmtpPassword: "password",
 				},
-				VaultConfig: GetDefaultVaultConfig(),
 			},
 		},
 		{
@@ -48,14 +48,13 @@ func TestReadServerConfig(t *testing.T) {
 				KnownHosts: map[string][]string{
 					"host": []string{"key1", "key2"},
 				},
-				SqsConfig:       DefaultSqsConfig(),
-				HostedZoneId:    "hosted-zone-id-x",
-				MetricsListener: ":6666",
-				MqttConfig: MqttConfig{
+				SqsConfig:    hybrid.DefaultSqsConfig(),
+				HostedZoneId: "hosted-zone-id-x",
+				MqttConfig: hybrid.MqttConfig{
 					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
 					ClientId: "my-client-id",
 				},
-				EmailConfig: EmailConfig{
+				EmailConfig: hybrid.EmailConfig{
 					From:         "from",
 					To:           []string{"to-1"},
 					SmtpHost:     "smtp-host",
@@ -63,13 +62,12 @@ func TestReadServerConfig(t *testing.T) {
 					SmtpUsername: "username",
 					SmtpPassword: "password",
 				},
-				VaultConfig: GetDefaultVaultConfig(),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadServerConfig(tt.args.path)
+			got, err := ReadConfig(tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadServerConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -87,7 +85,7 @@ func TestServerConf_ParseEnvVariables_KnownHosts(t *testing.T) {
 	// unset after running test
 	defer os.Setenv(envKey, "")
 
-	empty := &ServerConf{}
+	empty := GetDefaultConfig()
 	err := ParseEnvVariables(empty)
 	if err != nil {
 		t.Fatal(err)
@@ -98,49 +96,8 @@ func TestServerConf_ParseEnvVariables_KnownHosts(t *testing.T) {
 		"key2": []string{"value3", "value4"},
 	}
 
-	if !reflect.DeepEqual(empty.KnownHosts, expected) {
-		t.Fatalf("expected %v, got %v", expected, empty.KnownHosts)
-	}
-}
-
-func TestServerConf_ParseEnvVariables_AuthStrategy(t *testing.T) {
-	envKey := "DYNDNS_VAULT_AUTH_STRATEGY"
-	os.Setenv(envKey, "approle")
-	// unset after running test
-	defer os.Setenv(envKey, "")
-
-	empty := &ServerConf{
-		VaultConfig: VaultConfig{},
-	}
-	err := ParseEnvVariables(empty)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := VaultAuthStrategyApprole
-	if !reflect.DeepEqual(empty.AuthStrategy, expected) {
-		t.Fatalf("expected %v, got %v", expected, empty.AuthStrategy)
-	}
-}
-
-func TestServerConf_ParseEnvVariables_AuthStrategy_Invalid(t *testing.T) {
-	envKey := "DYNDNS_VAULT_AUTH_STRATEGY"
-	os.Setenv(envKey, "unknown")
-	// unset after running test
-	defer os.Setenv(envKey, "")
-
-	empty := &ServerConf{
-		VaultConfig: VaultConfig{},
-	}
-	err := ParseEnvVariables(empty)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, not := range []VaultAuthStrategy{VaultAuthStrategyToken, VaultAuthStrategyKubernetes, VaultAuthStrategyApprole} {
-		if reflect.DeepEqual(empty.AuthStrategy, not) {
-			t.Fatalf("must not be %v, got %v", not, empty.AuthStrategy)
-		}
+	if !reflect.DeepEqual(empty.Server.KnownHosts, expected) {
+		t.Fatalf("expected %v, got %v", expected, empty.Server.KnownHosts)
 	}
 }
 

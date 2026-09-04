@@ -12,20 +12,20 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"github.com/soerenschneider/soeren.cloud-events/pkg/dyndns"
 )
 
 type CloudeventsClient struct {
-	config       *conf.NatsConfig
+	config       *hybrid.NatsConfig
 	instanceName string
 
 	js            jetstream.JetStream
 	isInitialized atomic.Bool
 }
 
-func NewNatsCloudevents(config *conf.NatsConfig, js jetstream.JetStream) (*CloudeventsClient, error) {
+func NewNatsCloudevents(config *hybrid.NatsConfig, js jetstream.JetStream) (*CloudeventsClient, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
@@ -65,7 +65,7 @@ func (n *CloudeventsClient) Close(ctx context.Context) error {
 	return Close(ctx, n.js)
 }
 
-func (n *CloudeventsClient) NotifyUpdatedIpDetected(ip *common.DnsRecord) error {
+func (n *CloudeventsClient) NotifyUpdatedIpDetected(ip *update.DnsRecord) error {
 	if !n.isInitialized.Load() {
 		return ErrNotInitialized
 	}
@@ -79,7 +79,7 @@ func (n *CloudeventsClient) NotifyUpdatedIpDetected(ip *common.DnsRecord) error 
 	return n.Accept(context.Background(), event)
 }
 
-func (n *CloudeventsClient) NotifyUpdatedIpApplied(ip *common.DnsRecord) error {
+func (n *CloudeventsClient) NotifyUpdatedIpApplied(ip *update.DnsRecord) error {
 	if !n.isInitialized.Load() {
 		return ErrNotInitialized
 	}

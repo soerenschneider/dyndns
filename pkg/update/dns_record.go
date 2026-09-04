@@ -1,10 +1,11 @@
-package common
+package update
 
 import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -14,7 +15,7 @@ type UpdateRecordRequest struct {
 }
 
 func (r *UpdateRecordRequest) Validate() error {
-	if len(r.Signature) == 0 {
+	if strings.TrimSpace(r.Signature) == "" {
 		return errors.New("signature is missing")
 	}
 

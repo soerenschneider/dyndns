@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"go.uber.org/multierr"
 )
 
 type HttpServer struct {
 	address  string
-	requests chan common.UpdateRecordRequest
+	requests chan update.UpdateRecordRequest
 
 	// optional
 	certFile string
@@ -26,7 +26,7 @@ type HttpServer struct {
 
 type WebhookOpts func(*HttpServer) error
 
-func New(address string, requestsChan chan common.UpdateRecordRequest, opts ...WebhookOpts) (*HttpServer, error) {
+func New(address string, requestsChan chan update.UpdateRecordRequest, opts ...WebhookOpts) (*HttpServer, error) {
 	if len(address) == 0 {
 		return nil, errors.New("empty address provided")
 	}
@@ -60,7 +60,7 @@ func (s *HttpServer) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	payload := common.UpdateRecordRequest{}
+	payload := update.UpdateRecordRequest{}
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return
 	}

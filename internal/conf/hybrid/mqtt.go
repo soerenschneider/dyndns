@@ -1,4 +1,4 @@
-package conf
+package hybrid
 
 import (
 	"crypto/tls"

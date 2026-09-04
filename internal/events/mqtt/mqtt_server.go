@@ -1,5 +1,3 @@
-//go:build server
-
 package mqtt
 
 import (
@@ -11,8 +9,8 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type MqttBus struct {
@@ -20,10 +18,10 @@ type MqttBus struct {
 	notificationTopic string
 	broker            string
 
-	requests chan common.UpdateRecordRequest
+	requests chan update.UpdateRecordRequest
 }
 
-func NewMqttServer(broker string, clientId, notificationTopic string, tlsConfig *tls.Config, reqChan chan common.UpdateRecordRequest) (*MqttBus, error) {
+func NewMqttServer(broker string, clientId, notificationTopic string, tlsConfig *tls.Config, reqChan chan update.UpdateRecordRequest) (*MqttBus, error) {
 	bus := &MqttBus{
 		notificationTopic: notificationTopic,
 		requests:          reqChan,
@@ -68,7 +66,7 @@ func (s *MqttBus) Disconnect() {
 
 func (s *MqttBus) onMessage(_ mqtt.Client, msg mqtt.Message) {
 	log.Info().Str("component", "mqtt").Str("broker", s.broker).Msg("Picked up message")
-	var env common.UpdateRecordRequest
+	var env update.UpdateRecordRequest
 	err := json.Unmarshal(msg.Payload(), &env)
 	if err != nil {
 		metrics.MessageParsingFailed.Inc()

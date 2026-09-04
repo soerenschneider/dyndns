@@ -12,9 +12,9 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
-	"github.com/soerenschneider/dyndns/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/internal"
+	"github.com/soerenschneider/dyndns/v2/internal/metrics"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 const (
@@ -24,8 +24,8 @@ const (
 
 var (
 	serverAddresses = map[string]string{
-		conf.AddrFamilyIpv4: "8.8.8.8:53",
-		conf.AddrFamilyIpv6: "[2001:4860:4860::8888]:53",
+		internal.AddrFamilyIpv4: "8.8.8.8:53",
+		internal.AddrFamilyIpv6: "[2001:4860:4860::8888]:53",
 	}
 )
 
@@ -91,9 +91,9 @@ func (resolver *HttpResolver) Name() string {
 	return "HttpResolver"
 }
 
-func (resolver *HttpResolver) Resolve() (*common.DnsRecord, error) {
+func (resolver *HttpResolver) Resolve() (*update.DnsRecord, error) {
 	resolver.shuffleProviders()
-	detectedIps := &common.DnsRecord{
+	detectedIps := &update.DnsRecord{
 		Host:      resolver.host,
 		Timestamp: time.Now(),
 	}
@@ -130,7 +130,7 @@ func (resolver *HttpResolver) Resolve() (*common.DnsRecord, error) {
 				}
 
 				// Set the correct address family and stop iterating backupProviders
-				if addressFamily == conf.AddrFamilyIpv6 {
+				if addressFamily == internal.AddrFamilyIpv6 {
 					detectedIps.IpV6 = detectedIp
 				} else {
 					detectedIps.IpV4 = detectedIp

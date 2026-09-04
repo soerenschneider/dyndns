@@ -1,6 +1,8 @@
 package resolvers
 
-import "github.com/soerenschneider/dyndns/internal/common"
+import (
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
+)
 
 type CliResolver struct {
 	ipv4 string
@@ -24,8 +26,8 @@ func (resolver *CliResolver) Host() string {
 	return resolver.host
 }
 
-func (resolver *CliResolver) Resolve() (*common.DnsRecord, error) {
-	return &common.DnsRecord{
+func (resolver *CliResolver) Resolve() (*update.DnsRecord, error) {
+	return &update.DnsRecord{
 		IpV4: resolver.ipv4,
 		IpV6: resolver.ipv6,
 		Host: resolver.host,

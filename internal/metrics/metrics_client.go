@@ -1,5 +1,3 @@
-//go:build client
-
 package metrics
 
 import (
@@ -37,12 +35,6 @@ var (
 		Subsystem: client,
 		Name:      "ip_resolves_invalid_total",
 	}, []string{"host", "resolver", "url"})
-
-	ResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: client,
-		Name:      "ip_resolves_success_total",
-	}, []string{"host", "resolver"})
 
 	LastCheck = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,

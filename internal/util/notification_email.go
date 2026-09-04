@@ -3,8 +3,8 @@ package util
 import (
 	"fmt"
 
-	"github.com/soerenschneider/dyndns/internal/common"
-	"github.com/soerenschneider/dyndns/internal/conf"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"gopkg.in/gomail.v2"
 )
 
@@ -17,7 +17,7 @@ type EmailNotification struct {
 	smtpPassword string
 }
 
-func NewEmailNotification(emailConf *conf.EmailConfig) (*EmailNotification, error) {
+func NewEmailNotification(emailConf *hybrid.EmailConfig) (*EmailNotification, error) {
 	from, err := emailConf.GetFrom()
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func NewEmailNotification(emailConf *conf.EmailConfig) (*EmailNotification, erro
 	}, nil
 }
 
-func (e *EmailNotification) NotifyUpdatedIpDetected(ip *common.DnsRecord) error {
+func (e *EmailNotification) NotifyUpdatedIpDetected(ip *update.DnsRecord) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", e.From)
 	m.SetHeader("To", e.To...)
@@ -63,7 +63,7 @@ func (e *EmailNotification) NotifyUpdatedIpDetected(ip *common.DnsRecord) error 
 	return d.DialAndSend(m)
 }
 
-func (e *EmailNotification) NotifyUpdatedIpApplied(ip *common.DnsRecord) error {
+func (e *EmailNotification) NotifyUpdatedIpApplied(ip *update.DnsRecord) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", e.From)
 	m.SetHeader("To", e.To...)

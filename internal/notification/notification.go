@@ -1,20 +1,20 @@
 package notification
 
 import (
-	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 type Notification interface {
-	NotifyUpdatedIpDetected(ip *common.DnsRecord) error
-	NotifyUpdatedIpApplied(ip *common.DnsRecord) error
+	NotifyUpdatedIpDetected(ip *update.DnsRecord) error
+	NotifyUpdatedIpApplied(ip *update.DnsRecord) error
 }
 
 type DummyNotification struct{}
 
-func (d *DummyNotification) NotifyUpdatedIpDetected(ip *common.DnsRecord) error {
+func (d *DummyNotification) NotifyUpdatedIpDetected(ip *update.DnsRecord) error {
 	return nil
 }
 
-func (d *DummyNotification) NotifyUpdatedIpApplied(ip *common.DnsRecord) error {
+func (d *DummyNotification) NotifyUpdatedIpApplied(ip *update.DnsRecord) error {
 	return nil
 }

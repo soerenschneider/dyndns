@@ -1,8 +1,7 @@
-//go:build client
-
 package mqtt
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -11,7 +10,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
-	"github.com/soerenschneider/dyndns/internal/common"
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
 const publishWaitTimeout = 10 * time.Second
@@ -52,7 +51,7 @@ func NewMqttClient(broker string, clientId, notificationTopic string, tlsConfig 
 	}, nil
 }
 
-func (d *MqttClientBus) Notify(msg *common.UpdateRecordRequest) error {
+func (d *MqttClientBus) UpdateRecord(_ context.Context, msg update.UpdateRecordRequest) error {
 	payload, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("could not marshal envelope: %v", err)
