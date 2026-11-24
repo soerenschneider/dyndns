@@ -110,32 +110,43 @@ func TestRoute53Propagator_WithdrawnFamilies(t *testing.T) {
 				t.Fatalf("PropagateChange() error = %v", err)
 			}
 
-			var deleted []types.ResourceRecordSet
-			var upserts int
-			for _, c := range api.changes {
-				switch c.Action {
-				case types.ChangeActionDelete:
-					deleted = append(deleted, *c.ResourceRecordSet)
-				case types.ChangeActionUpsert:
-					upserts++
-				}
-			}
-
-			if upserts != tt.wantUpserts {
-				t.Errorf("upserts = %d, want %d", upserts, tt.wantUpserts)
-			}
-			if len(deleted) != len(tt.wantDeleted) {
-				t.Fatalf("deleted %d record sets, want %d", len(deleted), len(tt.wantDeleted))
-			}
-			for i := range deleted {
-				got, want := deleted[i], tt.wantDeleted[i]
-				if aws.ToString(got.Name) != aws.ToString(want.Name) || got.Type != want.Type || aws.ToInt64(got.TTL) != aws.ToInt64(want.TTL) ||
-					aws.ToString(got.ResourceRecords[0].Value) != aws.ToString(want.ResourceRecords[0].Value) {
-					t.Errorf("deleted %+v, want %+v", got, want)
-				}
-			}
+			assertChanges(t, api.changes, tt.wantDeleted, tt.wantUpserts)
 		})
 	}
+}
+
+func assertChanges(t *testing.T, changes []types.Change, wantDeleted []types.ResourceRecordSet, wantUpserts int) {
+	t.Helper()
+
+	var deleted []types.ResourceRecordSet
+	var upserts int
+	for _, c := range changes {
+		switch c.Action {
+		case types.ChangeActionDelete:
+			deleted = append(deleted, *c.ResourceRecordSet)
+		case types.ChangeActionUpsert:
+			upserts++
+		}
+	}
+
+	if upserts != wantUpserts {
+		t.Errorf("upserts = %d, want %d", upserts, wantUpserts)
+	}
+	if len(deleted) != len(wantDeleted) {
+		t.Fatalf("deleted %d record sets, want %d", len(deleted), len(wantDeleted))
+	}
+	for i := range deleted {
+		if !sameRecordSet(deleted[i], wantDeleted[i]) {
+			t.Errorf("deleted %+v, want %+v", deleted[i], wantDeleted[i])
+		}
+	}
+}
+
+func sameRecordSet(got, want types.ResourceRecordSet) bool {
+	return aws.ToString(got.Name) == aws.ToString(want.Name) &&
+		got.Type == want.Type &&
+		aws.ToInt64(got.TTL) == aws.ToInt64(want.TTL) &&
+		aws.ToString(got.ResourceRecords[0].Value) == aws.ToString(want.ResourceRecords[0].Value)
 }
 
 func TestRoute53Propagator_LookupFailureAbortsChange(t *testing.T) {
