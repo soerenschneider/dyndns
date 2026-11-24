@@ -34,7 +34,7 @@ func NewNatsDyndnsClient(config *hybrid.NatsConfig, js jetstream.JetStream) (*Na
 		isInitialized: atomic.Bool{},
 	}
 
-	ret.isInitialized.Store(js == nil)
+	ret.isInitialized.Store(js != nil)
 
 	if js == nil {
 		go func() {

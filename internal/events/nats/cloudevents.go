@@ -36,7 +36,7 @@ func NewNatsCloudevents(config *hybrid.NatsConfig, js jetstream.JetStream) (*Clo
 		isInitialized: atomic.Bool{},
 	}
 
-	ret.isInitialized.Store(js == nil)
+	ret.isInitialized.Store(js != nil)
 
 	if js == nil {
 		go func() {
