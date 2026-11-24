@@ -10,10 +10,46 @@
 | MetricsListener | string          | metrics_listen               | DYNDNS_METRICS_LISTEN               |
 | PreferredUrls   | []string        | http_resolver_preferred_urls | DYNDNS_HTTP_RESOLVER_PREFERRED_URLS |
 | FallbackUrls    | []string        | http_resolver_fallback_urls  | DYNDNS_HTTP_RESOLVER_FALLBACK_URLS  |
+| NetworkInterface | string         | interface                    | -                                   |
+| Ipv4Resolver    | string          | ipv4_resolver                | DYNDNS_IPV4_RESOLVER                |
+| Ipv6Resolver    | string          | ipv6_resolver                | DYNDNS_IPV6_RESOLVER                |
 | Once            | bool            | -                            | -                                   |
 | MqttConfig      | MqttConfig      | -                            | -                                   |
 | EmailConfig     | EmailConfig     | notifications                | -                                   |
 | InterfaceConfig | InterfaceConfig | -                            | -                                   |
+
+### Resolving IPv4 and IPv6 with different mechanisms
+
+`ipv4_resolver` and `ipv6_resolver` choose how each address family is resolved, either `http` (ask external
+services for the public address) or `interface` (read the address from `interface`). Unset, a family uses
+`interface` if one is configured and `http` otherwise. A resolver may only be set for a family listed in
+`address_families`.
+
+Behind NAT or CGNAT the interface only carries a private IPv4, while the IPv6 on it is globally routable:
+
+```yaml
+address_families: [ip4, ip6]
+interface: eth0
+ipv4_resolver: http
+ipv6_resolver: interface
+```
+
+Interface-based IPv6 detection is only supported on Linux.
+
+### Addresses that are not publicly routable
+
+The client never publishes private, CGNAT (`100.64.0.0/10`), link-local, documentation or other special-purpose
+addresses. When a family resolves to such an address, the client asks the server to delete that family's record,
+so it does not keep pointing at a stale address, and publishes whatever usable address is left. If no family has a
+usable address, the request only deletes records. This is counted in `dyndns_client_ip_resolves_dropped_total`.
+A family that fails to resolve is left untouched; only a definite non-public answer deletes its record.
+
+If the host's own outgoing IPv4 address is a CGNAT address, the http resolver does not ask its providers: they would
+only report the carrier's shared address, which does not reach this host. CGNAT on an upstream router (double NAT)
+cannot be detected; if that applies, remove `ip4` from `address_families`.
+
+Deleting records requires the `route53:ListResourceRecordSets` permission in addition to
+`route53:ChangeResourceRecordSets`.
 
 ## MqttConfig
 
