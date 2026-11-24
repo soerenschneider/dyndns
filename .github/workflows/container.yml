@@ -14,9 +14,6 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        mode: [client, server]
     permissions:
       contents: read
       packages: write
@@ -36,7 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.10.0
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.mode }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=schedule
             type=semver,pattern={{version}}
@@ -54,4 +51,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            MODE=${{ matrix.mode }}
+            VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+            COMMIT_HASH=${{ github.sha }}
