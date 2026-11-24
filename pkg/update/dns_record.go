@@ -233,6 +233,22 @@ func (resolved *DnsRecord) Validate() error {
 		return errors.New("both ipv4 and ipv6 are empty and nothing is withdrawn")
 	}
 
+	if err := resolved.validateAddresses(); err != nil {
+		return err
+	}
+
+	if err := resolved.validateWithdrawnFamilies(); err != nil {
+		return err
+	}
+
+	if resolved.Timestamp.IsZero() {
+		return fmt.Errorf("timestamp empty")
+	}
+
+	return nil
+}
+
+func (resolved *DnsRecord) validateAddresses() error {
 	if resolved.HasIpV4() && !IsPublicIpV4(resolved.IpV4) {
 		return fmt.Errorf("ipv4 %q is not a publicly routable ipv4 address", resolved.IpV4)
 	}
@@ -241,6 +257,10 @@ func (resolved *DnsRecord) Validate() error {
 		return fmt.Errorf("ipv6 %q is not a publicly routable ipv6 address", resolved.IpV6)
 	}
 
+	return nil
+}
+
+func (resolved *DnsRecord) validateWithdrawnFamilies() error {
 	for _, family := range resolved.WithdrawnFamilies {
 		switch {
 		case family != AddrFamilyIpv4 && family != AddrFamilyIpv6:
@@ -250,10 +270,6 @@ func (resolved *DnsRecord) Validate() error {
 		case family == AddrFamilyIpv6 && resolved.HasIpV6():
 			return errors.New("ipv6 is both set and withdrawn")
 		}
-	}
-
-	if resolved.Timestamp.IsZero() {
-		return fmt.Errorf("timestamp empty")
 	}
 
 	return nil
