@@ -12,41 +12,21 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/v2/pkg/update"
-	"go.uber.org/multierr"
 )
 
 type HttpServer struct {
 	address  string
 	requests chan update.UpdateRecordRequest
-
-	// optional
-	certFile string
-	keyFile  string
 }
 
-type WebhookOpts func(*HttpServer) error
-
-func New(address string, requestsChan chan update.UpdateRecordRequest, opts ...WebhookOpts) (*HttpServer, error) {
+func New(address string, requestsChan chan update.UpdateRecordRequest) (*HttpServer, error) {
 	if len(address) == 0 {
 		return nil, errors.New("empty address provided")
 	}
 
-	w := &HttpServer{
+	return &HttpServer{
 		address: address,
-	}
-
-	var errs error
-	for _, opt := range opts {
-		if err := opt(w); err != nil {
-			errs = multierr.Append(errs, err)
-		}
-	}
-
-	return w, errs
-}
-
-func (s *HttpServer) IsTLSConfigured() bool {
-	return len(s.certFile) > 0 && len(s.keyFile) > 0
+	}, nil
 }
 
 func (s *HttpServer) handle(w http.ResponseWriter, r *http.Request) {
@@ -86,14 +66,8 @@ func (s *HttpServer) Listen(ctx context.Context, wg *sync.WaitGroup) error {
 
 	errChan := make(chan error)
 	go func() {
-		if s.IsTLSConfigured() {
-			if err := server.ListenAndServeTLS(s.certFile, s.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				errChan <- fmt.Errorf("can not start webhook server: %w", err)
-			}
-		} else {
-			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				errChan <- fmt.Errorf("can not start webhook server: %w", err)
-			}
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errChan <- fmt.Errorf("can not start webhook server: %w", err)
 		}
 	}()
 
