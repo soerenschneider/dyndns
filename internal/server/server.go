@@ -17,23 +17,42 @@ import (
 	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
-// timestampGracePeriod must be a negative number
-const timestampGracePeriod = -24 * time.Hour
+const (
+	// maxMessageAge bounds how long a captured request can be replayed, e.g.
+	// right after a restart wiped the cache. Clients re-send unconfirmed updates
+	// every few minutes with a fresh timestamp, so legitimate requests are young.
+	maxMessageAge = 1 * time.Hour
+	// maxClockSkew tolerates clients whose clock runs slightly ahead.
+	maxClockSkew = 5 * time.Minute
+)
 
-var ErrorMessageTooOld = errors.New("message timestamp is too old")
+var (
+	ErrorMessageTooOld     = errors.New("message timestamp is too old")
+	ErrorMessageFromFuture = errors.New("message timestamp is in the future")
+	// ErrorMessageSuperseded is returned for requests older than the last one
+	// accepted for the host: a replay, or a duplicate delivered late via
+	// another transport. Applying it would roll the record back.
+	ErrorMessageSuperseded = errors.New("message is superseded by a newer one")
+)
 
 type propagator interface {
 	PropagateChange(ctx context.Context, ip update.DnsRecord) error
 }
 
 type DyndnsServer struct {
-	knownHosts       map[string][]verification.VerificationKey
-	requests         chan update.UpdateRecordRequest
-	propagator       propagator
+	knownHosts map[string][]verification.VerificationKey
+	requests   chan update.UpdateRecordRequest
+	propagator propagator
+	// cache holds the last accepted record per host. Its timestamp orders
+	// incoming requests, so it is only written after signature verification.
 	cache            map[string]update.DnsRecord
 	notificationImpl notification.Notification
+	// dnsMatches reports whether DNS already reflects a record.
+	dnsMatches func(*update.DnsRecord) bool
 
-	lock sync.RWMutex
+	// lock serializes UpdateRecord so the ordering check and the cache update
+	// cannot interleave.
+	lock sync.Mutex
 }
 
 func NewServer(config conf2.Conf, propagator propagator, requests chan update.UpdateRecordRequest, notifyImpl notification.Notification) (*DyndnsServer, error) {
@@ -77,20 +96,50 @@ func NewServer(config conf2.Conf, propagator propagator, requests chan update.Up
 		propagator:       propagator,
 		cache:            make(map[string]update.DnsRecord, len(config.Server.KnownHosts)),
 		notificationImpl: notifyImpl,
+		dnsMatches:       util.HostnameMatchesRecord,
 	}
 
 	return &server, nil
 }
 
-func (server *DyndnsServer) isCached(env update.UpdateRecordRequest) bool {
-	server.lock.RLock()
-	defer server.lock.RUnlock()
-	entry, ok := server.cache[env.PublicIp.Host]
-	if !ok {
-		return false
+// checkTimestamp rejects requests outside [now-maxMessageAge, now+maxClockSkew].
+func checkTimestamp(record update.DnsRecord, now time.Time) error {
+	if record.Timestamp.Before(now.Add(-maxMessageAge)) {
+		metrics.IgnoredMessage.WithLabelValues(record.Host, "message_too_old").Inc()
+		return ErrorMessageTooOld
 	}
 
-	return entry.Equals(&env.PublicIp)
+	if record.Timestamp.After(now.Add(maxClockSkew)) {
+		metrics.IgnoredMessage.WithLabelValues(record.Host, "message_from_future").Inc()
+		return ErrorMessageFromFuture
+	}
+
+	return nil
+}
+
+// checkOrder compares a verified request with the last accepted one for its
+// host. It returns isDuplicate for a repeat of that request and
+// ErrorMessageSuperseded for anything older. The signature only covers whole
+// seconds, so that is the resolution requests are ordered at.
+func (server *DyndnsServer) checkOrder(record update.DnsRecord) (isDuplicate bool, err error) {
+	last, ok := server.cache[record.Host]
+	if !ok {
+		return false, nil
+	}
+
+	reqSecond, lastSecond := record.Timestamp.Unix(), last.Timestamp.Unix()
+	switch {
+	case reqSecond < lastSecond:
+		metrics.IgnoredMessage.WithLabelValues(record.Host, "message_superseded").Inc()
+		return false, ErrorMessageSuperseded
+	case last.Equals(&record):
+		return true, nil
+	case reqSecond == lastSecond:
+		metrics.IgnoredMessage.WithLabelValues(record.Host, "message_superseded").Inc()
+		return false, ErrorMessageSuperseded
+	}
+
+	return false, nil
 }
 
 func (server *DyndnsServer) verifyMessage(env update.UpdateRecordRequest) error {
@@ -111,49 +160,58 @@ func (server *DyndnsServer) verifyMessage(env update.UpdateRecordRequest) error 
 	return fmt.Errorf("verifying signature FAILED for host '%s'", env.PublicIp.Host)
 }
 
-func (server *DyndnsServer) UpdateRecord(ctx context.Context, env update.UpdateRecordRequest) error {
-	if err := env.Validate(); err != nil {
-		metrics.MessageValidationsFailed.WithLabelValues(env.PublicIp.Host, "invalid_fields").Inc()
+func (server *DyndnsServer) UpdateRecord(ctx context.Context, req update.UpdateRecordRequest) error {
+	if err := req.Validate(); err != nil {
+		metrics.MessageValidationsFailed.WithLabelValues(req.PublicIp.Host, "invalid_fields").Inc()
 		return fmt.Errorf("invalid envelope received: %v", err)
 	}
 
-	if err := server.verifyMessage(env); err != nil {
+	if err := server.verifyMessage(req); err != nil {
 		return err
 	}
 
-	if env.PublicIp.Timestamp.Before(time.Now().Add(timestampGracePeriod)) {
-		metrics.IgnoredMessage.WithLabelValues(env.PublicIp.Host, "message_too_old").Inc()
-		return ErrorMessageTooOld
+	if err := checkTimestamp(req.PublicIp, time.Now()); err != nil {
+		return err
 	}
 
-	if server.isCached(env) {
-		log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Msg("Request for host is cached, not performing changes")
+	server.lock.Lock()
+	defer server.lock.Unlock()
+
+	isDuplicate, err := server.checkOrder(req.PublicIp)
+	if err != nil {
+		return err
+	}
+
+	if isDuplicate {
+		server.cache[req.PublicIp.Host] = req.PublicIp // advance the timestamp
+		log.Info().Str("component", "server").Str("host", req.PublicIp.Host).Msg("Request for host is cached, not performing changes")
 		return nil
 	}
 
-	if util.HostnameMatchesRecord(&env.PublicIp) {
-		log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("host already has desired address, not updating")
+	if server.dnsMatches(&req.PublicIp) {
+		server.cache[req.PublicIp.Host] = req.PublicIp
+		log.Info().Str("component", "server").Str("host", req.PublicIp.Host).Str("ipv4", req.PublicIp.IpV4).Str("ipv6", req.PublicIp.IpV6).Msg("host already has desired address, not updating")
 		return nil
 	}
 
-	log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Strs("withdrawn_families", env.PublicIp.WithdrawnFamilies).Msg("Verifying signature succeeded, updating host")
-	if err := server.propagator.PropagateChange(ctx, env.PublicIp); err != nil {
-		metrics.DnsPropagationErrors.WithLabelValues(env.PublicIp.Host).Inc()
-		return fmt.Errorf("could not propagate dns change for domain '%s': %v", env.PublicIp.Host, err)
+	log.Info().Str("component", "server").Str("host", req.PublicIp.Host).Str("ipv4", req.PublicIp.IpV4).Str("ipv6", req.PublicIp.IpV6).Strs("withdrawn_families", req.PublicIp.WithdrawnFamilies).Msg("Verifying signature succeeded, updating host")
+	if err := server.propagator.PropagateChange(ctx, req.PublicIp); err != nil {
+		metrics.DnsPropagationErrors.WithLabelValues(req.PublicIp.Host).Inc()
+		return fmt.Errorf("could not propagate dns change for domain '%s': %v", req.PublicIp.Host, err)
 	}
 
 	if server.notificationImpl != nil {
-		pubIp := env.PublicIp
+		pubIp := req.PublicIp
 		err := server.notificationImpl.NotifyUpdatedIpApplied(&pubIp)
 		if err != nil {
 			metrics.NotificationErrors.Inc()
 		}
 	}
-	log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("Successfully propagated change")
-	metrics.SuccessfulDnsPropagationsTotal.WithLabelValues(env.PublicIp.Host).Inc()
+	log.Info().Str("component", "server").Str("host", req.PublicIp.Host).Str("ipv4", req.PublicIp.IpV4).Str("ipv6", req.PublicIp.IpV6).Msg("Successfully propagated change")
+	metrics.SuccessfulDnsPropagationsTotal.WithLabelValues(req.PublicIp.Host).Inc()
 
 	// Add to cache
-	server.cache[env.PublicIp.Host] = env.PublicIp
+	server.cache[req.PublicIp.Host] = req.PublicIp
 	return nil
 }
 
@@ -166,7 +224,7 @@ func (server *DyndnsServer) Listen(ctx context.Context) {
 
 			log.Info().Str("component", "server").Msg("Picked up a new change request")
 			err := server.UpdateRecord(ctx, request)
-			if err != nil && !errors.Is(err, ErrorMessageTooOld) {
+			if err != nil && !errors.Is(err, ErrorMessageTooOld) && !errors.Is(err, ErrorMessageSuperseded) {
 				log.Error().Err(err).Str("component", "server").Msg("Change has not been propagated")
 			}
 			time.Sleep(1 * time.Second)
