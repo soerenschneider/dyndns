@@ -98,12 +98,13 @@ func buildListeners(config conf.ServerConf, requests chan update.UpdateRecordReq
 		}
 	}
 
-	if config.IsConfiguredForUpdates() {
+	if config.IsConfiguredAsListener() {
 		nats, err := buildNats(config, requests)
 		if err != nil {
 			errs = multierr.Append(errs, err)
+		} else {
+			listeners = append(listeners, nats)
 		}
-		listeners = append(listeners, nats)
 	}
 
 	if len(config.SqsQueue) > 0 {
