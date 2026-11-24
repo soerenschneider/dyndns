@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
@@ -188,6 +189,31 @@ func TestEmailConfig_Validate(t *testing.T) {
 
 			if err := ValidateConfig[hybrid.EmailConfig](conf); (err != nil) != tt.wantErr {
 				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateConfig_HostRequiredForMode(t *testing.T) {
+	tests := []struct {
+		mode    string
+		host    string
+		wantErr bool
+	}{
+		{mode: "server", host: "", wantErr: false},
+		{mode: "client", host: "", wantErr: true},
+		{mode: "edge", host: "", wantErr: true},
+		{mode: "edge", host: "my.host.tld", wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.mode+"/"+tt.host, func(t *testing.T) {
+			config := GetDefaultConfig()
+			config.Mode = tt.mode
+			config.Client.Host = tt.host
+
+			err := ValidateConfig(config)
+			if gotErr := err != nil && strings.Contains(err.Error(), "'Host'"); gotErr != tt.wantErr {
+				t.Errorf("ValidateConfig() error = %v, want host error %v", err, tt.wantErr)
 			}
 		})
 	}
