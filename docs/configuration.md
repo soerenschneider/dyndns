@@ -7,7 +7,6 @@
 | Host            | string          | host                         | DYNDNS_HOST                         |
 | AddrFamilies    | []string        | address_families             | DYNDNS_ADDRESS_FAMILIES             |
 | KeyPairPath     | string          | keypair_path                 | DYNDNS_KEYPAIR_PATH                 |
-| MetricsListener | string          | metrics_listen               | DYNDNS_METRICS_LISTEN               |
 | PreferredUrls   | []string        | http_resolver_preferred_urls | DYNDNS_HTTP_RESOLVER_PREFERRED_URLS |
 | FallbackUrls    | []string        | http_resolver_fallback_urls  | DYNDNS_HTTP_RESOLVER_FALLBACK_URLS  |
 | NetworkInterface | string         | interface                    | -                                   |
@@ -81,7 +80,6 @@ Deleting records requires the `route53:ListResourceRecordSets` permission in add
 |-----------------|---------------------|----------------|----------------------|
 | KnownHosts      | map[string][]string | known_hosts    | -                    |
 | HostedZoneId    | string              | hosted_zone_id | -                    |
-| MetricsListener | string              | metrics_listen | -                    |
 | MqttConfig      | MqttConfig          | -              | -                    |
 | VaultConfig     | VaultConfig         | -              | -                    |
 | EmailConfig     | EmailConfig         | notifications  | -                    |

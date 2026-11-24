@@ -3,7 +3,6 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"os"
 	"reflect"
 
@@ -94,15 +93,4 @@ func (conf *ServerConf) DecodePublicKeys() (map[string][]verification.Verificati
 	}
 
 	return ret, nil
-}
-
-func GetKnownHostsHash(knownHosts map[string][]string) (uint64, error) {
-	jsonBytes, err := json.Marshal(knownHosts)
-	if err != nil {
-		return 0, err
-	}
-
-	hash := fnv.New64a()
-	hash.Write(jsonBytes)
-	return hash.Sum64(), nil
 }

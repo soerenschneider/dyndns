@@ -8,7 +8,7 @@ import (
 	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 )
 
-func TestReadServerConfig(t *testing.T) {
+func TestReadConfig(t *testing.T) {
 	type args struct {
 		path string
 	}
@@ -27,6 +27,28 @@ func TestReadServerConfig(t *testing.T) {
 			name: "happy path - json",
 			args: args{"../../contrib/server.json"},
 			want: wantServerConf(),
+		},
+		{
+			name:    "non-existing-file",
+			args:    args{"some-file"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "wrong format",
+			args:    args{"../../contrib/textfile.txt"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "empty yaml file content",
+			args: args{"../../contrib/empty.yaml"},
+			want: GetDefaultConfig(),
+		},
+		{
+			name: "empty path",
+			args: args{""},
+			want: GetDefaultConfig(),
 		},
 	}
 	for _, tt := range tests {
@@ -89,84 +111,5 @@ func TestServerConf_ParseEnvVariables_KnownHosts(t *testing.T) {
 
 	if !reflect.DeepEqual(empty.Server.KnownHosts, expected) {
 		t.Fatalf("expected %v, got %v", expected, empty.Server.KnownHosts)
-	}
-}
-
-func TestServerConf_GetKnownHostsHash_HappyPath(t *testing.T) {
-	var h1, h2 map[string][]string
-	h1 = map[string][]string{
-		"host1": []string{"abc"},
-	}
-	hash1, err := GetKnownHostsHash(h1)
-	if err != nil {
-		t.Fatal()
-	}
-
-	h2 = map[string][]string{
-		"host1": []string{"abc"},
-	}
-	hash2, err := GetKnownHostsHash(h2)
-	if err != nil {
-		t.Fatal()
-	}
-
-	if hash1 != hash2 {
-		t.Fatal()
-	}
-}
-
-func TestServerConf_GetKnownHostsHash_MultipleHosts(t *testing.T) {
-	host1 := "host1"
-	host2 := "host2"
-
-	var h1, h2 map[string][]string
-	h1 = map[string][]string{
-		host1: []string{"abc", "1234"},
-		host2: []string{"zzz"},
-	}
-	hash1, err := GetKnownHostsHash(h1)
-	if err != nil {
-		t.Fatal()
-	}
-
-	h2 = map[string][]string{
-		host2: []string{"zzz"},
-		host1: []string{"abc", "1234"},
-	}
-	hash2, err := GetKnownHostsHash(h2)
-	if err != nil {
-		t.Fatal()
-	}
-
-	if hash1 != hash2 {
-		t.Fatal()
-	}
-}
-
-func TestServerConf_GetKnownHostsHash_ListWrongOrder(t *testing.T) {
-	host1 := "host1"
-	host2 := "host2"
-
-	var h1, h2 map[string][]string
-	h1 = map[string][]string{
-		host1: []string{"abc", "1234"},
-		host2: []string{"zzz"},
-	}
-	hash1, err := GetKnownHostsHash(h1)
-	if err != nil {
-		t.Fatal()
-	}
-
-	h2 = map[string][]string{
-		host2: []string{"zzz"},
-		host1: []string{"1234", "abc"},
-	}
-	hash2, err := GetKnownHostsHash(h2)
-	if err != nil {
-		t.Fatal()
-	}
-
-	if hash1 == hash2 {
-		t.Fatal()
 	}
 }
