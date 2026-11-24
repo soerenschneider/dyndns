@@ -55,4 +55,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.release.outputs.tag_name }}
+            COMMIT_HASH=${{ github.sha }}
         if: ${{ steps.release.outputs.release_created }}
