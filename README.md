@@ -38,8 +38,7 @@ $ terraform -chdir=deployment/terraform/envs/dev output -raw gateway-url # displ
 
 ### Docker / Podman
 ```shell
-$ docker pull ghcr.io/soerenschneider/dyndns-server:main
-$ docker pull ghcr.io/soerenschneider/dyndns-client:main
+$ docker pull ghcr.io/soerenschneider/dyndns:main
 ```
 
 ### Binaries
