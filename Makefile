@@ -1,61 +1,57 @@
 BUILD_DIR = builds
-MODULE = github.com/soerenschneider/dyndns
-BINARY_NAME_SERVER = dyndns-server
-BINARY_NAME_CLIENT = dyndns-client
+MODULE = github.com/soerenschneider/dyndns/v2
+BINARY_NAME = dyndns
 CHECKSUM_FILE = $(BUILD_DIR)/checksum.sha256
 SIGNATURE_KEYFILE = ~/.signify/github.sec
 DOCKER_PREFIX = ghcr.io/soerenschneider
 
+# Reproducible builds: pin the toolchain from go.mod instead of using whatever go
+# is installed, never touch go.mod/go.sum, strip local paths and build without cgo.
+# The same commit then yields bit-identical binaries on every machine.
+export GOTOOLCHAIN := $(shell awk '/^toolchain /{print $$2}' go.mod)
+export GOFLAGS := -mod=readonly -trimpath
+export CGO_ENABLED := 0
+
+VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
+COMMIT_HASH := $(shell git rev-parse HEAD)
+GO_VERSION := $(GOTOOLCHAIN:go%=%)
+LDFLAGS = -s -w -buildid= -X '$(MODULE)/internal.BuildVersion=$(VERSION)' -X '$(MODULE)/internal.CommitHash=$(COMMIT_HASH)' -X '$(MODULE)/internal.GoVersion=$(GO_VERSION)'
+
+.PHONY: tests clean build release signed-release lambda-server cross-build docker-build fmt pre-commit-init docs
+
 tests:
-	go test ./... -tags client,server -cover
+	CGO_ENABLED=1 go test -race ./... -cover
 
 clean:
 	rm -rf ./$(BUILD_DIR)
 
-build: version-info
-	go build -race -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BINARY_NAME_SERVER) -tags server cmd/server/server.go
-	go build -race -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BINARY_NAME_CLIENT) -tags client cmd/client/client.go
+build:
+	go build -ldflags="$(LDFLAGS)" -o $(BINARY_NAME) ./cmd
 
-release: clean version-info cross-build-client cross-build-server
-	sha256sum $(BUILD_DIR)/dyndns-* > $(CHECKSUM_FILE)
+release: clean cross-build
+	sha256sum $(BUILD_DIR)/$(BINARY_NAME)-* > $(CHECKSUM_FILE)
 
 signed-release: release
 	pass keys/signify/github | signify -S -s $(SIGNATURE_KEYFILE) -m $(CHECKSUM_FILE)
 	gh-upload-assets -o soerenschneider -r dyndns -f ~/.gh-token builds
 
 lambda-server:
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags server,aws -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o bootstrap cmd/server/server_lambda.go
+	GOOS=linux GOARCH=arm64 go build -tags server,aws -ldflags="$(LDFLAGS)" -o bootstrap cmd/server/server_lambda.go
 	rm -f dyndns-server-lambda.zip
 	zip dyndns-server-lambda.zip bootstrap
 	rm -f bootstrap
 
-cross-build-server:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0       go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_SERVER)-linux-x86_64    -tags server cmd/server/server.go
-	GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=0 go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_SERVER)-linux-armv5     -tags server cmd/server/server.go
-	GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_SERVER)-linux-armv6     -tags server cmd/server/server.go
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=0       go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}''" -o $(BUILD_DIR)/$(BINARY_NAME_SERVER)-linux-aarch64   -tags server cmd/server/server.go
+cross-build:
+	GOOS=linux GOARCH=amd64       go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-x86_64  ./cmd
+	GOOS=linux GOARCH=arm GOARM=5 go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-armv5   ./cmd
+	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-armv6   ./cmd
+	GOOS=linux GOARCH=arm64       go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-aarch64 ./cmd
 
-cross-build-client:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0       go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_CLIENT)-linux-x86_64    -tags client cmd/client/client.go
-	GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=0 go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_CLIENT)-linux-armv5     -tags client cmd/client/client.go
-	GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_CLIENT)-linux-armv6     -tags client cmd/client/client.go
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=0       go build -ldflags="-w -X '$(MODULE)/internal.BuildVersion=${VERSION}' -X '$(MODULE)/internal.CommitHash=${COMMIT_HASH}' -X '$(MODULE)/internal.GoVersion=${GO_VERSION}'" -o $(BUILD_DIR)/$(BINARY_NAME_CLIENT)-linux-aarch64   -tags client cmd/client/client.go
-
-docker-build-server:
-	docker build -t "$(DOCKER_PREFIX)/$(BINARY_NAME_SERVER)" --build-arg MODE=server .
-
-docker-build-client:
-	docker build -t "$(DOCKER_PREFIX)/$(BINARY_NAME_CLIENT)" --build-arg MODE=client .
-
-docker-build: docker-build-server docker-build-client
-
-version-info:
-	$(eval VERSION := $(shell git describe --tags --abbrev=0 || echo "dev"))
-	$(eval COMMIT_HASH := $(shell git rev-parse HEAD))
-	$(eval GO_VERSION := $(shell go version | awk '{print $$3}' | sed 's/^go//'))
+docker-build:
+	docker build -t "$(DOCKER_PREFIX)/$(BINARY_NAME)" .
 
 fmt:
-	find . -iname "*.go" -exec go fmt {} \; 
+	find . -iname "*.go" -exec go fmt {} \;
 
 pre-commit-init:
 	pre-commit install
