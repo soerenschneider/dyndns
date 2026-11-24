@@ -18,7 +18,9 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/zerolog v1.35.1
 	github.com/soerenschneider/soeren.cloud-events v0.0.0-20250423164936-f1e30077892f
+	github.com/vishvananda/netlink v1.3.1
 	go.uber.org/multierr v1.11.0
+	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
@@ -58,11 +60,11 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.70.1 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
+	github.com/vishvananda/netns v0.0.5 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

@@ -39,7 +39,11 @@ type ClientConf struct {
 	PreferredUrls    []string `yaml:"http_resolver_preferred_urls,omitempty" env:"HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
 	FallbackUrls     []string `yaml:"http_resolver_fallback_urls,omitempty" env:"HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
 	NetworkInterface string   `yaml:"interface,omitempty"`
-	Once             bool     // this is not parsed via json, it's an cli flag
+	// Ipv4Resolver and Ipv6Resolver pick the mechanism per address family, e.g.
+	// the public IPv4 via http behind NAT and the IPv6 straight from the interface.
+	Ipv4Resolver string `yaml:"ipv4_resolver,omitempty" env:"IPV4_RESOLVER" validate:"omitempty,oneof=http interface"`
+	Ipv6Resolver string `yaml:"ipv6_resolver,omitempty" env:"IPV6_RESOLVER" validate:"omitempty,oneof=http interface"`
+	Once         bool   // this is not parsed via json, it's an cli flag
 
 	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
 	hybrid.SqsConfig   `yaml:"sqs" envPrefix:"SQS_"`
@@ -75,6 +79,29 @@ func getDefaultClientConfig() *ClientConf {
 		AddrFamilies:  []string{internal.AddrFamilyIpv4},
 		PreferredUrls: defaultHttpResolverUrls,
 	}
+}
+
+// ResolverFor returns the resolver mechanism used for addrFamily. Unless set
+// explicitly, the interface resolver is used if an interface is configured and
+// the http resolver otherwise.
+func (c *ClientConf) ResolverFor(addrFamily string) string {
+	var explicit string
+	switch addrFamily {
+	case internal.AddrFamilyIpv4:
+		explicit = c.Ipv4Resolver
+	case internal.AddrFamilyIpv6:
+		explicit = c.Ipv6Resolver
+	}
+
+	if explicit != "" {
+		return explicit
+	}
+
+	if c.NetworkInterface != "" {
+		return internal.ResolverInterface
+	}
+
+	return internal.ResolverHttp
 }
 
 func GetDefaultConfigFileOrEmpty() string {

@@ -130,13 +130,43 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 }
 
 func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
-	if len(conf.NetworkInterface) > 0 {
-		log.Info().Str("component", "client").Msgf("Building new resolver for interface %s", conf.NetworkInterface)
-		return resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host)
+	familiesByResolver := map[string][]string{}
+	for _, addrFamily := range conf.AddrFamilies {
+		resolver := conf.ResolverFor(addrFamily)
+		familiesByResolver[resolver] = append(familiesByResolver[resolver], addrFamily)
 	}
 
-	log.Info().Str("component", "client").Msg("Building HTTP resolver")
-	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls, conf.AddrFamilies)
+	// All families share one mechanism, no need to split them up.
+	if len(familiesByResolver) <= 1 {
+		resolver := conf.ResolverFor(internal.AddrFamilyIpv4)
+		for r := range familiesByResolver {
+			resolver = r
+		}
+		return buildSingleResolver(conf, resolver, conf.AddrFamilies)
+	}
+
+	ipv4, err := buildSingleResolver(conf, conf.ResolverFor(internal.AddrFamilyIpv4), []string{internal.AddrFamilyIpv4})
+	if err != nil {
+		return nil, fmt.Errorf("could not build ipv4 resolver: %w", err)
+	}
+
+	ipv6, err := buildSingleResolver(conf, conf.ResolverFor(internal.AddrFamilyIpv6), []string{internal.AddrFamilyIpv6})
+	if err != nil {
+		return nil, fmt.Errorf("could not build ipv6 resolver: %w", err)
+	}
+
+	log.Info().Str("component", "client").Msgf("Resolving ipv4 via %s and ipv6 via %s", ipv4.Name(), ipv6.Name())
+	return resolvers.NewFamilyResolver(conf.Host, ipv4, ipv6)
+}
+
+func buildSingleResolver(conf *conf.ClientConf, resolver string, addrFamilies []string) (resolvers.IpResolver, error) {
+	if resolver == internal.ResolverInterface {
+		log.Info().Str("component", "client").Strs("address_families", addrFamilies).Msgf("Building new resolver for interface %s", conf.NetworkInterface)
+		return resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host, addrFamilies)
+	}
+
+	log.Info().Str("component", "client").Strs("address_families", addrFamilies).Msg("Building HTTP resolver")
+	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls, addrFamilies)
 }
 
 func buildNotificationImpl(config *conf.Conf) (notification.Notification, error) {

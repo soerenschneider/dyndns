@@ -3,6 +3,7 @@ package conf
 import (
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"unicode"
@@ -39,6 +40,7 @@ func ValidateConfig[T any](c T) error {
 		}
 
 		validate.RegisterStructValidation(validateEmailConfig, hybrid.EmailConfig{})
+		validate.RegisterStructValidation(validateClientResolvers, ClientConf{})
 	})
 
 	return validate.Struct(c)
@@ -116,6 +118,29 @@ func validateEmailConfig(sl validator.StructLevel) {
 	if len(config.To) == 0 && config.ToFile == "" {
 		sl.ReportError(config.To, "To", "To", "requiredWithoutToFile", "")
 		sl.ReportError(config.ToFile, "ToFile", "ToFile", "requiredWithoutTo", "")
+	}
+}
+
+// validateClientResolvers checks that every per-family resolver can actually be
+// built and is used for an address family that is enabled.
+func validateClientResolvers(sl validator.StructLevel) {
+	config := sl.Current().Interface().(ClientConf)
+
+	perFamily := []struct {
+		family, field, value string
+	}{
+		{internal.AddrFamilyIpv4, "Ipv4Resolver", config.Ipv4Resolver},
+		{internal.AddrFamilyIpv6, "Ipv6Resolver", config.Ipv6Resolver},
+	}
+
+	for _, f := range perFamily {
+		if f.value != "" && !slices.Contains(config.AddrFamilies, f.family) {
+			sl.ReportError(f.value, f.field, f.field, "addrFamilyNotEnabled", f.family)
+		}
+
+		if slices.Contains(config.AddrFamilies, f.family) && config.ResolverFor(f.family) == internal.ResolverInterface && config.NetworkInterface == "" {
+			sl.ReportError(f.value, f.field, f.field, "interfaceRequired", "")
+		}
 	}
 }
 
