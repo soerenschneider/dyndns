@@ -1,5 +1,5 @@
+/.git
 /deployment
-/dyndns-client
-/dyndns-server
+/dyndns
 /dyndns-server-lambda.zip
 /builds

@@ -49,7 +49,7 @@ cross-build:
 	GOOS=linux GOARCH=arm64       go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-aarch64 ./cmd
 
 docker-build:
-	docker build -t "$(DOCKER_PREFIX)/$(BINARY_NAME)" .
+	docker build -t "$(DOCKER_PREFIX)/$(BINARY_NAME)" --build-arg VERSION=$(VERSION) --build-arg COMMIT_HASH=$(COMMIT_HASH) .
 
 fmt:
 	find . -iname "*.go" -exec go fmt {} \;

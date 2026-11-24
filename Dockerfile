@@ -1,21 +1,20 @@
-ARG MODE=client
+FROM golang:1.26.4 AS builder
 
-FROM golang:1.24.4 as builder
-ARG MODE
-ENV MODE="$MODE"
-ENV MODULE=github.com/soerenschneider/dyndns
+ARG VERSION=dev
+ARG COMMIT_HASH=unknown
+ENV MODULE=github.com/soerenschneider/dyndns/v2
 
 WORKDIR /build/
 
-ADD go.mod go.sum /build/
+COPY go.mod go.sum /build/
 RUN go mod download
 
-ADD . /build/
-RUN CGO_ENABLED=0 go build -ldflags="-X $MODULE/internal.BuildVersion=$(git describe --tags --abbrev=0 || echo dev) -X $MODULE/internal.CommitHash=$(git rev-parse HEAD)" -tags $MODE -o "dyndns-$MODE" "cmd/$MODE/$MODE.go"
+COPY . /build/
+# Same flags as the Makefile, so the binary is reproducible.
+RUN CGO_ENABLED=0 go build -mod=readonly -trimpath -buildvcs=false \
+    -ldflags="-s -w -buildid= -X '$MODULE/internal.BuildVersion=$VERSION' -X '$MODULE/internal.CommitHash=$COMMIT_HASH' -X '$MODULE/internal.GoVersion=$(go env GOVERSION | sed 's/^go//')'" \
+    -o dyndns ./cmd
 
-FROM gcr.io/distroless/base
-ARG MODE
-ENV MODE="$MODE"
-COPY --from=builder "/build/dyndns-$MODE" /dyndns
-USER 65532:65532
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=builder /build/dyndns /dyndns
 ENTRYPOINT ["/dyndns"]
