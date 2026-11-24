@@ -10,7 +10,6 @@ Automatically updates DNS records for hosts that don't have a static IP
 
 📣 Dynamically updates DNS records to match their public IP address<br/>
 🏰 Built-in resiliency for different failure scenarios<br/>
-🚢 Server component supports running on AWS Lambda<br/>
 🚀 Dispatch update requests via [AWS SQS](https://aws.amazon.com/sqs/), MQTT and/or HTTP API calls<br/>
 🚏 Detect public IP address by network interface's status or by calling HTTP APIs<br/>
 🎭 Runs in client / server mode to limit blast-radius of leaked credentials<br/>
@@ -26,15 +25,6 @@ Automatically updates DNS records for hosts that don't have a static IP
 🤹 Ideally, you have multiple endpoints you want to assign DNS records to<br/>
 
 ## Installation
-
-### AWS Lambda
-Run the `lambda-server` Makefile target to build an archive for the `provided.al2` Lambda runtime and the `arm64` architecture. Either create a Lambda function using AWS cli / Console or run the Terraform code to create an API Gateway instance and Lambda function.
-
-```shell
-$ make lambda-server # build the server component
-$ terraform -chdir=deployment/terraform/envs/dev apply # this command will deploy a dyndns-server as a Lambda function which is reachable via a new API Gateway instance
-$ terraform -chdir=deployment/terraform/envs/dev output -raw gateway-url # display the url of the API endpoint
-```
 
 ### Docker / Podman
 ```shell

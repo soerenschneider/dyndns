@@ -6,7 +6,6 @@
 /keypair.json
 dist/
 /bootstrap
-/dyndns-server-lambda.zip
 *.zip
 **/.terraform/*
 *.tfstate

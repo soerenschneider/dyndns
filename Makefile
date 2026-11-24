@@ -18,7 +18,7 @@ COMMIT_HASH := $(shell git rev-parse HEAD)
 GO_VERSION := $(GOTOOLCHAIN:go%=%)
 LDFLAGS = -s -w -buildid= -X '$(MODULE)/internal.BuildVersion=$(VERSION)' -X '$(MODULE)/internal.CommitHash=$(COMMIT_HASH)' -X '$(MODULE)/internal.GoVersion=$(GO_VERSION)'
 
-.PHONY: tests clean build release signed-release lambda-server cross-build docker-build fmt pre-commit-init docs
+.PHONY: tests clean build release signed-release cross-build docker-build fmt pre-commit-init docs
 
 tests:
 	CGO_ENABLED=1 go test -race ./... -cover
@@ -35,12 +35,6 @@ release: clean cross-build
 signed-release: release
 	pass keys/signify/github | signify -S -s $(SIGNATURE_KEYFILE) -m $(CHECKSUM_FILE)
 	gh-upload-assets -o soerenschneider -r dyndns -f ~/.gh-token builds
-
-lambda-server:
-	GOOS=linux GOARCH=arm64 go build -tags server,aws -ldflags="$(LDFLAGS)" -o bootstrap cmd/server/server_lambda.go
-	rm -f dyndns-server-lambda.zip
-	zip dyndns-server-lambda.zip bootstrap
-	rm -f bootstrap
 
 cross-build:
 	GOOS=linux GOARCH=amd64       go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-linux-x86_64  ./cmd

@@ -1,8 +1,4 @@
 
-output "gateway-url" {
-  value = module.dyndns.api_gateway_invoke_url
-}
-
 output "ids_server" {
   value     = module.sqs.ids_server
   sensitive = true

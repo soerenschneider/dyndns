@@ -2,12 +2,6 @@ data "sops_file" "vars" {
   source_file = "vars.sops.json"
 }
 
-module "dyndns" {
-  source      = "../../lambda-deployment-module"
-  env_vars    = jsondecode(data.sops_file.vars.raw).env_vars
-  hosted_zone = data.sops_file.vars.data["hosted_zone"]
-}
-
 module "sqs" {
   source      = "../../sqs"
   hosted_zone = data.sops_file.vars.data["hosted_zone"]
