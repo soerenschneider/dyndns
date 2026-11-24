@@ -6,10 +6,11 @@ SIGNATURE_KEYFILE = ~/.signify/github.sec
 DOCKER_PREFIX = ghcr.io/soerenschneider
 
 # Reproducible builds: pin the toolchain from go.mod instead of using whatever go
-# is installed, never touch go.mod/go.sum, strip local paths and build without cgo.
+# is installed, never touch go.mod/go.sum, strip local paths and VCS state (the
+# commit is set via ldflags) and build without cgo.
 # The same commit then yields bit-identical binaries on every machine.
 export GOTOOLCHAIN := $(shell awk '/^toolchain /{print $$2}' go.mod)
-export GOFLAGS := -mod=readonly -trimpath
+export GOFLAGS := -mod=readonly -trimpath -buildvcs=false
 export CGO_ENABLED := 0
 
 VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
