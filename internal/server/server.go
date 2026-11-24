@@ -57,8 +57,12 @@ func NewServer(config conf2.Conf, propagator propagator, requests chan update.Up
 	var knownHosts map[string][]verification.VerificationKey
 	switch config.Mode {
 	case internal.EdgeMode:
+		keypair, err := verification.NewEdge(config.Client.Host)
+		if err != nil {
+			return nil, fmt.Errorf("could not build 'edge' encryption key: %w", err)
+		}
 		knownHosts = map[string][]verification.VerificationKey{
-			config.Client.Host: {&verification.Edge{}},
+			config.Client.Host: {keypair},
 		}
 	case internal.ServerMode:
 		knownHosts, err = config.Server.DecodePublicKeys()

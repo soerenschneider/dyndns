@@ -25,7 +25,11 @@ func newClient(config *conf.Conf, updaters map[string]client.RecordUpdater) (*ap
 	var keypair verification.SignatureKeypair
 	switch config.Mode {
 	case internal.EdgeMode:
-		keypair = &verification.Edge{}
+		var err error
+		keypair, err = verification.NewEdge(config.Client.Host)
+		if err != nil {
+			return nil, fmt.Errorf("could not build 'edge' encryption key: %w", err)
+		}
 	case internal.ClientMode:
 		provider, err := buildKeyProvider(config.Client)
 		if err != nil {

@@ -1,15 +1,28 @@
 package verification
 
-import "github.com/soerenschneider/dyndns/v2/pkg/update"
+import (
+	"errors"
+	"strings"
 
-type Edge struct {
+	"github.com/soerenschneider/dyndns/v2/pkg/update"
+)
+
+func NewEdge(host string) (*edge, error) {
+	if strings.TrimSpace(host) == "" {
+		return nil, errors.New("empty host given")
+	}
+
+	return &edge{Host: host}, nil
+}
+
+type edge struct {
 	Host string
 }
 
-func (e Edge) Sign(ip update.DnsRecord) string {
+func (e edge) Sign(ip update.DnsRecord) string {
 	return "edge"
 }
 
-func (e Edge) Verify(signature string, ip update.DnsRecord) bool {
+func (e edge) Verify(signature string, ip update.DnsRecord) bool {
 	return signature == "edge" && e.Host == ip.Host
 }
