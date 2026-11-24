@@ -15,67 +15,58 @@ func TestReadServerConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *ServerConf
+		want    *Conf
 		wantErr bool
 	}{
 		{
 			name: "happy path - yaml",
 			args: args{"../../contrib/server.yaml"},
-			want: &ServerConf{
-				KnownHosts: map[string][]string{
-					"host": []string{"key1", "key2"},
-				},
-				SqsConfig:    hybrid.DefaultSqsConfig(),
-				HostedZoneId: "hosted-zone-id-x",
-				MqttConfig: hybrid.MqttConfig{
-					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
-					ClientId: "my-client-id",
-				},
-				EmailConfig: hybrid.EmailConfig{
-					From:         "from",
-					To:           []string{"to-1"},
-					SmtpHost:     "smtp-host",
-					SmtpPort:     465,
-					SmtpUsername: "username",
-					SmtpPassword: "password",
-				},
-			},
+			want: wantServerConf(),
 		},
 		{
 			name: "happy path - json",
 			args: args{"../../contrib/server.json"},
-			want: &ServerConf{
-				KnownHosts: map[string][]string{
-					"host": []string{"key1", "key2"},
-				},
-				SqsConfig:    hybrid.DefaultSqsConfig(),
-				HostedZoneId: "hosted-zone-id-x",
-				MqttConfig: hybrid.MqttConfig{
-					Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
-					ClientId: "my-client-id",
-				},
-				EmailConfig: hybrid.EmailConfig{
-					From:         "from",
-					To:           []string{"to-1"},
-					SmtpHost:     "smtp-host",
-					SmtpPort:     465,
-					SmtpUsername: "username",
-					SmtpPassword: "password",
-				},
-			},
+			want: wantServerConf(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ReadConfig(tt.args.path)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadServerConfig() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReadServerConfig() got = %v, want %v", got, tt.want)
+				t.Errorf("ReadConfig() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func wantServerConf() *Conf {
+	return &Conf{
+		Mode:            "server",
+		MetricsListener: ":6666",
+		Client:          getDefaultClientConfig(),
+		Server: &ServerConf{
+			KnownHosts: map[string][]string{
+				"host": []string{"key1", "key2"},
+			},
+			SqsConfig:    hybrid.DefaultSqsConfig(),
+			HostedZoneId: "hosted-zone-id-x",
+			MqttConfig: hybrid.MqttConfig{
+				Brokers:  []string{"tcp://mqtt.eclipseprojects.io:1883"},
+				ClientId: "my-client-id",
+			},
+		},
+		EmailConfig: hybrid.EmailConfig{
+			From:         "from",
+			To:           []string{"to-1"},
+			SmtpHost:     "smtp-host",
+			SmtpPort:     465,
+			SmtpUsername: "username",
+			SmtpPassword: "password",
+		},
 	}
 }
 
