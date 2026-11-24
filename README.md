@@ -28,11 +28,32 @@ Automatically updates DNS records for hosts that don't have a static IP
 
 ### Docker / Podman
 ```shell
-$ docker pull ghcr.io/soerenschneider/dyndns:main
+$ docker pull ghcr.io/soerenschneider/dyndns:latest
+```
+
+The image is built for `linux/amd64` and `linux/arm64` and signed with cosign:
+```shell
+$ cosign verify ghcr.io/soerenschneider/dyndns:latest \
+    --certificate-identity "https://github.com/soerenschneider/dyndns/.github/workflows/release-container.yaml@refs/heads/main" \
+    --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
 
 ### Binaries
-Head over to the [prebuilt binaries](https://github.com/soerenschneider/dyndns/releases) and download the correct binary for your system.
+Head over to the [prebuilt binaries](https://github.com/soerenschneider/dyndns/releases) and download the correct binary for your system, together with `checksum.sha256` and its signatures.
+
+```shell
+# cosign: made by this repository's release workflow
+$ cosign verify-blob checksum.sha256 \
+    --bundle checksum.sha256.sigstore.json \
+    --certificate-identity "https://github.com/soerenschneider/dyndns/.github/workflows/release-container.yaml@refs/heads/main" \
+    --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+# signify, if the release has a checksum.sha256.sig
+$ signify -V -p github.pub -m checksum.sha256
+
+# then the binaries themselves
+$ sha256sum --ignore-missing -c checksum.sha256
+```
 
 ### From Source
 As a prerequesite, you need to have [Golang SDK](https://go.dev/dl/) installed. After that, you can install dyndns from source by invoking:
@@ -79,6 +100,12 @@ Data sent over the wire is expected to have the following format, encoded as a J
 
 ## Observability
 Head over to the [metrics](docs/metrics.md) to see more details.
+
+## Releases
+
+release-please opens a release PR on every push to main. Merging it tags the release, and the release workflow builds the binaries and the container image, and signs both with cosign.
+
+Builds are reproducible: the Makefile pins the Go toolchain from `go.mod` and strips paths, VCS data and build IDs, so `make release` on a tag produces the same binaries on any host, and the binary in the image is the released one for its platform. `make signed-release` uses that: it rebuilds a published release, checks that it is byte-identical, and adds a signify signature of its checksums.
 
 ## Changelog
 The changelog can be found [here](CHANGELOG.md)
