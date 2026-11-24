@@ -36,6 +36,12 @@ var (
 		Name:      "ip_resolves_invalid_total",
 	}, []string{"host", "resolver", "url"})
 
+	DroppedResolvedIps = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: client,
+		Name:      "ip_resolves_dropped_total",
+	}, []string{"host", "resolver", "family", "reason"})
+
 	LastCheck = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: client,

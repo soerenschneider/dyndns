@@ -19,14 +19,15 @@ import (
 const DefaultResolveInterval = 45 * time.Second
 
 type Client struct {
-	signature        verification.SignatureKeypair
-	resolver         resolvers.IpResolver
-	reconciler       *Reconciler
-	state            states.State
-	lastStateChange  time.Time
-	notificationImpl notification.Notification
-	resolveInterval  time.Duration
-	forceSendUpdate  bool
+	signature                verification.SignatureKeypair
+	resolver                 resolvers.IpResolver
+	reconciler               *Reconciler
+	state                    states.State
+	lastStateChange          time.Time
+	notificationImpl         notification.Notification
+	resolveInterval          time.Duration
+	forceSendUpdate          bool
+	seenNonRoutableAddresses map[string]struct{}
 }
 
 type Opts func(c *Client) error
@@ -43,12 +44,13 @@ func NewClient(resolver resolvers.IpResolver, signature verification.SignatureKe
 	}
 
 	c := &Client{
-		resolver:         resolver,
-		resolveInterval:  DefaultResolveInterval,
-		reconciler:       reconciler,
-		signature:        signature,
-		lastStateChange:  time.Now(),
-		notificationImpl: notifyImpl,
+		resolver:                 resolver,
+		resolveInterval:          DefaultResolveInterval,
+		reconciler:               reconciler,
+		signature:                signature,
+		lastStateChange:          time.Now(),
+		notificationImpl:         notifyImpl,
+		seenNonRoutableAddresses: make(map[string]struct{}),
 	}
 
 	var errs error
@@ -97,12 +99,48 @@ func (client *Client) resolveIp() (*update.DnsRecord, error) {
 		metrics.IpResolveErrors.WithLabelValues(client.resolver.Host(), client.resolver.Name(), "").Inc()
 		return nil, fmt.Errorf("error while resolving ip: %v", err)
 	}
+
+	// Publish what is routable rather than nothing at all, e.g. the IPv6 of a
+	// host whose IPv4 sits behind CGNAT.
+	droppedV4, droppedV6 := resolvedIp.DropNonPublic()
+	client.reportDroppedIp("ipv4", droppedV4)
+	client.reportDroppedIp("ipv6", droppedV6)
+
+	// A dropped address is a definite answer that the family has no public
+	// address, unlike a failed resolve, so ask the server to remove its record
+	// instead of leaving it pointing at a stale address.
+	if droppedV4 != "" {
+		resolvedIp.Withdraw(update.AddrFamilyIpv4)
+	}
+	if droppedV6 != "" {
+		resolvedIp.Withdraw(update.AddrFamilyIpv6)
+	}
+
 	if !resolvedIp.IsValid() {
 		metrics.InvalidResolvedIps.WithLabelValues(client.resolver.Host(), client.resolver.Name(), "").Inc()
-		return nil, fmt.Errorf("resolvedip is invalid")
+		return nil, fmt.Errorf("no publicly routable ip resolved")
 	}
 
 	return resolvedIp, err
+}
+
+func (client *Client) reportDroppedIp(family, ip string) {
+	if ip == "" {
+		return
+	}
+
+	reason := "not_public"
+	if update.IsCGNAT(ip) {
+		reason = "cgnat"
+	}
+
+	metrics.DroppedResolvedIps.WithLabelValues(client.resolver.Host(), client.resolver.Name(), family, reason).Inc()
+
+	_, found := client.seenNonRoutableAddresses[ip]
+	if !found {
+		log.Warn().Str("component", "client").Str("host", client.resolver.Host()).Str("resolver", client.resolver.Name()).Str("family", family).Str("ip", ip).Str("reason", reason).Msg("dropping resolved address that is not publicly routable")
+		client.seenNonRoutableAddresses[ip] = struct{}{}
+	}
 }
 
 func (client *Client) Resolve(ctx context.Context, prev *update.DnsRecord) (*update.DnsRecord, error) {

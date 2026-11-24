@@ -83,6 +83,18 @@ func getLocalAddress(serverAddr string) (net.Addr, error) {
 	return &net.TCPAddr{IP: localAddr.IP, Port: 0, Zone: ""}, nil
 }
 
+// cgnatLocalIpV4 returns the local address used for ipv4 traffic if it lies in
+// the CGNAT range.
+func cgnatLocalIpV4(addressFamily string, localAddr net.Addr) (string, bool) {
+	tcpAddr, ok := localAddr.(*net.TCPAddr)
+	if !ok || addressFamily != internal.AddrFamilyIpv4 {
+		return "", false
+	}
+
+	localIp := tcpAddr.IP.String()
+	return localIp, update.IsCGNAT(localIp)
+}
+
 func (resolver *HttpResolver) Host() string {
 	return resolver.host
 }
@@ -109,6 +121,15 @@ func (resolver *HttpResolver) Resolve() (*update.DnsRecord, error) {
 		localAddr, err := getLocalAddress(serverAddress)
 		if err != nil {
 			// system has no support for addressFamily apparently, continue
+			continue
+		}
+
+		// Behind CGNAT the providers only see the carrier's shared address,
+		// which does not reach this host. Report the local CGNAT address
+		// instead, so the client drops it and withdraws the A record.
+		if localIp, ok := cgnatLocalIpV4(addressFamily, localAddr); ok {
+			log.Debug().Str("component", "http_resolver").Str("local_ip", localIp).Msg("outgoing ipv4 address is behind CGNAT, not asking providers")
+			detectedIps.IpV4 = localIp
 			continue
 		}
 		transport := &http.Transport{
