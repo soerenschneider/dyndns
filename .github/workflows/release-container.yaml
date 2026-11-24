@@ -1,61 +1,166 @@
 ---
+name: release
+
 on:
   push:
     branches:
       - main
+  # Rebuilds the binaries and container image of an existing release, e.g.
+  # after a failed run. Only runs from main produce trusted signatures.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of the existing release to rebuild
+        required: true
+        type: string
 
 permissions:
-  contents: write
-  pull-requests: write
-  packages: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-name: release
-
+# The signatures certify this workflow file on main, so do not rename it or move
+# the signing elsewhere without updating the verification instructions in the
+# README.
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      # empty if nothing is to be released
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v4.4.0
-        name: release
+      - uses: googleapis/release-please-action@v5.0.0
         id: release
+        if: ${{ github.event_name == 'push' }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
           package-name: ${{ github.repository }}
 
-      - name: Checkout
-        uses: actions/checkout@v4.3.1
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            gh release view "$INPUT_TAG" -R "$REPO" > /dev/null
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+          elif [ "$RELEASE_CREATED" = "true" ]; then
+            echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
 
-      - name: Log in to the container registry
-        uses: docker/login-action@v3.7.0
+  # Releases created with GITHUB_TOKEN do not trigger other workflows, so the
+  # binaries are built and published here.
+  binaries:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.tag != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # upload release assets
+      id-token: write  # cosign keyless signing via GitHub OIDC
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag }}
+          persist-credentials: false
+
+      - uses: actions/setup-go@v7.1.0
+        with:
+          go-version-file: go.mod
+          cache: false  # a restored cache must not be able to influence release binaries
+
+      - name: Test
+        run: go test -race ./...
+
+      # No cgo, so every platform cross-compiles on one runner. The Makefile
+      # takes the commit from the checked-out tag.
+      - name: Build release binaries and checksums
+        run: make release VERSION="$TAG"
+        env:
+          TAG: ${{ needs.release-please.outputs.tag }}
+
+      - uses: sigstore/cosign-installer@v4.1.4
+
+      - name: Sign checksums with cosign
+        run: make sign
+
+      - name: Upload to the release
+        run: gh release upload "$TAG" builds/dyndns-* builds/checksum.sha256 builds/checksum.sha256.sigstore.json --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag }}
+
+  # Independent of the binaries, so a failing image push does not block them.
+  image:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.tag != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # push to ghcr.io
+      id-token: write  # cosign keyless signing via GitHub OIDC
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag }}
+          persist-credentials: false
+
+      # The release's commit; github.sha is main's head on manual rebuilds.
+      - name: Determine commit
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Multi-platform builds, SBOM and provenance need a BuildKit builder.
+      - uses: docker/setup-buildx-action@v4.4.1
+
+      - uses: docker/login-action@v4.8.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ steps.release.outputs.release_created }}
 
-      - name: Extract metadata for container
-        id: meta
-        uses: docker/metadata-action@v5.10.0
+      - id: meta
+        uses: docker/metadata-action@v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},value=v${{steps.release.outputs.major }}.${{steps.release.outputs.minor }}.${{steps.release.outputs.patch }}
-        if: ${{ steps.release.outputs.release_created }}
+            type=semver,pattern={{version}},value=${{ needs.release-please.outputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.tag }}
+            type=semver,pattern={{major}},value=${{ needs.release-please.outputs.tag }}
+            type=raw,value=latest
 
-      - name: Build and push container image
-        uses: docker/build-push-action@v6.19.2
+      - id: build
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ steps.release.outputs.tag_name }}
-            COMMIT_HASH=${{ github.sha }}
-        if: ${{ steps.release.outputs.release_created }}
+            VERSION=${{ needs.release-please.outputs.tag }}
+            COMMIT_HASH=${{ steps.commit.outputs.sha }}
+          provenance: mode=max
+          sbom: true
+
+      - uses: sigstore/cosign-installer@v4.1.4
+
+      - name: Sign image with cosign
+        # Signs the digest, which covers every tag and platform of this build.
+        run: cosign sign --yes "${REGISTRY}/${IMAGE_NAME,,}@${DIGEST}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
