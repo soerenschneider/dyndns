@@ -55,7 +55,7 @@ func (e *EmailNotification) NotifyUpdatedIpDetected(ip *update.DnsRecord) error 
 	subject := fmt.Sprintf("DynDNS new IP detected for host %s", ip.Host)
 	m.SetHeader("Subject", subject)
 
-	body := fmt.Sprintf("New IP detected for host %s: %s", ip.Host, ip.IpV4)
+	body := fmt.Sprintf("New IP detected for host %s", ip.String())
 	m.SetBody("text/plain", body)
 
 	d := gomail.NewDialer(e.SmtpHost, e.SmtpPort, e.smtpUsername, e.smtpPassword)
@@ -70,7 +70,7 @@ func (e *EmailNotification) NotifyUpdatedIpApplied(ip *update.DnsRecord) error {
 	subject := fmt.Sprintf("DynDNS applied IP for host %s", ip.Host)
 	m.SetHeader("Subject", subject)
 
-	body := fmt.Sprintf("New IP applied for host %s: %s", ip.Host, ip.IpV4)
+	body := fmt.Sprintf("New IP applied for host %s", ip.String())
 	m.SetBody("text/plain", body)
 
 	d := gomail.NewDialer(e.SmtpHost, e.SmtpPort, e.smtpUsername, e.smtpPassword)
