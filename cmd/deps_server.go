@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/v2/internal"
@@ -35,7 +37,7 @@ func newServer(config *conf.Conf) (*appServerMode, error) {
 		log.Fatal().Err(err).Msg("no usable listener has been built")
 	}
 
-	propagator, err := dns.NewRoute53Propagator(config.Server.HostedZoneId, provider)
+	propagator, err := dns.NewRoute53Propagator(context.Background(), config.Server.HostedZoneId, provider)
 	if err != nil {
 		return nil, err
 	}

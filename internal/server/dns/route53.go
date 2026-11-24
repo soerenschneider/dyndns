@@ -22,10 +22,9 @@ type Route53Propagator struct {
 	ttl          int64
 }
 
-func NewRoute53Propagator(hostedZoneId string, provider aws.CredentialsProvider) (*Route53Propagator, error) {
-	awsCfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		return nil, err
+func NewRoute53Propagator(ctx context.Context, hostedZoneId string, provider aws.CredentialsProvider) (*Route53Propagator, error) {
+	opts := []func(*config.LoadOptions) error{
+		config.WithRegion("us-east-1"), // Route 53 is global; its endpoint is in us-east-1
 	}
 
 	if provider != nil {
@@ -33,17 +32,20 @@ func NewRoute53Propagator(hostedZoneId string, provider aws.CredentialsProvider)
 			Str("component", "route53").
 			Msg("Building AWS client using given credentials provider")
 
-		awsCfg.Credentials = aws.NewCredentialsCache(provider)
+		opts = append(opts, config.WithCredentialsProvider(aws.NewCredentialsCache(provider)))
 	} else {
 		log.Info().
 			Str("component", "route53").
 			Msg("Building AWS client using default credentials provider")
 	}
 
-	svc := route53.NewFromConfig(awsCfg)
+	awsCfg, err := config.LoadDefaultConfig(ctx, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("loading aws config: %w", err)
+	}
 
 	return &Route53Propagator{
-		client:       svc,
+		client:       route53.NewFromConfig(awsCfg),
 		hostedZoneId: hostedZoneId,
 		ttl:          defaultRecordTtl,
 	}, nil
