@@ -32,18 +32,14 @@ func (state *ipNotConfirmedState) Name() string {
 }
 
 func (state *ipNotConfirmedState) EvaluateState(context Client, resolved *update.DnsRecord) bool {
-	ips, err := util.LookupDns(resolved.Host)
-	if err != nil {
-		log.Warn().Err(err).Str("component", "state_machine").Str("state", state.Name()).Str("host", resolved.Host).Msg("Error looking up dns record")
-		return true
-	}
-
-	for _, hostIp := range ips {
-		if hostIp == resolved.IpV4 || hostIp == resolved.IpV6 {
-			log.Info().Str("component", "state_machine").Str("state", state.Name()).Str("host", resolved.Host).Msg("DNS record verified")
-			context.SetState(NewIpConfirmedState(resolved))
-			return false
-		}
+	if util.HostnameMatchesRecord(resolved) {
+		log.Info().
+			Str("component", "state_machine").
+			Str("state", state.Name()).
+			Str("host", resolved.Host).
+			Msg("DNS record verified")
+		context.SetState(NewIpConfirmedState(resolved))
+		return false
 	}
 
 	log.Info().Str("component", "state_machine").Str("state", state.Name()).Str("host", resolved.Host).Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Msg("DNS entry differs to new IP")

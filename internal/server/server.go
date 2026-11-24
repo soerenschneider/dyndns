@@ -131,12 +131,12 @@ func (server *DyndnsServer) UpdateRecord(ctx context.Context, env update.UpdateR
 		return nil
 	}
 
-	if util.HostnameMatchesIp(env.PublicIp.Host, env.PublicIp.IpV4, env.PublicIp.IpV6) {
+	if util.HostnameMatchesRecord(&env.PublicIp) {
 		log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("host already has desired address, not updating")
 		return nil
 	}
 
-	log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Msg("Verifying signature succeeded, updating host")
+	log.Info().Str("component", "server").Str("host", env.PublicIp.Host).Str("ipv4", env.PublicIp.IpV4).Str("ipv6", env.PublicIp.IpV6).Strs("withdrawn_families", env.PublicIp.WithdrawnFamilies).Msg("Verifying signature succeeded, updating host")
 	if err := server.propagator.PropagateChange(ctx, env.PublicIp); err != nil {
 		metrics.DnsPropagationErrors.WithLabelValues(env.PublicIp.Host).Inc()
 		return fmt.Errorf("could not propagate dns change for domain '%s': %v", env.PublicIp.Host, err)

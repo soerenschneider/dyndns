@@ -18,7 +18,8 @@ resource "aws_iam_policy" "dyndns_server" {
     {
       "Effect": "Allow",
       "Action": [
-        "route53:ChangeResourceRecordSets"
+        "route53:ChangeResourceRecordSets",
+        "route53:ListResourceRecordSets"
       ],
       "Resource": "arn:aws:route53:::hostedzone/${var.hosted_zone}"
     }

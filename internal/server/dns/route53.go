@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,8 +17,13 @@ import (
 
 const defaultRecordTtl = 60
 
+type route53Api interface {
+	ChangeResourceRecordSets(ctx context.Context, params *route53.ChangeResourceRecordSetsInput, optFns ...func(*route53.Options)) (*route53.ChangeResourceRecordSetsOutput, error)
+	ListResourceRecordSets(ctx context.Context, params *route53.ListResourceRecordSetsInput, optFns ...func(*route53.Options)) (*route53.ListResourceRecordSetsOutput, error)
+}
+
 type Route53Propagator struct {
-	client       *route53.Client
+	client       route53Api
 	hostedZoneId string
 	ttl          int64
 }
@@ -53,6 +59,18 @@ func NewRoute53Propagator(ctx context.Context, hostedZoneId string, provider aws
 
 func (dns *Route53Propagator) PropagateChange(ctx context.Context, resolvedIp update.DnsRecord) error {
 	changes := getChanges(resolvedIp, dns.ttl)
+
+	deletions, err := dns.getDeletions(ctx, resolvedIp)
+	if err != nil {
+		return err
+	}
+	changes = append(changes, deletions...)
+
+	// Withdraw-only record whose records are already gone.
+	if len(changes) == 0 && len(resolvedIp.WithdrawnFamilies) > 0 {
+		return nil
+	}
+
 	if len(changes) == 0 {
 		return errors.New("empty list of changes")
 	}
@@ -70,12 +88,74 @@ func (dns *Route53Propagator) PropagateChange(ctx context.Context, resolvedIp up
 		HostedZoneId: &dns.hostedZoneId,
 	}
 
-	_, err := dns.client.ChangeResourceRecordSets(ctx, in)
+	_, err = dns.client.ChangeResourceRecordSets(ctx, in)
 	if err != nil {
 		return fmt.Errorf("updating resource failed '%s': %v", resolvedIp.Host, err)
 	}
 
 	return nil
+}
+
+// getDeletions builds DELETE changes for the records of withdrawn address
+// families. Route 53 only deletes a record set given its exact current state,
+// so it is looked up first; a record that does not exist needs no change.
+func (dns *Route53Propagator) getDeletions(ctx context.Context, resolved update.DnsRecord) ([]types.Change, error) {
+	var deletions []types.Change
+	for _, family := range resolved.WithdrawnFamilies {
+		recordType := types.RRTypeA
+		if family == update.AddrFamilyIpv6 {
+			recordType = types.RRTypeAaaa
+		}
+
+		existing, err := dns.getRecordSet(ctx, resolved.Host, recordType)
+		if err != nil {
+			return nil, fmt.Errorf("looking up %s record of '%s' to withdraw it: %w", recordType, resolved.Host, err)
+		}
+
+		if existing == nil {
+			continue
+		}
+
+		log.Info().
+			Str("component", "route53").
+			Str("host", resolved.Host).
+			Str("type", string(recordType)).
+			Msg("deleting record of withdrawn address family")
+
+		deletions = append(deletions, types.Change{
+			Action:            types.ChangeActionDelete,
+			ResourceRecordSet: existing,
+		})
+	}
+
+	return deletions, nil
+}
+
+// getRecordSet returns the record set of host and recordType, or nil if there is none.
+func (dns *Route53Propagator) getRecordSet(ctx context.Context, host string, recordType types.RRType) (*types.ResourceRecordSet, error) {
+	out, err := dns.client.ListResourceRecordSets(ctx, &route53.ListResourceRecordSetsInput{
+		HostedZoneId:    &dns.hostedZoneId,
+		StartRecordName: aws.String(host),
+		StartRecordType: recordType,
+		MaxItems:        aws.Int32(1),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// The listing starts at host but returns the next record set in the zone
+	// if host has none of that type.
+	for _, set := range out.ResourceRecordSets {
+		if set.Type == recordType && sameDnsName(aws.ToString(set.Name), host) {
+			return &set, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func sameDnsName(a, b string) bool {
+	return strings.EqualFold(strings.TrimSuffix(a, "."), strings.TrimSuffix(b, "."))
 }
 
 func buildChange(host, value string, recordType types.RRType, ttl int64) (types.Change, error) {

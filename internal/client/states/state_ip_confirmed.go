@@ -29,15 +29,15 @@ func (state *ipConfirmedState) Name() string {
 	return "ipConfirmedState"
 }
 
-func (state *ipConfirmedState) EvaluateState(context Client, resolved *update.DnsRecord) bool {
+func (state *ipConfirmedState) EvaluateState(client Client, resolved *update.DnsRecord) bool {
 	hasIpChanged := !state.previouslyResolvedIp.Equals(resolved)
 	state.previouslyResolvedIp = resolved
 
 	if hasIpChanged {
 		log.Info().Str("component", "state_machine").Str("state", state.Name()).Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("New IP detected")
-		context.SetState(NewIpNotConfirmedState())
+		client.SetState(NewIpNotConfirmedState())
 
-		if err := context.NotifyUpdatedIpDetected(resolved); err != nil {
+		if err := client.NotifyUpdatedIpDetected(resolved); err != nil {
 			log.Error().Err(err).Msg("could not send notification")
 			metrics.NotificationErrors.Inc()
 		}
@@ -45,16 +45,9 @@ func (state *ipConfirmedState) EvaluateState(context Client, resolved *update.Dn
 
 	ips, err := util.LookupDns(resolved.Host)
 	if err == nil {
-		found := false
-		for _, hostIp := range ips {
-			if hostIp == resolved.IpV4 || hostIp == resolved.IpV6 {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !util.RecordMatchesIps(resolved, ips) {
 			log.Info().Str("component", "state_machine").Str("state", state.Name()).Str("ipv4", resolved.IpV4).Str("ipv6", resolved.IpV6).Str("host", resolved.Host).Msg("Detected changed DNS record")
-			context.SetState(NewIpNotConfirmedState())
+			client.SetState(NewIpNotConfirmedState())
 		}
 	}
 
