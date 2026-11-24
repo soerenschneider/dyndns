@@ -57,11 +57,7 @@ func newClient(config *conf.Conf, updaters map[string]client.RecordUpdater) (*ap
 		return nil, err
 	}
 
-	opts := []client.Opts{
-		client.WithInterval(15 * time.Second),
-	}
-
-	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl, opts...)
+	client, err := client.NewClient(resolver, keypair, reconciler, notificationImpl, buildClientOpts(config.Client)...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +65,20 @@ func newClient(config *conf.Conf, updaters map[string]client.RecordUpdater) (*ap
 	return &appClientMode{
 		client:     client,
 		reconciler: reconciler,
+		once:       config.Client.Once,
 	}, nil
+}
+
+func buildClientOpts(config *conf.ClientConf) []client.Opts {
+	opts := []client.Opts{
+		client.WithInterval(15 * time.Second),
+	}
+
+	if config.ForceSendUpdate {
+		opts = append(opts, client.WithForceSendUpdate())
+	}
+
+	return opts
 }
 
 // nolint cyclop

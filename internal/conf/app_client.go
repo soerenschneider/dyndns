@@ -30,7 +30,9 @@ type ClientConf struct {
 	// the public IPv4 via http behind NAT and the IPv6 straight from the interface.
 	Ipv4Resolver string `yaml:"ipv4_resolver,omitempty" env:"IPV4_RESOLVER" validate:"omitempty,oneof=http interface"`
 	Ipv6Resolver string `yaml:"ipv6_resolver,omitempty" env:"IPV6_RESOLVER" validate:"omitempty,oneof=http interface"`
-	Once         bool   // this is not parsed via json, it's an cli flag
+	// Once and ForceSendUpdate are set via cli flags, not via the config file.
+	Once            bool `yaml:"-"`
+	ForceSendUpdate bool `yaml:"-"`
 
 	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
 	hybrid.SqsConfig   `yaml:"sqs" envPrefix:"SQS_"`
