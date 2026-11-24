@@ -24,24 +24,32 @@ func New(address string, requestsChan chan update.UpdateRecordRequest) (*HttpSer
 		return nil, errors.New("empty address provided")
 	}
 
+	if requestsChan == nil {
+		return nil, errors.New("nil requests channel provided")
+	}
+
 	return &HttpServer{
-		address: address,
+		address:  address,
+		requests: requestsChan,
 	}, nil
 }
 
 func (s *HttpServer) handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
 	payload := update.UpdateRecordRequest{}
 	if err := json.Unmarshal(data, &payload); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
