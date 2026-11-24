@@ -1,6 +1,7 @@
 /builds
 /dyndns-server
 /dyndns-client
+/dyndns
 /.idea
 /keypair.json
 dist/
