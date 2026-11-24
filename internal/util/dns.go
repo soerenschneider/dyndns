@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"slices"
 
 	"github.com/rs/zerolog/log"
 	"github.com/soerenschneider/dyndns/v2/pkg/update"
@@ -34,31 +35,38 @@ func RecordMatchesIps(record *update.DnsRecord, ips []string) bool {
 		return false
 	}
 
-	wantV4, _ := netip.ParseAddr(record.IpV4)
-	wantV6, _ := netip.ParseAddr(record.IpV6)
-
-	var ipv4Confirmed, ipv6Confirmed, staleWithdrawn bool
+	var gotV4, gotV6 []netip.Addr
 	for _, ip := range ips {
 		addr, err := netip.ParseAddr(ip)
 		if err != nil {
 			continue
 		}
-		addr = addr.Unmap()
 
-		switch {
-		case addr.Is4() && record.IsWithdrawn(update.AddrFamilyIpv4),
-			addr.Is6() && record.IsWithdrawn(update.AddrFamilyIpv6):
-			staleWithdrawn = true
-		case record.HasIpV4() && addr == wantV4:
-			ipv4Confirmed = true
-		case record.HasIpV6() && addr == wantV6:
-			ipv6Confirmed = true
+		addr = addr.Unmap()
+		if addr.Is4() {
+			gotV4 = append(gotV4, addr)
+		} else {
+			gotV6 = append(gotV6, addr)
 		}
 	}
 
-	return !staleWithdrawn &&
-		(!record.HasIpV4() || ipv4Confirmed) &&
-		(!record.HasIpV6() || ipv6Confirmed)
+	return familyMatches(record.HasIpV4(), record.IpV4, record.IsWithdrawn(update.AddrFamilyIpv4), gotV4) &&
+		familyMatches(record.HasIpV6(), record.IpV6, record.IsWithdrawn(update.AddrFamilyIpv6), gotV6)
+}
+
+// familyMatches reports whether got, the addresses of one family a host
+// resolves to, match what a record declares for that family.
+func familyMatches(declared bool, want string, withdrawn bool, got []netip.Addr) bool {
+	if withdrawn {
+		return len(got) == 0
+	}
+
+	if !declared {
+		return true
+	}
+
+	wantAddr, err := netip.ParseAddr(want)
+	return err == nil && slices.Contains(got, wantAddr.Unmap())
 }
 
 func LookupDns(host string) ([]string, error) {
