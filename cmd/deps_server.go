@@ -17,8 +17,8 @@ import (
 	"go.uber.org/multierr"
 )
 
-func newServer(config *conf.Conf) (*appServerMode, error) {
-	notificationImpl, err := buildNotificationImpl(config, config.Server.NatsConfig)
+func newServer(ctx context.Context, config *conf.Conf) (*appServerMode, error) {
+	notificationImpl, err := buildNotificationImpl(ctx, config, config.Server.NatsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func newServer(config *conf.Conf) (*appServerMode, error) {
 		return nil, err
 	}
 
-	listeners, err := buildListeners(*config.Server, requestsChannel, provider)
+	listeners, err := buildListeners(ctx, *config.Server, requestsChannel, provider)
 	if err != nil {
 		log.Error().Err(err).Msg("could not build all listeners")
 	}
@@ -37,7 +37,7 @@ func newServer(config *conf.Conf) (*appServerMode, error) {
 		log.Fatal().Err(err).Msg("no usable listener has been built")
 	}
 
-	propagator, err := dns.NewRoute53Propagator(context.Background(), config.Server.HostedZoneId, provider)
+	propagator, err := dns.NewRoute53Propagator(ctx, config.Server.HostedZoneId, provider)
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +54,8 @@ func newServer(config *conf.Conf) (*appServerMode, error) {
 	}, nil
 }
 
-func buildSqs(config conf.ServerConf, requests chan update.UpdateRecordRequest, credProvider aws.CredentialsProvider) (*client.SqsListener, error) {
-	return client.NewSqsConsumer(context.Background(), config.SqsConfig, credProvider, requests)
+func buildSqs(ctx context.Context, config conf.ServerConf, requests chan update.UpdateRecordRequest, credProvider aws.CredentialsProvider) (*client.SqsListener, error) {
+	return client.NewSqsConsumer(ctx, config.SqsConfig, credProvider, requests)
 }
 
 func buildMqtt(config conf.ServerConf, requests chan update.UpdateRecordRequest) ([]*mqtt.MqttBus, error) {
@@ -72,17 +72,17 @@ func buildMqtt(config conf.ServerConf, requests chan update.UpdateRecordRequest)
 	return servers, nil
 }
 
-func buildNats(config conf.ServerConf, requests chan update.UpdateRecordRequest) (*sink.NatsDyndnsServer, error) {
+func buildNats(ctx context.Context, config conf.ServerConf, requests chan update.UpdateRecordRequest) (*sink.NatsDyndnsServer, error) {
 	log.Info().Msg("Building NATS notifier")
 	js, err := sink.Connect(config.NatsConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return sink.NewNatsDyndnsServer(&config.NatsConfig, js, requests)
+	return sink.NewNatsDyndnsServer(ctx, &config.NatsConfig, js, requests)
 }
 
-func buildListeners(config conf.ServerConf, requests chan update.UpdateRecordRequest, creds aws.CredentialsProvider) ([]listener, error) {
+func buildListeners(ctx context.Context, config conf.ServerConf, requests chan update.UpdateRecordRequest, creds aws.CredentialsProvider) ([]listener, error) {
 	var listeners []listener
 	var errs error
 
@@ -99,7 +99,7 @@ func buildListeners(config conf.ServerConf, requests chan update.UpdateRecordReq
 	}
 
 	if config.IsConfiguredAsListener() {
-		nats, err := buildNats(config, requests)
+		nats, err := buildNats(ctx, config, requests)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
@@ -109,7 +109,7 @@ func buildListeners(config conf.ServerConf, requests chan update.UpdateRecordReq
 
 	if len(config.SqsQueue) > 0 {
 		log.Info().Str("component", "server").Msg("Building AWS SQS listener...")
-		sqs, err := buildSqs(config, requests, creds)
+		sqs, err := buildSqs(ctx, config, requests, creds)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
-	rand2 "math/rand"
 	"sync/atomic"
-	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/nats-io/nats.go"
@@ -27,7 +25,7 @@ type CloudeventsClient struct {
 
 // NewNatsCloudevents publishes cloudevents with the given source, which the
 // spec requires to be non-empty. A nil js connects in the background.
-func NewNatsCloudevents(config *hybrid.NatsConfig, js jetstream.JetStream, source string) (*CloudeventsClient, error) {
+func NewNatsCloudevents(ctx context.Context, config *hybrid.NatsConfig, js jetstream.JetStream, source string) (*CloudeventsClient, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
@@ -46,19 +44,10 @@ func NewNatsCloudevents(config *hybrid.NatsConfig, js jetstream.JetStream, sourc
 	ret.isInitialized.Store(js != nil)
 
 	if js == nil {
-		go func() {
-			for {
-				js, err := Connect(*config)
-				if err != nil {
-					rand := rand2.Intn(15) //nolint G404
-					time.Sleep(time.Duration(rand) * time.Second)
-				} else {
-					ret.js = js
-					ret.isInitialized.Store(true)
-					return
-				}
-			}
-		}()
+		connectInBackground(ctx, *config, func(js jetstream.JetStream) {
+			ret.js = js
+			ret.isInitialized.Store(true)
+		})
 	}
 
 	return ret, nil

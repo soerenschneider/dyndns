@@ -142,7 +142,7 @@ func runMode(opts *globalOpts, mode string, modeOpts *modeOpts) error {
 		go metrics.StartHeartbeat(ctx)
 	}
 
-	app, err := buildApp(config)
+	app, err := buildApp(ctx, config)
 	if err != nil {
 		return fmt.Errorf("could not build dependencies: %w", err)
 	}

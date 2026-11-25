@@ -23,7 +23,7 @@ import (
 	"go.uber.org/multierr"
 )
 
-func newClient(config *conf.Conf, updaters map[string]client.RecordUpdater) (*appClientMode, error) {
+func newClient(ctx context.Context, config *conf.Conf, updaters map[string]client.RecordUpdater) (*appClientMode, error) {
 	var keypair verification.SignatureKeypair
 	switch config.Mode {
 	case internal.EdgeMode:
@@ -44,7 +44,7 @@ func newClient(config *conf.Conf, updaters map[string]client.RecordUpdater) (*ap
 		}
 	}
 
-	notificationImpl, err := buildNotificationImpl(config, config.Client.NatsConfig)
+	notificationImpl, err := buildNotificationImpl(ctx, config, config.Client.NatsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func buildClientOpts(config *conf.ClientConf) []client.Opts {
 }
 
 // nolint cyclop
-func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater, error) {
+func buildUpdateDispatchers(ctx context.Context, config *conf.Conf) (map[string]client.RecordUpdater, error) {
 	dispatchImplementations := map[string]client.RecordUpdater{}
 
 	var errs error
@@ -106,7 +106,7 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
-			dispatcher, err := sink.NewNatsDyndnsClient(&config.Client.NatsConfig, js)
+			dispatcher, err := sink.NewNatsDyndnsClient(ctx, &config.Client.NatsConfig, js)
 			if err != nil {
 				errs = multierr.Append(errs, err)
 			} else {
@@ -129,7 +129,7 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 
 	if len(config.Client.SqsQueue) > 0 {
 		log.Info().Str("component", "client").Msg("Building AWS SQS notifier")
-		sqs, err := buildSqsDispatcher(config.Client)
+		sqs, err := buildSqsDispatcher(ctx, config.Client)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
@@ -140,13 +140,13 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 	return dispatchImplementations, errs
 }
 
-func buildSqsDispatcher(config *conf.ClientConf) (*dispatchers.SqsDispatch, error) {
+func buildSqsDispatcher(ctx context.Context, config *conf.ClientConf) (*dispatchers.SqsDispatch, error) {
 	provider, err := config.Aws.CredentialsProvider()
 	if err != nil {
 		return nil, err
 	}
 
-	return dispatchers.NewSqsDispatcher(context.Background(), config.SqsConfig, provider)
+	return dispatchers.NewSqsDispatcher(ctx, config.SqsConfig, provider)
 }
 
 func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
@@ -191,7 +191,7 @@ func buildSingleResolver(conf *conf.ClientConf, resolver string, addrFamilies []
 
 // buildNotificationImpl builds the email notification and the cloudevents
 // published to natsConf, the nats config of the client or the server.
-func buildNotificationImpl(config *conf.Conf, natsConf hybrid.NatsConfig) (notification.Notification, error) {
+func buildNotificationImpl(ctx context.Context, config *conf.Conf, natsConf hybrid.NatsConfig) (notification.Notification, error) {
 	var notifiers notification.Multi
 	if config.BuildEmailNotification() {
 		// TODO: fail fast
@@ -203,7 +203,7 @@ func buildNotificationImpl(config *conf.Conf, natsConf hybrid.NatsConfig) (notif
 	}
 
 	if natsConf.SupportsCloudeventsDispatch() {
-		cloudevents, err := buildCloudevents(natsConf)
+		cloudevents, err := buildCloudevents(ctx, natsConf)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,7 @@ func buildNotificationImpl(config *conf.Conf, natsConf hybrid.NatsConfig) (notif
 	}
 }
 
-func buildCloudevents(natsConf hybrid.NatsConfig) (*sink.CloudeventsClient, error) {
+func buildCloudevents(ctx context.Context, natsConf hybrid.NatsConfig) (*sink.CloudeventsClient, error) {
 	log.Info().Str("component", "notification").Msg("Building NATS cloudevents notifier")
 
 	// Unreachable NATS must not keep dyndns from starting; the client connects
@@ -236,7 +236,7 @@ func buildCloudevents(natsConf hybrid.NatsConfig) (*sink.CloudeventsClient, erro
 		hostname = "unknown"
 	}
 
-	return sink.NewNatsCloudevents(&natsConf, js, "dyndns/"+hostname)
+	return sink.NewNatsCloudevents(ctx, &natsConf, js, "dyndns/"+hostname)
 }
 
 func buildKeyProvider(config *conf.ClientConf) (key_provider.KeyProvider, error) {

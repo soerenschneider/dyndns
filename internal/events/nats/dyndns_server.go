@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	rand2 "math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -27,7 +26,7 @@ type NatsDyndnsServer struct {
 	reqChan        chan update.UpdateRecordRequest
 }
 
-func NewNatsDyndnsServer(config *hybrid.NatsConfig, js jetstream.JetStream, reqChan chan update.UpdateRecordRequest) (*NatsDyndnsServer, error) {
+func NewNatsDyndnsServer(ctx context.Context, config *hybrid.NatsConfig, js jetstream.JetStream, reqChan chan update.UpdateRecordRequest) (*NatsDyndnsServer, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
@@ -42,19 +41,10 @@ func NewNatsDyndnsServer(config *hybrid.NatsConfig, js jetstream.JetStream, reqC
 	ret.isInitialized.Store(js != nil)
 
 	if js == nil {
-		go func() {
-			for {
-				js, err := Connect(*config)
-				if err != nil {
-					rand := rand2.Intn(15) //nolint G404
-					time.Sleep(time.Duration(rand) * time.Second)
-				} else {
-					ret.js = js
-					ret.isInitialized.Store(true)
-					return
-				}
-			}
-		}()
+		connectInBackground(ctx, *config, func(js jetstream.JetStream) {
+			ret.js = js
+			ret.isInitialized.Store(true)
+		})
 	}
 
 	return ret, nil

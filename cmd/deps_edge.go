@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
+
 	client2 "github.com/soerenschneider/dyndns/v2/internal/client"
 	"github.com/soerenschneider/dyndns/v2/internal/conf"
 )
 
-func newEdge(config *conf.Conf) (*appEdgeMode, error) {
-	serverApp, err := newServer(config)
+func newEdge(ctx context.Context, config *conf.Conf) (*appEdgeMode, error) {
+	serverApp, err := newServer(ctx, config)
 	if err != nil {
 		return nil, err
 	}
@@ -15,7 +17,7 @@ func newEdge(config *conf.Conf) (*appEdgeMode, error) {
 		"edge": serverApp.server,
 	}
 
-	clientApp, err := newClient(config, dispatchers)
+	clientApp, err := newClient(ctx, config, dispatchers)
 	if err != nil {
 		return nil, err
 	}

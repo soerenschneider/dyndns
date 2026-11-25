@@ -105,21 +105,21 @@ func main() {
 	}
 }
 
-func buildApp(config *conf.Conf) (dyndnsApp, error) {
+func buildApp(ctx context.Context, config *conf.Conf) (dyndnsApp, error) {
 	switch config.Mode {
 	case internal.EdgeMode:
-		return newEdge(config)
+		return newEdge(ctx, config)
 	case internal.ClientMode:
-		dispatchers, err := buildUpdateDispatchers(config)
+		dispatchers, err := buildUpdateDispatchers(ctx, config)
 		if err != nil {
 			return nil, err
 		}
 		if len(dispatchers) == 0 {
 			return nil, errors.New("mode is client and no dispatchers were built")
 		}
-		return newClient(config, dispatchers)
+		return newClient(ctx, config, dispatchers)
 	case internal.ServerMode:
-		return newServer(config)
+		return newServer(ctx, config)
 	}
 
 	return nil, fmt.Errorf("unknown mode %q", config.Mode)

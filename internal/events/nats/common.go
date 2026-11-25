@@ -17,7 +17,41 @@ var (
 	connections       = map[string]jetstream.JetStream{}
 	mutex             sync.Mutex
 	ErrNotInitialized = errors.New("nats not initialized")
+
+	// connect and the reconnect delays are replaced in tests.
+	connect           = Connect
+	reconnectMinDelay = 1 * time.Second
+	reconnectMaxDelay = 1 * time.Minute
 )
+
+// connectInBackground connects to nats until it succeeds or ctx is done,
+// waiting twice as long after every failed attempt, and hands the connection to
+// onConnect. The returned channel is closed once it has connected or given up.
+func connectInBackground(ctx context.Context, config hybrid.NatsConfig, onConnect func(jetstream.JetStream)) <-chan struct{} {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+
+		delay := reconnectMinDelay
+		for {
+			js, err := connect(config)
+			if err == nil {
+				onConnect(js)
+				return
+			}
+
+			log.Warn().Err(err).Str("component", "nats").Str("url", config.Url).Dur("retry_in", delay).Msg("Could not connect, retrying")
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(delay):
+			}
+			delay = min(2*delay, reconnectMaxDelay)
+		}
+	}()
+
+	return done
+}
 
 func Close(ctx context.Context, js jetstream.JetStream) error {
 	mutex.Lock()

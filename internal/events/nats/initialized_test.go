@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -18,7 +19,7 @@ func TestConstructors_ConnectedJetStreamIsInitialized(t *testing.T) {
 	config := &hybrid.NatsConfig{}
 	js := connectedJetStream{}
 
-	client, err := NewNatsDyndnsClient(config, js)
+	client, err := NewNatsDyndnsClient(context.Background(), config, js)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +27,7 @@ func TestConstructors_ConnectedJetStreamIsInitialized(t *testing.T) {
 		t.Error("NatsDyndnsClient: not initialized despite connected jetstream")
 	}
 
-	cloudevents, err := NewNatsCloudevents(config, js, "dyndns/test")
+	cloudevents, err := NewNatsCloudevents(context.Background(), config, js, "dyndns/test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +35,7 @@ func TestConstructors_ConnectedJetStreamIsInitialized(t *testing.T) {
 		t.Error("CloudeventsClient: not initialized despite connected jetstream")
 	}
 
-	server, err := NewNatsDyndnsServer(config, js, make(chan update.UpdateRecordRequest))
+	server, err := NewNatsDyndnsServer(context.Background(), config, js, make(chan update.UpdateRecordRequest))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	rand2 "math/rand"
 	"sync/atomic"
-	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -23,7 +21,7 @@ type NatsDyndnsClient struct {
 	isInitialized atomic.Bool
 }
 
-func NewNatsDyndnsClient(config *hybrid.NatsConfig, js jetstream.JetStream) (*NatsDyndnsClient, error) {
+func NewNatsDyndnsClient(ctx context.Context, config *hybrid.NatsConfig, js jetstream.JetStream) (*NatsDyndnsClient, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
@@ -37,19 +35,10 @@ func NewNatsDyndnsClient(config *hybrid.NatsConfig, js jetstream.JetStream) (*Na
 	ret.isInitialized.Store(js != nil)
 
 	if js == nil {
-		go func() {
-			for {
-				js, err := Connect(*config)
-				if err != nil {
-					rand := rand2.Intn(15) //nolint G404
-					time.Sleep(time.Duration(rand) * time.Second)
-				} else {
-					ret.js = js
-					ret.isInitialized.Store(true)
-					return
-				}
-			}
-		}()
+		connectInBackground(ctx, *config, func(js jetstream.JetStream) {
+			ret.js = js
+			ret.isInitialized.Store(true)
+		})
 	}
 
 	return ret, nil

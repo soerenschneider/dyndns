@@ -25,14 +25,14 @@ func (p *publishingJetStream) PublishMsg(_ context.Context, msg *nats.Msg, _ ...
 }
 
 func TestNewNatsCloudevents_EmptySource(t *testing.T) {
-	if _, err := NewNatsCloudevents(&hybrid.NatsConfig{}, &publishingJetStream{}, ""); err == nil {
+	if _, err := NewNatsCloudevents(context.Background(), &hybrid.NatsConfig{}, &publishingJetStream{}, ""); err == nil {
 		t.Fatal("expected error for empty source")
 	}
 }
 
 func TestCloudeventsClient_PublishesValidEvents(t *testing.T) {
 	js := &publishingJetStream{}
-	client, err := NewNatsCloudevents(&hybrid.NatsConfig{EventsSubject: "dyndns.events"}, js, "dyndns/test")
+	client, err := NewNatsCloudevents(context.Background(), &hybrid.NatsConfig{EventsSubject: "dyndns.events"}, js, "dyndns/test")
 	if err != nil {
 		t.Fatal(err)
 	}
