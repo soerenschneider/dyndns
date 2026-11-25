@@ -14,7 +14,6 @@
 | Ipv6Resolver    | string          | ipv6_resolver                | DYNDNS_IPV6_RESOLVER                |
 | Once            | bool            | -                            | -                                   |
 | MqttConfig      | MqttConfig      | -                            | -                                   |
-| EmailConfig     | EmailConfig     | notifications                | -                                   |
 | InterfaceConfig | InterfaceConfig | -                            | -                                   |
 
 ### Resolving IPv4 and IPv6 with different mechanisms
@@ -64,6 +63,8 @@ Deleting records requires the `route53:ListResourceRecordSets` permission in add
 
 ## EmailConfig
 
+The top-level `notifications` section, used in every mode.
+
 | Field        | Type     | JSON Field | Environment Variable  |
 |--------------|----------|------------|-----------------------|
 | From         | string   | from       | DYNDNS_EMAIL_FROM     |
@@ -82,7 +83,6 @@ Deleting records requires the `route53:ListResourceRecordSets` permission in add
 | HostedZoneId    | string              | hosted_zone_id | -                    |
 | MqttConfig      | MqttConfig          | -              | -                    |
 | Aws             | AwsCredentials      | aws            | DYNDNS_AWS_*         |
-| EmailConfig     | EmailConfig         | notifications  | -                    |
 
 
 ## AWS Credentials
