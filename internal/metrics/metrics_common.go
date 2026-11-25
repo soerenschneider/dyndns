@@ -113,9 +113,10 @@ func StartMetricsServer(ctx context.Context, addr string) error {
 	case err := <-errChan:
 		return err
 	case <-ctx.Done():
-		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		// ctx is already done, so it cannot bound the shutdown.
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		_ = server.Shutdown(ctx)
+		_ = server.Shutdown(shutdownCtx)
 	}
 
 	return nil
