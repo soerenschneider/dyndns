@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/rs/zerolog/log"
@@ -60,16 +61,17 @@ func buildSqs(ctx context.Context, config conf.ServerConf, requests chan update.
 
 func buildMqtt(config conf.ServerConf, requests chan update.UpdateRecordRequest) ([]*mqtt.MqttBus, error) {
 	var servers []*mqtt.MqttBus
+	var errs error
 	for _, broker := range config.Brokers {
 		mqttServer, err := mqtt.NewMqttServer(broker, config.ClientId, notificationTopic, config.TlsConfig(), requests)
 		if err != nil {
-			log.Error().Err(err).Str("component", "server").Msg("could not connect to mqtt")
+			errs = multierr.Append(errs, fmt.Errorf("could not build mqtt listener for %s: %w", broker, err))
 		} else {
 			servers = append(servers, mqttServer)
 		}
 	}
 
-	return servers, nil
+	return servers, errs
 }
 
 func buildNats(ctx context.Context, config conf.ServerConf, requests chan update.UpdateRecordRequest) (*sink.NatsDyndnsServer, error) {
