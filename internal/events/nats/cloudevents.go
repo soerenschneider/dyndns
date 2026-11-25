@@ -25,13 +25,20 @@ type CloudeventsClient struct {
 	isInitialized atomic.Bool
 }
 
-func NewNatsCloudevents(config *hybrid.NatsConfig, js jetstream.JetStream) (*CloudeventsClient, error) {
+// NewNatsCloudevents publishes cloudevents with the given source, which the
+// spec requires to be non-empty. A nil js connects in the background.
+func NewNatsCloudevents(config *hybrid.NatsConfig, js jetstream.JetStream, source string) (*CloudeventsClient, error) {
 	if config == nil {
 		return nil, errors.New("nil config supplied")
 	}
 
+	if source == "" {
+		return nil, errors.New("empty source supplied")
+	}
+
 	ret := &CloudeventsClient{
 		config:        config,
+		instanceName:  source,
 		js:            js,
 		isInitialized: atomic.Bool{},
 	}

@@ -26,7 +26,7 @@ func TestConstructors_ConnectedJetStreamIsInitialized(t *testing.T) {
 		t.Error("NatsDyndnsClient: not initialized despite connected jetstream")
 	}
 
-	cloudevents, err := NewNatsCloudevents(config, js)
+	cloudevents, err := NewNatsCloudevents(config, js, "dyndns/test")
 	if err != nil {
 		t.Fatal(err)
 	}
