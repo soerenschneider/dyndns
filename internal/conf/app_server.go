@@ -17,6 +17,7 @@ type ServerConf struct {
 	KnownHosts         map[string][]string `yaml:"known_hosts" env:"KNOWN_HOSTS"`
 	HostedZoneId       string              `yaml:"hosted_zone_id" env:"HOSTED_ZONE_ID"`
 	hybrid.SqsConfig   `yaml:"sqs"`
+	Aws                hybrid.AwsCredentialsConfig `yaml:"aws" envPrefix:"AWS_"`
 	HttpConfig         `yaml:"http"`
 	hybrid.MqttConfig  `yaml:"mqtt"`
 	hybrid.EmailConfig `yaml:"notifications"`

@@ -218,3 +218,31 @@ func TestValidateConfig_HostRequiredForMode(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateConfig_AwsCredentials(t *testing.T) {
+	keyPath := "/run/secrets/aws"
+	tests := []struct {
+		name    string
+		aws     hybrid.AwsCredentialsConfig
+		wantErr bool
+	}{
+		{name: "none", aws: hybrid.AwsCredentialsConfig{}},
+		{name: "key and secret", aws: hybrid.AwsCredentialsConfig{AccessKeyId: "id", SecretAccessKey: "secret"}},
+		{name: "key and secret file", aws: hybrid.AwsCredentialsConfig{AccessKeyId: "id", SecretAccessKeyFile: keyPath}},
+		{name: "key without secret", aws: hybrid.AwsCredentialsConfig{AccessKeyId: "id"}, wantErr: true},
+		{name: "secret without key", aws: hybrid.AwsCredentialsConfig{SecretAccessKey: "secret"}, wantErr: true},
+		{name: "secret and secret file", aws: hybrid.AwsCredentialsConfig{AccessKeyId: "id", SecretAccessKey: "secret", SecretAccessKeyFile: keyPath}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := GetDefaultConfig()
+			config.Mode = "server"
+			config.Server.Aws = tt.aws
+
+			err := ValidateConfig(config)
+			if gotErr := err != nil && strings.Contains(err.Error(), "Aws."); gotErr != tt.wantErr {
+				t.Errorf("ValidateConfig() error = %v, want aws error %v", err, tt.wantErr)
+			}
+		})
+	}
+}

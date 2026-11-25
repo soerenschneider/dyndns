@@ -128,7 +128,7 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 
 	if len(config.Client.SqsQueue) > 0 {
 		log.Info().Str("component", "client").Msg("Building AWS SQS notifier")
-		sqs, err := dispatchers.NewSqsDispatcher(context.Background(), config.Client.SqsConfig, nil)
+		sqs, err := buildSqsDispatcher(config.Client)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
@@ -137,6 +137,15 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 	}
 
 	return dispatchImplementations, errs
+}
+
+func buildSqsDispatcher(config *conf.ClientConf) (*dispatchers.SqsDispatch, error) {
+	provider, err := config.Aws.CredentialsProvider()
+	if err != nil {
+		return nil, err
+	}
+
+	return dispatchers.NewSqsDispatcher(context.Background(), config.SqsConfig, provider)
 }
 
 func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {

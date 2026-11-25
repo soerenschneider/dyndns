@@ -130,9 +130,10 @@ func buildListeners(config conf.ServerConf, requests chan update.UpdateRecordReq
 	return listeners, errs
 }
 
+// buildAwsCredentialsProvider returns the configured static credentials, or
+// nil to use the AWS default credential chain.
 func buildAwsCredentialsProvider(config *conf.ServerConf) (aws.CredentialsProvider, error) {
-	// TODO
-	return nil, nil
+	return config.Aws.CredentialsProvider()
 }
 
 func buildHttpServer(conf conf.ServerConf, req chan update.UpdateRecordRequest) (*http.HttpServer, error) {

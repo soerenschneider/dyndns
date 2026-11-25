@@ -40,6 +40,7 @@ func ValidateConfig[T any](c T) error {
 		}
 
 		validate.RegisterStructValidation(validateEmailConfig, hybrid.EmailConfig{})
+		validate.RegisterStructValidation(validateAwsCredentials, hybrid.AwsCredentialsConfig{})
 		validate.RegisterStructValidation(validateClientResolvers, ClientConf{})
 	})
 
@@ -90,6 +91,26 @@ func hasValue(field reflect.Value) bool {
 		return !field.IsNil()
 	default:
 		return field.IsValid() && !field.IsZero()
+	}
+}
+
+// validateAwsCredentials checks that static aws credentials are complete: an
+// access key id together with exactly one of the secret and the secret's file.
+func validateAwsCredentials(sl validator.StructLevel) {
+	config := sl.Current().Interface().(hybrid.AwsCredentialsConfig)
+	if !config.IsConfigured() {
+		return
+	}
+
+	if config.AccessKeyId == "" {
+		sl.ReportError(config.AccessKeyId, "AccessKeyId", "AccessKeyId", "required", "")
+	}
+
+	switch {
+	case config.SecretAccessKey == "" && config.SecretAccessKeyFile == "":
+		sl.ReportError(config.SecretAccessKey, "SecretAccessKey", "SecretAccessKey", "secretOrFileRequired", "")
+	case config.SecretAccessKey != "" && config.SecretAccessKeyFile != "":
+		sl.ReportError(config.SecretAccessKeyFile, "SecretAccessKeyFile", "SecretAccessKeyFile", "excluded_with", "SecretAccessKey")
 	}
 }
 

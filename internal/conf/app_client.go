@@ -36,6 +36,7 @@ type ClientConf struct {
 
 	HttpDispatcherConf []HttpDispatcherConfig `yaml:"http_dispatcher" env:"HTTP_DISPATCHER_CONF"`
 	hybrid.SqsConfig   `yaml:"sqs" envPrefix:"SQS_"`
+	Aws                hybrid.AwsCredentialsConfig `yaml:"aws" envPrefix:"AWS_"`
 	hybrid.MqttConfig  `yaml:"mqtt"`
 	hybrid.NatsConfig  `yaml:"nats" envPrefix:"NATS_"`
 }

@@ -81,8 +81,32 @@ Deleting records requires the `route53:ListResourceRecordSets` permission in add
 | KnownHosts      | map[string][]string | known_hosts    | -                    |
 | HostedZoneId    | string              | hosted_zone_id | -                    |
 | MqttConfig      | MqttConfig          | -              | -                    |
+| Aws             | AwsCredentials      | aws            | DYNDNS_AWS_*         |
 | VaultConfig     | VaultConfig         | -              | -                    |
 | EmailConfig     | EmailConfig         | notifications  | -                    |
+
+
+## AWS Credentials
+
+The server needs AWS credentials for Route 53 and, if it listens on SQS, for SQS. A client needs them to send updates via SQS.
+Both use the AWS SDK's default credential chain: the `AWS_*` environment variables, the shared config and credentials
+files, and the role of an EC2 instance, ECS task or EKS pod. To use the access key of an IAM user instead, e.g. one
+created by `deployment/terraform/sqs`, set it in the `aws` section of `client` or `server`:
+
+| Field               | Type   | JSON Field             | Environment Variable                 |
+|---------------------|--------|------------------------|--------------------------------------|
+| AccessKeyId         | string | access_key_id          | DYNDNS_AWS_ACCESS_KEY_ID             |
+| SecretAccessKey     | string | secret_access_key      | DYNDNS_AWS_SECRET_ACCESS_KEY         |
+| SecretAccessKeyFile | string | secret_access_key_file | DYNDNS_AWS_SECRET_ACCESS_KEY_FILE    |
+
+`access_key_id` requires exactly one of `secret_access_key` and `secret_access_key_file`.
+
+```yaml
+server:
+  aws:
+    access_key_id: AKIA...
+    secret_access_key_file: /run/secrets/aws-secret-access-key
+```
 
 
 ## Vault Config
