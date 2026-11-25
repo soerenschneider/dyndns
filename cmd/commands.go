@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os/signal"
+	"syscall"
 
 	"github.com/soerenschneider/dyndns/v2/internal"
 	"github.com/soerenschneider/dyndns/v2/internal/conf"
@@ -132,7 +134,9 @@ func runMode(opts *globalOpts, mode string, modeOpts *modeOpts) error {
 	config.Client.Once = modeOpts.once
 	config.Client.ForceSendUpdate = modeOpts.forceSendUpdate
 
-	ctx := context.Background()
+	// Cancelled on SIGINT and SIGTERM, which shuts dyndns down gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	if !modeOpts.once {
 		go func() {

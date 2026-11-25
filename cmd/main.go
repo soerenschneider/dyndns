@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -37,34 +36,35 @@ type appEdgeMode struct {
 	clientApp dyndnsApp
 }
 
+// StartApp runs server and client until ctx is done and both have stopped, or
+// until one of them fails.
 func (app appEdgeMode) StartApp(ctx context.Context) error {
-	errChan := make(chan error, 1)
-	go func() {
-		if err := app.serverApp.StartApp(ctx); err != nil {
-			errChan <- err
-		}
-	}()
-
-	go func() {
-		if err := app.clientApp.StartApp(ctx); err != nil {
-			errChan <- err
-		}
-	}()
-
-	select {
-	case err := <-errChan:
-		return err
-	case <-ctx.Done():
-		return nil
+	apps := []dyndnsApp{app.serverApp, app.clientApp}
+	errChan := make(chan error, len(apps))
+	for _, a := range apps {
+		go func() {
+			errChan <- a.StartApp(ctx)
+		}()
 	}
+
+	for range apps {
+		if err := <-errChan; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (app appServerMode) StartApp(ctx context.Context) error {
 	log.Info().Str("component", "server").Msg("Ready, listening for incoming requests")
 
 	wg := &sync.WaitGroup{}
+	var running sync.WaitGroup
 	for _, listener := range app.listeners {
+		running.Add(1)
 		go func() {
+			defer running.Done()
 			log.Info().Str("component", "server").Msg("starting listener")
 			err := listener.Listen(ctx, wg)
 			if err != nil {
@@ -74,8 +74,10 @@ func (app appServerMode) StartApp(ctx context.Context) error {
 	}
 
 	app.server.Listen(ctx)
-	close(app.requests)
 
+	// The listeners stop on their own once ctx is done. The requests channel
+	// stays open, as a listener may still try to hand over a request.
+	running.Wait()
 	return nil
 }
 
@@ -125,25 +127,37 @@ func buildApp(ctx context.Context, config *conf.Conf) (dyndnsApp, error) {
 	return nil, fmt.Errorf("unknown mode %q", config.Mode)
 }
 
+// shutdownTimeout bounds how long run waits for the app to stop once ctx is
+// done; replaced in tests.
+var shutdownTimeout = 15 * time.Second
+
 // run starts app and blocks until it returns, e.g. after a single run with
-// --once, or until a termination signal is caught.
+// --once, or until ctx is done and app has shut down.
 func run(ctx context.Context, app dyndnsApp) error {
 	done := make(chan error, 1)
 	go func() {
 		done <- app.StartApp(ctx)
 	}()
 
-	terminate := make(chan os.Signal, 1)
-	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
 	select {
 	case err := <-done:
-		if err != nil {
-			return fmt.Errorf("error running dyndns: %w", err)
-		}
-	case <-terminate:
-		log.Info().Str("component", "server").Msg("Caught signal, cancelling context")
+		return appError(err)
+	case <-ctx.Done():
+		log.Info().Str("component", "main").Msg("Caught signal, shutting down")
 	}
 
+	select {
+	case err := <-done:
+		return appError(err)
+	case <-time.After(shutdownTimeout):
+		return fmt.Errorf("did not shut down within %v", shutdownTimeout)
+	}
+}
+
+func appError(err error) error {
+	if err != nil {
+		return fmt.Errorf("error running dyndns: %w", err)
+	}
 	return nil
 }
 

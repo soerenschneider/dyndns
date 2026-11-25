@@ -114,10 +114,16 @@ func (r *Reconciler) dispatch(ctx context.Context) error {
 func (r *Reconciler) Run(ctx context.Context) {
 	interval := 1 * time.Minute
 	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 
-	for range ticker.C {
-		if err := r.dispatch(ctx); err != nil {
-			log.Error().Err(err).Msg("running reconciler produced errors")
+	for {
+		select {
+		case <-ticker.C:
+			if err := r.dispatch(ctx); err != nil {
+				log.Error().Err(err).Msg("running reconciler produced errors")
+			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }

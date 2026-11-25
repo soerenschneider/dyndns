@@ -49,13 +49,20 @@ func NewMqttServer(broker string, clientId, notificationTopic string, tlsConfig 
 	return bus, nil
 }
 
+// Listen connects to the broker, which delivers messages to onMessage, and
+// disconnects once ctx is done.
 func (s *MqttBus) Listen(ctx context.Context, wg *sync.WaitGroup) error {
+	wg.Add(1)
+	defer wg.Done()
+
 	token := s.client.Connect()
 	finishedWithinTimeout := token.WaitTimeout(10 * time.Second)
 	if token.Error() != nil || !finishedWithinTimeout {
 		log.Error().Err(token.Error()).Str("broker", s.broker).Msg("Connection to broker failed, continuing in background")
 	}
 
+	<-ctx.Done()
+	s.Disconnect()
 	return nil
 }
 
