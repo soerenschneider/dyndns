@@ -83,7 +83,8 @@ dyndns keygen                                       # generate a client keypair
 dyndns version
 ```
 
-`--config` defaults to `/etc/dyndns/config.json`. Without a file there, dyndns is configured via `DYNDNS_*`
+`--config` defaults to `/etc/dyndns/config.yaml` (YAML, so JSON works as well; before v2 the default was
+`/etc/dyndns/config.json`). Without a file there, dyndns is configured via `DYNDNS_*`
 environment variables only. Configs from before v2 that set `mode:` are rejected: remove the key and run the
 matching subcommand instead.
 

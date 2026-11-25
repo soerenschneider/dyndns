@@ -19,7 +19,7 @@ import (
 	"golang.org/x/term"
 )
 
-const defaultConfigPath = "/etc/dyndns/config.json"
+const defaultConfigPath = "/etc/dyndns/config.yaml"
 const notificationTopic = "dyndns/+"
 
 type dyndnsApp interface {
