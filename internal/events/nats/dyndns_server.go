@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log/slog"
 	rand2 "math/rand"
 	"sync"
 	"sync/atomic"
@@ -16,6 +15,9 @@ import (
 	"github.com/soerenschneider/dyndns/v2/internal/metrics"
 	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
+
+// fetchErrorBackoff is the pause after a failed fetch; replaced in tests.
+var fetchErrorBackoff = 5 * time.Second
 
 type NatsDyndnsServer struct {
 	isInitialized  atomic.Bool
@@ -66,6 +68,8 @@ func (n *NatsDyndnsServer) Close(ctx context.Context) error {
 	return Close(ctx, n.js)
 }
 
+// waitUntilConnected blocks until the connection is established. It returns
+// ctx's error if ctx is done first.
 func (n *NatsDyndnsServer) waitUntilConnected(ctx context.Context) error {
 	if !n.isInitialized.Load() {
 		if n.isOnlyListener {
@@ -75,9 +79,8 @@ func (n *NatsDyndnsServer) waitUntilConnected(ctx context.Context) error {
 		for !n.isInitialized.Load() {
 			select {
 			case <-ctx.Done():
-				return nil
-			default:
-				time.Sleep(2 * time.Second)
+				return ctx.Err()
+			case <-time.After(2 * time.Second):
 			}
 		}
 	}
@@ -85,12 +88,15 @@ func (n *NatsDyndnsServer) waitUntilConnected(ctx context.Context) error {
 	return nil
 }
 
-// nolint cyclop
 func (n *NatsDyndnsServer) Listen(ctx context.Context, wg *sync.WaitGroup) error {
 	wg.Add(1)
 	defer wg.Done()
 
 	if err := n.waitUntilConnected(ctx); err != nil {
+		if ctx.Err() != nil {
+			// Shut down before the connection was established.
+			return nil
+		}
 		return err
 	}
 
@@ -99,37 +105,53 @@ func (n *NatsDyndnsServer) Listen(ctx context.Context, wg *sync.WaitGroup) error
 		return err
 	}
 
-	for {
+	n.consume(ctx, cons)
+
+	if err := n.js.Conn().FlushTimeout(3 * time.Second); err != nil {
+		log.Error().Err(err).Str("component", "nats").Msg("Could not flush nats connection")
+	}
+	n.js.Conn().Close()
+	return nil
+}
+
+// consume fetches messages until ctx is done. A failing fetch, e.g. while nats
+// is unreachable, is retried after fetchErrorBackoff instead of right away.
+func (n *NatsDyndnsServer) consume(ctx context.Context, cons jetstream.Consumer) {
+	for ctx.Err() == nil {
 		msgs, err := cons.Fetch(3, jetstream.FetchMaxWait(1*time.Second))
 		if err != nil {
-			slog.Error("failed to fetch messages from nats stream", "err", err)
+			log.Error().Err(err).Str("component", "nats").Msg("Failed to fetch messages from nats stream")
+			metrics.NatsErrors.WithLabelValues(n.config.Url, "fetching").Inc()
+			select {
+			case <-ctx.Done():
+			case <-time.After(fetchErrorBackoff):
+			}
 			continue
 		}
 
-		select {
-		case <-ctx.Done():
-			if err := n.js.Conn().FlushTimeout(3 * time.Second); err != nil {
-				slog.Error("could not flush nats connection", "err", err)
-			}
-			n.js.Conn().Close()
-			return nil
-		default:
-			for msg := range msgs.Messages() {
-				var env update.UpdateRecordRequest
-				if err := json.Unmarshal(msg.Data(), &env); err != nil {
-					metrics.MessageParsingFailed.Inc()
-					log.Warn().Msgf("Can't parse message: %v", err)
-					continue
-				}
-
-				n.reqChan <- env
-			}
+		for msg := range msgs.Messages() {
+			n.handleMessage(ctx, msg)
 		}
 
 		if err := msgs.Error(); err != nil {
-			slog.Error("error while consuming", "err", err)
+			log.Error().Err(err).Str("component", "nats").Msg("Error while consuming")
 			metrics.NatsErrors.WithLabelValues(n.config.Url, "consuming").Inc()
 		}
+	}
+}
+
+func (n *NatsDyndnsServer) handleMessage(ctx context.Context, msg jetstream.Msg) {
+	var env update.UpdateRecordRequest
+	if err := json.Unmarshal(msg.Data(), &env); err != nil {
+		metrics.MessageParsingFailed.Inc()
+		log.Warn().Msgf("Can't parse message: %v", err)
+		return
+	}
+
+	// The server stops reading requests on shutdown.
+	select {
+	case n.reqChan <- env:
+	case <-ctx.Done():
 	}
 }
 
