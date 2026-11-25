@@ -8,7 +8,8 @@ import (
 type Conf struct {
 	Client *ClientConf `yaml:"client" validate:"required_without=Mode server"`
 	Server *ServerConf `yaml:"server" validate:"required_without=Mode client"`
-	Mode   string      `yaml:"mode" validate:"oneof=client server edge"`
+	// Mode is chosen by the subcommand, not by the config file.
+	Mode string `yaml:"-" validate:"oneof=client server edge"`
 
 	MetricsListener    string `yaml:"metrics_listen,omitempty" validate:"omitempty,tcp_addr"`
 	hybrid.EmailConfig `yaml:"notifications"`

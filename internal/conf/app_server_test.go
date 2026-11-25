@@ -2,7 +2,9 @@ package conf
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
@@ -67,7 +69,6 @@ func TestReadConfig(t *testing.T) {
 
 func wantServerConf() *Conf {
 	return &Conf{
-		Mode:            "server",
 		MetricsListener: ":6666",
 		Client:          getDefaultClientConfig(),
 		Server: &ServerConf{
@@ -111,5 +112,17 @@ func TestServerConf_ParseEnvVariables_KnownHosts(t *testing.T) {
 
 	if !reflect.DeepEqual(empty.Server.KnownHosts, expected) {
 		t.Fatalf("expected %v, got %v", expected, empty.Server.KnownHosts)
+	}
+}
+
+func TestReadConfig_RejectsModeKey(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte("mode: server\nserver:\n  hosted_zone_id: x\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := ReadConfig(path)
+	if err == nil || !strings.Contains(err.Error(), "dyndns server") {
+		t.Fatalf("ReadConfig() error = %v, want a hint to run 'dyndns server'", err)
 	}
 }

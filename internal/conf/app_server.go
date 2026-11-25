@@ -48,7 +48,24 @@ func ReadConfig(path string) (*Conf, error) {
 		return nil, fmt.Errorf("could not unmarshal json to config: %v", err)
 	}
 
+	if err := rejectModeKey(content); err != nil {
+		return nil, err
+	}
+
 	return conf, nil
+}
+
+// rejectModeKey fails for configs that still set the mode, which is chosen
+// by the subcommand now, so they are not silently run in another mode.
+func rejectModeKey(content []byte) error {
+	var legacy struct {
+		Mode string `yaml:"mode"`
+	}
+	if err := yaml.Unmarshal(content, &legacy); err != nil || legacy.Mode == "" {
+		return nil
+	}
+
+	return fmt.Errorf("'mode: %s' is not supported anymore, the mode is chosen by the subcommand: remove it from the config and run 'dyndns %s'", legacy.Mode, legacy.Mode)
 }
 
 func ParseEnvVariables(config *Conf) error {

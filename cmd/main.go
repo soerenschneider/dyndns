@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -15,7 +14,6 @@ import (
 	"github.com/soerenschneider/dyndns/v2/internal"
 	"github.com/soerenschneider/dyndns/v2/internal/client"
 	"github.com/soerenschneider/dyndns/v2/internal/conf"
-	"github.com/soerenschneider/dyndns/v2/internal/metrics"
 	"github.com/soerenschneider/dyndns/v2/internal/server"
 	"github.com/soerenschneider/dyndns/v2/pkg/update"
 	"golang.org/x/term"
@@ -102,78 +100,9 @@ func (app appClientMode) StartApp(ctx context.Context) error {
 }
 
 func main() {
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.GoVersion).Set(1)
-	metrics.ProcessStartTime.SetToCurrentTime()
-
-	configPath := flag.String("config", defaultConfigPath, "Path to the config file")
-	version := flag.Bool("version", false, "Print version and exit")
-	debug := flag.Bool("debug", false, "Print debug logs")
-	once := flag.Bool("once", false, "Resolve and update the record once, then exit (client mode only)")
-	forceSendUpdate := flag.Bool("force", false, "Force sending an update request at start")
-	genKeypair := flag.Bool("gen-keypair", false, "Generate a keypair, print it and exit")
-	flag.Parse()
-
-	if *version {
-		fmt.Printf("%s (commit: %s) go%s\n", internal.BuildVersion, internal.CommitHash, internal.GoVersion)
-		os.Exit(0)
+	if err := newRootCmd().Execute(); err != nil {
+		os.Exit(1)
 	}
-
-	if *genKeypair {
-		generateKeypair()
-	}
-
-	initLogging(*debug)
-
-	metrics.Version.WithLabelValues(internal.BuildVersion, internal.CommitHash, internal.GoVersion).Set(1)
-	metrics.ProcessStartTime.SetToCurrentTime()
-
-	config, err := conf.ReadConfig(*configPath)
-	if err != nil {
-		if *configPath != defaultConfigPath {
-			dieOnError(err, "couldn't read config file")
-		}
-		config = conf.GetDefaultConfig()
-	}
-
-	err = conf.ParseEnvVariables(config)
-	dieOnError(err, "could not parse env variables")
-
-	err = conf.ValidateConfig(config)
-	dieOnError(err, "Config validation failed")
-
-	err = applyCliFlags(config, *once, *forceSendUpdate)
-	dieOnError(err, "invalid flags")
-
-	ctx := context.Background()
-
-	if !*once {
-		go func() {
-			err := metrics.StartMetricsServer(ctx, config.MetricsListener)
-			dieOnError(err, "could not start metrics server")
-		}()
-		go metrics.StartHeartbeat(ctx)
-	}
-
-	app, err := buildApp(config)
-	dieOnError(err, "could not build dependencies")
-
-	run(ctx, app)
-}
-
-// applyCliFlags checks the cli flags against the configured mode and stores
-// them in the config.
-func applyCliFlags(config *conf.Conf, once, forceSendUpdate bool) error {
-	if once && config.Mode != internal.ClientMode {
-		return errors.New("-once is only supported in client mode")
-	}
-
-	if forceSendUpdate && config.Mode == internal.ServerMode {
-		return errors.New("-force is not supported in server mode")
-	}
-
-	config.Client.Once = once
-	config.Client.ForceSendUpdate = forceSendUpdate
-	return nil
 }
 
 func buildApp(config *conf.Conf) (dyndnsApp, error) {
@@ -197,8 +126,8 @@ func buildApp(config *conf.Conf) (dyndnsApp, error) {
 }
 
 // run starts app and blocks until it returns, e.g. after a single run with
-// -once, or until a termination signal is caught.
-func run(ctx context.Context, app dyndnsApp) {
+// --once, or until a termination signal is caught.
+func run(ctx context.Context, app dyndnsApp) error {
 	done := make(chan error, 1)
 	go func() {
 		done <- app.StartApp(ctx)
@@ -208,10 +137,14 @@ func run(ctx context.Context, app dyndnsApp) {
 	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
 	select {
 	case err := <-done:
-		dieOnError(err, "error running dyndns")
+		if err != nil {
+			return fmt.Errorf("error running dyndns: %w", err)
+		}
 	case <-terminate:
 		log.Info().Str("component", "server").Msg("Caught signal, cancelling context")
 	}
+
+	return nil
 }
 
 func dieOnError(err error, msg string) {

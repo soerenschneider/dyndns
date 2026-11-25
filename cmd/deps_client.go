@@ -281,17 +281,3 @@ func getKeypair(provider key_provider.KeyProvider) (verification.SignatureKeypai
 
 	return keypair, nil
 }
-
-func generateKeypair() {
-	keypair, err := verification.NewKeyPair()
-	if err != nil {
-		log.Fatal().Str("component", "client").Err(err).Msg("Can not create keypair")
-	}
-
-	jsonEncoded, err := keypair.AsJson()
-	if err != nil {
-		log.Fatal().Str("component", "client").Err(err).Msg("could not marshall keypair")
-	}
-	fmt.Printf("%s\n", jsonEncoded)
-	os.Exit(0)
-}

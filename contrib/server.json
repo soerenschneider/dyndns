@@ -1,5 +1,4 @@
 {
-  "mode": "server",
   "metrics_listen": ":6666",
   "notifications": {
     "from": "from",
