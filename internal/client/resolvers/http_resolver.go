@@ -113,7 +113,6 @@ func (resolver *HttpResolver) Resolve() (*update.DnsRecord, error) {
 	for _, addressFamily := range resolver.addressFamilies {
 		serverAddress, ok := serverAddresses[addressFamily]
 		if !ok {
-			// TODO: add metric?
 			log.Warn().Str("component", "http_resolver").Str("address_family", addressFamily).Msg("unknown address family, check your configuration")
 			continue
 		}

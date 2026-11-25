@@ -194,7 +194,6 @@ func buildSingleResolver(conf *conf.ClientConf, resolver string, addrFamilies []
 func buildNotificationImpl(ctx context.Context, config *conf.Conf, natsConf hybrid.NatsConfig) (notification.Notification, error) {
 	var notifiers notification.Multi
 	if config.BuildEmailNotification() {
-		// TODO: fail fast
 		email, err := util.NewEmailNotification(&config.EmailConfig)
 		if err != nil {
 			return nil, err
