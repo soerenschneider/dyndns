@@ -35,8 +35,13 @@ func (h *HttpDispatch) UpdateRecord(ctx context.Context, msg update.UpdateRecord
 		return err
 	}
 
-	// TODO ctx
-	response, err := h.client.Post(h.url, "application/json", bytes.NewBuffer(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.url, bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	response, err := h.client.Do(req)
 	if err != nil {
 		return err
 	}
