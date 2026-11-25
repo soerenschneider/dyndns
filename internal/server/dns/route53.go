@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
 	"github.com/rs/zerolog/log"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 	"github.com/soerenschneider/dyndns/v2/pkg/update"
 )
 
@@ -29,25 +29,16 @@ type Route53Propagator struct {
 }
 
 func NewRoute53Propagator(ctx context.Context, hostedZoneId string, provider aws.CredentialsProvider) (*Route53Propagator, error) {
-	opts := []func(*config.LoadOptions) error{
-		config.WithRegion("us-east-1"), // Route 53 is global; its endpoint is in us-east-1
-	}
-
 	if provider != nil {
-		log.Info().
-			Str("component", "route53").
-			Msg("Building AWS client using given credentials provider")
-
-		opts = append(opts, config.WithCredentialsProvider(aws.NewCredentialsCache(provider)))
+		log.Info().Str("component", "route53").Msg("Building AWS client using given credentials provider")
 	} else {
-		log.Info().
-			Str("component", "route53").
-			Msg("Building AWS client using default credentials provider")
+		log.Info().Str("component", "route53").Msg("Building AWS client using default credentials provider")
 	}
 
-	awsCfg, err := config.LoadDefaultConfig(ctx, opts...)
+	// Route 53 is global; its endpoint is in us-east-1
+	awsCfg, err := hybrid.LoadAwsConfig(ctx, "us-east-1", provider)
 	if err != nil {
-		return nil, fmt.Errorf("loading aws config: %w", err)
+		return nil, err
 	}
 
 	return &Route53Propagator{

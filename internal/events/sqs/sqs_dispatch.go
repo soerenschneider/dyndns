@@ -29,7 +29,7 @@ type SqsListener struct {
 
 type SqsOpts func(consumer *SqsListener) error
 
-func NewSqsConsumer(sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider, reqChan chan update.UpdateRecordRequest, opts ...SqsOpts) (*SqsListener, error) {
+func NewSqsConsumer(ctx context.Context, sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider, reqChan chan update.UpdateRecordRequest, opts ...SqsOpts) (*SqsListener, error) {
 	if reqChan == nil {
 		return nil, errors.New("empty chan provided")
 	}
@@ -51,13 +51,15 @@ func NewSqsConsumer(sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider, 
 		return nil, errs
 	}
 
-	awsConf := aws.Config{
-		Region: sqsConf.Region,
-	}
-
 	if provider != nil {
 		log.Info().Str("component", "sqs").Msg("Building AWS client using given credentials provider")
-		awsConf.Credentials = aws.NewCredentialsCache(provider)
+	} else {
+		log.Info().Str("component", "sqs").Msg("Building AWS client using default credentials provider")
+	}
+
+	awsConf, err := hybrid.LoadAwsConfig(ctx, sqsConf.Region, provider)
+	if err != nil {
+		return nil, err
 	}
 
 	ret.client = sqs.NewFromConfig(awsConf)

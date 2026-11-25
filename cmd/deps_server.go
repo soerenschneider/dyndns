@@ -55,7 +55,7 @@ func newServer(config *conf.Conf) (*appServerMode, error) {
 }
 
 func buildSqs(config conf.ServerConf, requests chan update.UpdateRecordRequest, credProvider aws.CredentialsProvider) (*client.SqsListener, error) {
-	return client.NewSqsConsumer(config.SqsConfig, credProvider, requests)
+	return client.NewSqsConsumer(context.Background(), config.SqsConfig, credProvider, requests)
 }
 
 func buildMqtt(config conf.ServerConf, requests chan update.UpdateRecordRequest) ([]*mqtt.MqttBus, error) {

@@ -17,13 +17,16 @@ type SqsDispatch struct {
 	queueUrl string
 }
 
-func NewSqsDispatcher(sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider) (*SqsDispatch, error) {
-	awsConf := aws.Config{
-		Region: sqsConf.Region,
-	}
+func NewSqsDispatcher(ctx context.Context, sqsConf hybrid.SqsConfig, provider aws.CredentialsProvider) (*SqsDispatch, error) {
 	if provider != nil {
 		log.Info().Str("component", "sqs").Msg("Building AWS client using given credentials provider")
-		awsConf.Credentials = aws.NewCredentialsCache(provider)
+	} else {
+		log.Info().Str("component", "sqs").Msg("Building AWS client using default credentials provider")
+	}
+
+	awsConf, err := hybrid.LoadAwsConfig(ctx, sqsConf.Region, provider)
+	if err != nil {
+		return nil, err
 	}
 
 	ret := &SqsDispatch{

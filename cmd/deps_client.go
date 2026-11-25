@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -127,7 +128,7 @@ func buildUpdateDispatchers(config *conf.Conf) (map[string]client.RecordUpdater,
 
 	if len(config.Client.SqsQueue) > 0 {
 		log.Info().Str("component", "client").Msg("Building AWS SQS notifier")
-		sqs, err := dispatchers.NewSqsDispatcher(config.Client.SqsConfig, nil)
+		sqs, err := dispatchers.NewSqsDispatcher(context.Background(), config.Client.SqsConfig, nil)
 		if err != nil {
 			errs = multierr.Append(errs, err)
 		} else {
