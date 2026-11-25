@@ -28,8 +28,8 @@ The clients run without access to credentials of the DNS provider. The worst cas
 
 The dyndns server should only run a trusted and well-secured server though.
 
-#### Support for dynamic IAM credentials
-Dyndns supports acquiring dynamic IAM credentials through Vault's [AWS secret engine](https://developer.hashicorp.com/vault/docs/secrets/aws)
+#### Support for short-lived IAM credentials
+Dyndns uses the AWS SDK's default credential chain, so the server can run with short-lived credentials, such as the role of an EC2 instance, ECS task or EKS pod, instead of a static access key.
 
 ### Observability
 

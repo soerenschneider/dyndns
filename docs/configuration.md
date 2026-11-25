@@ -82,7 +82,6 @@ Deleting records requires the `route53:ListResourceRecordSets` permission in add
 | HostedZoneId    | string              | hosted_zone_id | -                    |
 | MqttConfig      | MqttConfig          | -              | -                    |
 | Aws             | AwsCredentials      | aws            | DYNDNS_AWS_*         |
-| VaultConfig     | VaultConfig         | -              | -                    |
 | EmailConfig     | EmailConfig         | notifications  | -                    |
 
 
@@ -108,26 +107,10 @@ server:
     secret_access_key_file: /run/secrets/aws-secret-access-key
 ```
 
-
-## Vault Config
-Here's a markdown table that displays the name, type, JSON field name, and environment variable name (if applicable) for each field in the `VaultConfig` struct:
-
-| Field           | Type              | JSON Field            | Environment Variable |
-|-----------------|-------------------|-----------------------|----------------------|
-| VaultAddr       | string            | vault_addr            | -                    |
-| AuthStrategy    | VaultAuthStrategy | vault_auth_strategy   | -                    |
-| AwsRoleName     | string            | vault_aws_role_name   | -                    |
-| AwsMountPath    | string            | vault_aws_mount_path  | -                    |
-| AppRoleId       | string            | vault_app_role_id     | -                    |
-| AppRoleSecretId | string            | vault_app_role_secret | -                    |
-| VaultToken      | string            | vault_token           | -                    |
-
-Please note that some fields do not have corresponding environment variable names as they are not specified in the `env` tag.
-
 ## Reference
 | Keyword        | Description                                    | Example                      | Mandatory |
 |----------------|------------------------------------------------|------------------------------|-----------|
-| host           | FQDN of the host you want to update the IP for | https://vault:8200           | Y         |
+| host           | FQDN of the host you want to update the IP for | home.example.com             | Y         |
 | keypair_path   | The path to the ed25519 keypair                | /etc/dyndns/keypair          | Y         |
 | metrics_listen | HTTP metrics handler listen address            | :9095                        | N         |
 | brokers        | The MQTT brokers to connect to                 | ["tcp://host.tld":1883]      | Y         |

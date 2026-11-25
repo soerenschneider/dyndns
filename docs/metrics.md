@@ -27,7 +27,6 @@ Here's the markdown table for the updated variables:
 | dyndns_signature_verifications_errors_total | Total count of signature verification errors         | host                         |
 | dyndns_messages_ignored_total              | Total count of ignored messages                         | host, reason                 |
 | dyndns_message_validations_failed_total    | Total count of failed message validations              | host, reason                 |
-| dyndns_vault_token_expiry_time_seconds    | Expiry time of the Vault token                          | N/A                          |
 | dyndns_config_public_key_errors_total     | Total count of public key configuration errors          | N/A                          |
 | dyndns_message_parsing_failed_total       | Total count of failed message parsing                   | N/A                          |
 

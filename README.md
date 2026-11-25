@@ -16,7 +16,7 @@ Automatically updates DNS records for hosts that don't have a static IP
 🔧 Customizable list of HTTP APIs to detect IP updates<br/>
 ❤️ Specify HTTP APIs that detect IP updates which are preferred over other API endpoints<br/>
 🔐 Messages are cryptographically signed, therefore public MQTT brokers can be used<br/>
-🔑 Can use either dynamic credentials using Hashicorp Vault or static credentials<br/>
+🔑 Uses the AWS default credential chain or static credentials from the config<br/>
 🔭 Observability through Prometheus metrics
 
 ## Why would I need it?
