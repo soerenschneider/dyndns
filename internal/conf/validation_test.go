@@ -246,3 +246,23 @@ func TestValidateConfig_AwsCredentials(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateConfig_SectionsRequired(t *testing.T) {
+	for _, mode := range []string{"client", "server", "edge"} {
+		t.Run(mode, func(t *testing.T) {
+			withoutClient := GetDefaultConfig()
+			withoutClient.Mode = mode
+			withoutClient.Client = nil
+			if err := ValidateConfig(withoutClient); err == nil || !strings.Contains(err.Error(), "'Client'") {
+				t.Errorf("ValidateConfig() without client section error = %v, want a Client error", err)
+			}
+
+			withoutServer := GetDefaultConfig()
+			withoutServer.Mode = mode
+			withoutServer.Server = nil
+			if err := ValidateConfig(withoutServer); err == nil || !strings.Contains(err.Error(), "'Server'") {
+				t.Errorf("ValidateConfig() without server section error = %v, want a Server error", err)
+			}
+		})
+	}
+}

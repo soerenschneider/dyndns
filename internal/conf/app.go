@@ -6,8 +6,10 @@ import (
 )
 
 type Conf struct {
-	Client *ClientConf `yaml:"client" validate:"required_without=Mode server"`
-	Server *ServerConf `yaml:"server" validate:"required_without=Mode client"`
+	// Both are needed in every mode, e.g. the server mode reads the cli flags
+	// from Client, so an empty "client:" or "server:" section is rejected.
+	Client *ClientConf `yaml:"client" validate:"required"`
+	Server *ServerConf `yaml:"server" validate:"required"`
 	// Mode is chosen by the subcommand, not by the config file.
 	Mode string `yaml:"-" validate:"oneof=client server edge"`
 
