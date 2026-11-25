@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -59,16 +60,25 @@ func (app appEdgeMode) StartApp(ctx context.Context) error {
 func (app appServerMode) StartApp(ctx context.Context) error {
 	log.Info().Str("component", "server").Msg("Ready, listening for incoming requests")
 
+	// A failing listener does not stop the server while others still receive
+	// requests; only once all of them have failed, the server gives up.
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+
 	wg := &sync.WaitGroup{}
 	var running sync.WaitGroup
+	var listening atomic.Int32
+	listening.Store(int32(len(app.listeners))) //#nosec:G115
 	for _, listener := range app.listeners {
 		running.Add(1)
 		go func() {
 			defer running.Done()
 			log.Info().Str("component", "server").Msg("starting listener")
-			err := listener.Listen(ctx, wg)
-			if err != nil {
-				log.Fatal().Err(err).Str("component", "server").Msg("could not start listener")
+			if err := listener.Listen(ctx, wg); err != nil {
+				log.Error().Err(err).Str("component", "server").Msg("listener failed")
+				if listening.Add(-1) == 0 {
+					cancel(errAllListenersFailed)
+				}
 			}
 		}()
 	}
@@ -78,8 +88,14 @@ func (app appServerMode) StartApp(ctx context.Context) error {
 	// The listeners stop on their own once ctx is done. The requests channel
 	// stays open, as a listener may still try to hand over a request.
 	running.Wait()
+
+	if errors.Is(context.Cause(ctx), errAllListenersFailed) {
+		return errAllListenersFailed
+	}
 	return nil
 }
+
+var errAllListenersFailed = errors.New("all listeners failed")
 
 type appClientMode struct {
 	client     *client.Client
