@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -71,25 +70,26 @@ func (r *Reconciler) dispatch(ctx context.Context) error {
 	timeStart := time.Now()
 	wg := sync.WaitGroup{}
 	wg.Add(len(r.pendingChanges))
-	errLock := &sync.Mutex{}
+	// The goroutines only record their results; the map is changed after all of
+	// them are done, as concurrent writes to a map are not allowed, not even to
+	// distinct keys, and the loop below is still iterating it.
+	resultLock := &sync.Mutex{}
 	var errs error
-	var successFullDispatches atomic.Int32
+	var succeeded []string
 	for key, dispatcher := range r.pendingChanges {
 		var disp = dispatcher
 		go func(key string) {
 			err := disp.UpdateRecord(ctx, *r.env)
+			resultLock.Lock()
 			if err == nil {
-				successFullDispatches.Add(1)
-				r.pendingChanges[key] = nil
-				delete(r.pendingChanges, key)
+				succeeded = append(succeeded, key)
 				metrics.UpdatesDispatched.WithLabelValues(r.env.PublicIp.Host).Inc()
 				log.Info().Str("component", "reconciler").Str("dispatcher", key).Msg("Reconciliation successful")
 			} else {
-				errLock.Lock()
 				metrics.UpdateDispatchErrors.WithLabelValues(key).Inc()
 				errs = multierr.Append(errs, fmt.Errorf("reconciliation for dispatcher %s failed: %w", key, err))
-				errLock.Unlock()
 			}
+			resultLock.Unlock()
 			wg.Done()
 		}(key)
 	}
@@ -97,8 +97,12 @@ func (r *Reconciler) dispatch(ctx context.Context) error {
 	wg.Wait()
 	timeSpent := time.Since(timeStart)
 
-	if r.stopAfterFirstSuccess && successFullDispatches.Load() > 0 && len(r.pendingChanges) > 0 {
-		log.Info().Str("component", "reconciler").Int("pending", len(r.pendingChanges)).Int32("successful_dispatches", successFullDispatches.Load()).Msg("Stopping reconciliation due to successful dispatches")
+	for _, key := range succeeded {
+		delete(r.pendingChanges, key)
+	}
+
+	if r.stopAfterFirstSuccess && len(succeeded) > 0 && len(r.pendingChanges) > 0 {
+		log.Info().Str("component", "reconciler").Int("pending", len(r.pendingChanges)).Int("successful_dispatches", len(succeeded)).Msg("Stopping reconciliation due to successful dispatches")
 		r.pendingChanges = nil
 	}
 
