@@ -13,6 +13,7 @@ import (
 	"github.com/soerenschneider/dyndns/v2/internal/client/dispatchers"
 	"github.com/soerenschneider/dyndns/v2/internal/client/resolvers"
 	"github.com/soerenschneider/dyndns/v2/internal/conf"
+	"github.com/soerenschneider/dyndns/v2/internal/conf/hybrid"
 	"github.com/soerenschneider/dyndns/v2/internal/events/mqtt"
 	sink "github.com/soerenschneider/dyndns/v2/internal/events/nats"
 	"github.com/soerenschneider/dyndns/v2/internal/notification"
@@ -43,7 +44,7 @@ func newClient(config *conf.Conf, updaters map[string]client.RecordUpdater) (*ap
 		}
 	}
 
-	notificationImpl, err := buildNotificationImpl(config)
+	notificationImpl, err := buildNotificationImpl(config, config.Client.NatsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -188,19 +189,54 @@ func buildSingleResolver(conf *conf.ClientConf, resolver string, addrFamilies []
 	return resolvers.NewHttpResolver(conf.Host, conf.PreferredUrls, conf.FallbackUrls, addrFamilies)
 }
 
-func buildNotificationImpl(config *conf.Conf) (notification.Notification, error) {
+// buildNotificationImpl builds the email notification and the cloudevents
+// published to natsConf, the nats config of the client or the server.
+func buildNotificationImpl(config *conf.Conf, natsConf hybrid.NatsConfig) (notification.Notification, error) {
+	var notifiers notification.Multi
 	if config.BuildEmailNotification() {
 		// TODO: fail fast
-		return util.NewEmailNotification(&config.EmailConfig)
+		email, err := util.NewEmailNotification(&config.EmailConfig)
+		if err != nil {
+			return nil, err
+		}
+		notifiers = append(notifiers, email)
 	}
 
-	//if config.SupportsCloudeventsDispatch() {
-	//	jetstream, err := sink.Connect(config.NatsConfig)
-	//	dieOnError(err, "could not build nats jetstream")
-	//	return sink.NewNatsCloudevents(&config.NatsConfig, jetstream)
-	//}
+	if natsConf.SupportsCloudeventsDispatch() {
+		cloudevents, err := buildCloudevents(natsConf)
+		if err != nil {
+			return nil, err
+		}
+		notifiers = append(notifiers, cloudevents)
+	}
 
-	return &notification.DummyNotification{}, nil
+	switch len(notifiers) {
+	case 0:
+		return &notification.DummyNotification{}, nil
+	case 1:
+		return notifiers[0], nil
+	default:
+		return notifiers, nil
+	}
+}
+
+func buildCloudevents(natsConf hybrid.NatsConfig) (*sink.CloudeventsClient, error) {
+	log.Info().Str("component", "notification").Msg("Building NATS cloudevents notifier")
+
+	// Unreachable NATS must not keep dyndns from starting; the client connects
+	// in the background instead.
+	js, err := sink.Connect(natsConf)
+	if err != nil {
+		log.Warn().Err(err).Str("component", "notification").Msg("could not connect to nats, retrying in the background")
+		js = nil
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" {
+		hostname = "unknown"
+	}
+
+	return sink.NewNatsCloudevents(&natsConf, js, "dyndns/"+hostname)
 }
 
 func buildKeyProvider(config *conf.ClientConf) (key_provider.KeyProvider, error) {

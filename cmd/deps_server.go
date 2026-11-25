@@ -18,7 +18,7 @@ import (
 )
 
 func newServer(config *conf.Conf) (*appServerMode, error) {
-	notificationImpl, err := buildNotificationImpl(config)
+	notificationImpl, err := buildNotificationImpl(config, config.Server.NatsConfig)
 	if err != nil {
 		return nil, err
 	}

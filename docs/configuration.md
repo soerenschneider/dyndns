@@ -107,6 +107,23 @@ server:
     secret_access_key_file: /run/secrets/aws-secret-access-key
 ```
 
+## Notifications
+
+Notifications report new addresses the client detected and updates the server applied. They are sent by email
+(the top-level `notifications` section) and as [CloudEvents](https://cloudevents.io) published to NATS JetStream,
+or both. For the CloudEvents, set `url` and `events_subject` in the `nats` section of `client` or `server`:
+
+```yaml
+client:
+  nats:
+    url: nats://nats.example.com:4222
+    events_subject: dyndns.events
+```
+
+The client publishes `cloud.soeren.dyndns.client.new-ip-detected.v1`, the server
+`cloud.soeren.dyndns.server.new-ip-applied.v1`, both with the source `dyndns/<hostname>`. If NATS is unreachable at
+startup, dyndns starts anyway and connects in the background.
+
 ## Reference
 | Keyword        | Description                                    | Example                      | Mandatory |
 |----------------|------------------------------------------------|------------------------------|-----------|
