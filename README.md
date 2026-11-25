@@ -70,9 +70,22 @@ Head over to the [configuration section](docs/configuration.md) to see more deta
 
 First, you need to build a keypair. This is easily done
 ```bash
-$ docker run ghcr.io/soerenschneider/dyndns-client -gen-keypair
+$ docker run ghcr.io/soerenschneider/dyndns keygen
 {"public_key":"IyXH8z/+vRsIUEAldlGgKKFcVHoll8w2tzC6o9717m8=","private_key":"h7jrhYupN0LVPnVWqFun6sN+bWNr0B0mh7/mgRaKnhsjJcfzP/69GwhQQCV2UaAooVxUeiWXzDa3MLqj3vXubw=="}
 ```
+
+The subcommand chooses the mode, the config file holds the `client` and `server` sections:
+```text
+dyndns client  [--config PATH] [--once] [--force]   # detect the public IP, send signed update requests
+dyndns server  [--config PATH]                      # verify update requests, apply them to Route 53
+dyndns edge    [--config PATH] [--force]            # both in one process, updating Route 53 directly
+dyndns keygen                                       # generate a client keypair
+dyndns version
+```
+
+`--config` defaults to `/etc/dyndns/config.json`. Without a file there, dyndns is configured via `DYNDNS_*`
+environment variables only. Configs from before v2 that set `mode:` are rejected: remove the key and run the
+matching subcommand instead.
 
 # Architecture
 
