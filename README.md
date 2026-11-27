@@ -65,6 +65,70 @@ $ go install github.com/soerenschneider/dyndns@latest
 
 Head over to the [configuration section](docs/configuration.md) to see more details.
 
+### Examples
+
+#### Client: IPv4 via HTTP, IPv6 from the interface
+Behind NAT the interface only carries a private IPv4, so the public IPv4 is looked up via HTTP APIs, while the
+globally routable IPv6 is read straight from the interface. There is no automatic detection of the default interface:
+the interface resolver needs `interface` to be set explicitly.
+
+```yaml
+client:
+  host: home.example.com
+  keypair_path: /etc/dyndns/keypair.json
+  address_families: [ip4, ip6]
+  interface: eth0          # the interface that carries the public IPv6
+  ipv4_resolver: http      # ask external services for the public IPv4
+  ipv6_resolver: interface # read the IPv6 from eth0 (Linux only)
+  http_dispatcher:
+    - url: https://dyndns.example.com/update
+server: {}
+```
+
+`ipv6_resolver: interface` can be omitted here, since a family uses `interface` whenever one is set.
+
+#### Client: IPv4 only, via HTTP, sending updates via MQTT
+```yaml
+client:
+  host: home.example.com
+  keypair_path: /etc/dyndns/keypair.json
+  http_resolver_preferred_urls:
+    - https://icanhazip.com
+    - https://api.ipify.org
+  mqtt:
+    brokers:
+      - tcp://mqtt.example.com:1883
+    client_id: dyndns-home
+server: {}
+```
+
+#### Server: accept updates via HTTP and MQTT
+```yaml
+client: {}
+server:
+  hosted_zone_id: Z0123456789ABCDEFGHIJ
+  known_hosts:
+    home.example.com:
+      - IyXH8z/+vRsIUEAldlGgKKFcVHoll8w2tzC6o9717m8=
+  http:
+    addr: :8080            # updates are posted to /update
+  mqtt:
+    brokers:
+      - tcp://mqtt.example.com:1883
+    client_id: dyndns-server
+```
+
+#### Edge: client and server in one process, updating Route 53 directly
+```yaml
+client:
+  host: home.example.com
+  address_families: [ip4, ip6]
+  interface: eth0
+  ipv4_resolver: http
+server:
+  hosted_zone_id: Z0123456789ABCDEFGHIJ
+```
+
 
 ## Getting Started
 
