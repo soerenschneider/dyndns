@@ -69,23 +69,22 @@ Head over to the [configuration section](docs/configuration.md) to see more deta
 
 #### Client: IPv4 via HTTP, IPv6 from the interface
 Behind NAT the interface only carries a private IPv4, so the public IPv4 is looked up via HTTP APIs, while the
-globally routable IPv6 is read straight from the interface. There is no automatic detection of the default interface:
-the interface resolver needs `interface` to be set explicitly.
+globally routable IPv6 is read straight from the interface of the IPv6 default route.
 
 ```yaml
 client:
   host: home.example.com
   keypair_path: /etc/dyndns/keypair.json
   address_families: [ip4, ip6]
-  interface: eth0          # the interface that carries the public IPv6
   ipv4_resolver: http      # ask external services for the public IPv4
-  ipv6_resolver: interface # read the IPv6 from eth0 (Linux only)
+  ipv6_resolver: interface # read the IPv6 from the default route's interface (Linux only)
   http_dispatcher:
     - url: https://dyndns.example.com/update
 server: {}
 ```
 
-`ipv6_resolver: interface` can be omitted here, since a family uses `interface` whenever one is set.
+To read the IPv6 from a specific interface instead, set e.g. `interface: eth0`. `ipv6_resolver: interface` can then be
+omitted, since a family uses `interface` whenever one is set.
 
 #### Client: IPv4 only, via HTTP, sending updates via MQTT
 ```yaml

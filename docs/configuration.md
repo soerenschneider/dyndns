@@ -23,6 +23,10 @@ services for the public address) or `interface` (read the address from `interfac
 `interface` if one is configured and `http` otherwise. A resolver may only be set for a family listed in
 `address_families`.
 
+If a family uses the `interface` resolver but no `interface` is configured, the address is read from the interface of
+that family's default route, which is looked up on every check. A family without a default route is skipped, its
+record is left untouched.
+
 Behind NAT or CGNAT the interface only carries a private IPv4, while the IPv6 on it is globally routable:
 
 ```yaml

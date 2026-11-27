@@ -48,9 +48,8 @@ func TestClientConf_ValidateResolvers(t *testing.T) {
 			conf: ClientConf{Host: "my.host.tld", AddrFamilies: both, NetworkInterface: "eth0", Ipv4Resolver: "http"},
 		},
 		{
-			name:    "interface resolver without interface",
-			conf:    ClientConf{Host: "my.host.tld", AddrFamilies: both, Ipv6Resolver: "interface"},
-			wantErr: true,
+			name: "interface resolver without interface uses the default route",
+			conf: ClientConf{Host: "my.host.tld", AddrFamilies: both, Ipv6Resolver: "interface"},
 		},
 		{
 			name:    "unknown resolver",

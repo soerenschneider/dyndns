@@ -56,7 +56,8 @@ func getDefaultClientConfig() *ClientConf {
 
 // ResolverFor returns the resolver mechanism used for addrFamily. Unless set
 // explicitly, the interface resolver is used if an interface is configured and
-// the http resolver otherwise.
+// the http resolver otherwise. An interface resolver without a configured
+// interface uses the interface of the family's default route.
 func (c *ClientConf) ResolverFor(addrFamily string) string {
 	var explicit string
 	switch addrFamily {

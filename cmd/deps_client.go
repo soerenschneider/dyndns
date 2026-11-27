@@ -181,7 +181,11 @@ func buildResolver(conf *conf.ClientConf) (resolvers.IpResolver, error) {
 
 func buildSingleResolver(conf *conf.ClientConf, resolver string, addrFamilies []string) (resolvers.IpResolver, error) {
 	if resolver == internal.ResolverInterface {
-		log.Info().Str("component", "client").Strs("address_families", addrFamilies).Msgf("Building new resolver for interface %s", conf.NetworkInterface)
+		if conf.NetworkInterface == "" {
+			log.Info().Str("component", "client").Strs("address_families", addrFamilies).Msg("Building new resolver for the default route's interface")
+		} else {
+			log.Info().Str("component", "client").Strs("address_families", addrFamilies).Msgf("Building new resolver for interface %s", conf.NetworkInterface)
+		}
 		return resolvers.NewInterfaceResolver(conf.NetworkInterface, conf.Host, addrFamilies)
 	}
 

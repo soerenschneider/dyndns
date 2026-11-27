@@ -156,8 +156,8 @@ func validateClientKeypair(sl validator.StructLevel) {
 	}
 }
 
-// validateClientResolvers checks that every per-family resolver can actually be
-// built and is used for an address family that is enabled.
+// validateClientResolvers checks that every per-family resolver is used for an
+// address family that is enabled.
 func validateClientResolvers(sl validator.StructLevel) {
 	config := sl.Current().Interface().(ClientConf)
 
@@ -173,9 +173,6 @@ func validateClientResolvers(sl validator.StructLevel) {
 			sl.ReportError(f.value, f.field, f.field, "addrFamilyNotEnabled", f.family)
 		}
 
-		if slices.Contains(config.AddrFamilies, f.family) && config.ResolverFor(f.family) == internal.ResolverInterface && config.NetworkInterface == "" {
-			sl.ReportError(f.value, f.field, f.field, "interfaceRequired", "")
-		}
 	}
 }
 

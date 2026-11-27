@@ -3,6 +3,8 @@ package resolvers
 import (
 	"net"
 	"testing"
+
+	"github.com/soerenschneider/dyndns/v2/internal"
 )
 
 func ipNet(s string) net.Addr {
@@ -62,4 +64,51 @@ func TestPickIpV4(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInterfaceWithIp(t *testing.T) {
+	loopback, err := net.InterfaceByName(loopbackName(t))
+	if err != nil {
+		t.Skipf("no loopback interface: %v", err)
+	}
+	ifaces := []net.Interface{*loopback}
+
+	got, err := interfaceWithIp(ifaces, net.ParseIP("127.0.0.1"))
+	if err != nil || got != loopback.Name {
+		t.Errorf("interfaceWithIp(127.0.0.1) = %q, %v, want %q", got, err, loopback.Name)
+	}
+
+	if got, err := interfaceWithIp(ifaces, net.ParseIP("192.0.2.1")); err == nil {
+		t.Errorf("interfaceWithIp(192.0.2.1) = %q, want an error", got)
+	}
+}
+
+func TestDefaultRouteInterface(t *testing.T) {
+	if _, err := defaultRouteInterface("ip5"); err == nil {
+		t.Error("defaultRouteInterface(ip5) wants an error for an unknown address family")
+	}
+
+	// Depends on the host's routes, so only check consistency when there is one.
+	got, err := defaultRouteInterface(internal.AddrFamilyIpv4)
+	if err != nil {
+		t.Skipf("no ipv4 default route: %v", err)
+	}
+	if _, err := net.InterfaceByName(got); err != nil {
+		t.Errorf("defaultRouteInterface() = %q, not an interface: %v", got, err)
+	}
+}
+
+func loopbackName(t *testing.T) string {
+	t.Helper()
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		t.Skipf("could not list interfaces: %v", err)
+	}
+	for _, ief := range ifaces {
+		if ief.Flags&net.FlagLoopback != 0 {
+			return ief.Name
+		}
+	}
+	t.Skip("no loopback interface")
+	return ""
 }
