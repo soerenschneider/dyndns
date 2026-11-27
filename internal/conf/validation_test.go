@@ -219,6 +219,36 @@ func TestValidateConfig_HostRequiredForMode(t *testing.T) {
 	}
 }
 
+func TestValidateConfig_ClientKeypair(t *testing.T) {
+	tests := []struct {
+		name        string
+		mode        string
+		keypair     string
+		keypairPath string
+		wantErr     bool
+	}{
+		{name: "client without keypair", mode: "client", wantErr: true},
+		{name: "client with keypair", mode: "client", keypair: "keypair"},
+		{name: "client with keypair path", mode: "client", keypairPath: "/etc/dyndns/keypair.json"},
+		{name: "client with both", mode: "client", keypair: "keypair", keypairPath: "/etc/dyndns/keypair.json"},
+		{name: "server without keypair", mode: "server"},
+		{name: "edge without keypair", mode: "edge"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := GetDefaultConfig()
+			config.Mode = tt.mode
+			config.Client.KeyPair = tt.keypair
+			config.Client.KeyPairPath = tt.keypairPath
+
+			err := ValidateConfig(config)
+			if gotErr := err != nil && strings.Contains(err.Error(), "KeyPair"); gotErr != tt.wantErr {
+				t.Errorf("ValidateConfig() error = %v, want keypair error %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestValidateConfig_AwsCredentials(t *testing.T) {
 	keyPath := "/run/secrets/aws"
 	tests := []struct {

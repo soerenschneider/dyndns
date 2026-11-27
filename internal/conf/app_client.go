@@ -19,10 +19,11 @@ var (
 )
 
 type ClientConf struct {
-	Host             string   `yaml:"host,omitempty" env:"HOST" validate:"required_for_mode=client edge"`
-	AddrFamilies     []string `yaml:"address_families" env:"ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
-	KeyPairPath      string   `yaml:"keypair_path,omitempty" env:"KEYPAIR_PATH" validate:"required_for_mode=client"`
-	KeyPair          string   `yaml:"keypair,omitempty" env:"KEYPAIR" validate:"required_for_mode=client"`
+	Host         string   `yaml:"host,omitempty" env:"HOST" validate:"required_for_mode=client edge"`
+	AddrFamilies []string `yaml:"address_families" env:"ADDRESS_FAMILIES" envSeparator:";" validate:"omitempty,addrfamilies"`
+	// KeyPairPath and KeyPair are alternatives, KeyPair takes precedence.
+	KeyPairPath      string   `yaml:"keypair_path,omitempty" env:"KEYPAIR_PATH"`
+	KeyPair          string   `yaml:"keypair,omitempty" env:"KEYPAIR"`
 	PreferredUrls    []string `yaml:"http_resolver_preferred_urls,omitempty" env:"HTTP_RESOLVER_PREFERRED_URLS" envSeparator:";"`
 	FallbackUrls     []string `yaml:"http_resolver_fallback_urls,omitempty" env:"HTTP_RESOLVER_FALLBACK_URLS" envSeparator:";"`
 	NetworkInterface string   `yaml:"interface,omitempty"`

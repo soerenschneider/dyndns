@@ -42,6 +42,7 @@ func ValidateConfig[T any](c T) error {
 		validate.RegisterStructValidation(validateEmailConfig, hybrid.EmailConfig{})
 		validate.RegisterStructValidation(validateAwsCredentials, hybrid.AwsCredentialsConfig{})
 		validate.RegisterStructValidation(validateClientResolvers, ClientConf{})
+		validate.RegisterStructValidation(validateClientKeypair, Conf{})
 	})
 
 	return validate.Struct(c)
@@ -139,6 +140,19 @@ func validateEmailConfig(sl validator.StructLevel) {
 	if len(config.To) == 0 && config.ToFile == "" {
 		sl.ReportError(config.To, "To", "To", "requiredWithoutToFile", "")
 		sl.ReportError(config.ToFile, "ToFile", "ToFile", "requiredWithoutTo", "")
+	}
+}
+
+// validateClientKeypair checks that a client has a keypair, either inline or
+// as a path. It validates Conf, as only Conf knows the mode.
+func validateClientKeypair(sl validator.StructLevel) {
+	config := sl.Current().Interface().(Conf)
+	if config.Mode != internal.ClientMode || config.Client == nil {
+		return
+	}
+
+	if config.Client.KeyPair == "" && config.Client.KeyPairPath == "" {
+		sl.ReportError(config.Client.KeyPairPath, "KeyPairPath", "KeyPairPath", "keypairOrPathRequired", "")
 	}
 }
 
